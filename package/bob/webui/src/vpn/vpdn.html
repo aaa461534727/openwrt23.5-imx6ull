@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+           <table class="table table-striped">
+            <tr>
+              <td colspan="12">
+                <div class="container-fluid">
+                  <ul class="list-inline">
+                    <li>
+                      <a style="cursor: pointer;text-decoration: underline;" :style="{color: pageIndex==1?'#b85904':'#938F8C'}" @click="gopage('1')">L2TP</a>
+                      <span>&nbsp;&nbsp;|</span>
+                    </li>
+                    <li>
+                      <a style="cursor: pointer;text-decoration: underline;" :style="{color: pageIndex!=1?'#b85904':'#938F8C'}" @click="gopage('0')">PPTP</a>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2"><strong>{{ pageIndex==1 ? lang_t('vpninfo.l2tp') : lang_t('vpninfo.pptp') }}</strong></td>
+            </tr>
+            <tr>
+              <td style="width: 20%">{{ lang_t('common.state') }}</td>
+              <td>
+                <input type="checkbox" id="switch_status" data-on-color="warning" >
+              </td>
+            </tr>     
+           </table>
+            <table class="table table-striped" v-show="enable">
+              <tr>
+                <td style="width: 20%">{{ lang_t('vpn.connect_status') }}</td>
+                <td>
+                  <span>{{pageIndex==1? 'L2TP' : 'PPTP'}}</span>
+                  <span style="color:#fff;background-color:#3399ff;" v-if="connect_status == 1">{{ lang_t('index.connected') }}</span>
+                  <span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('index.disconnected') }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('vpninfo.server_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.serverip" maxlength="32" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('index.username')}}</td>
+                <td>
+                  <input type="text" v-model="forms.user" maxlength="32" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('index.password')}}</td>
+                <td>
+                  <input type="text" v-model="forms.pass" maxlength="32" v-pass/>
+                </td>
+              </tr>
+
+              <tr v-if="pageIndex==1">
+                <td>{{lang_t('vpninfo.local_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localIp" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr v-if="pageIndex==1">
+                <td>{{lang_t('vpninfo.tunnel_secret')}}</td>
+                <td>
+                  <input type="text" v-model="forms.tunnelSecret" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr v-if="pageIndex==1">
+                <td>{{lang_t('vpninfo.local_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localHostname" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr v-if="pageIndex==1">
+                <td>{{lang_t('vpninfo.remote_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.remoteHostname" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr >
+                <td>{{ lang_t('vpninfo.ip_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="ipMasq">
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('vpninfo.lan_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="lanMasq">
+                </td>
+              </tr>
+              <tr v-if="pageIndex==0">
+                <td>{{lang_t('vpninfo.mppe_encryption')}}</td>
+                <td>
+                  <select v-model="mppe">
+                    <option value="0">{{lang_t('vpninfo.optional_encryp')}}</option>
+                    <option value="1">{{lang_t('vpninfo.unencryption')}}</option>
+                    <option value="2">{{lang_t('vpninfo.encryption')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('vpninfo.df_router') }}</td>
+                <td>
+                    <select v-model="forms.defr">
+                      <option value="0">{{ lang_t('common.off') }}</option>
+                      <option value="1">{{ lang_t('common.on') }}</option>
+                    </select>
+                </td>
+              </tr>
+              <tr>
+                  <td style="width: 100px">{{ lang_t('vpninfo.custo_route') }}</td>
+                  <td>
+                    <ul class="list-inline" >
+                      <li style="margin-right: 0;padding-right: 0;max-width: 165px;"><input type="text"  v-model="vpnlan[0]" /></li>
+                      <li style="margin: 0;padding: 5px 0 5px 0;">/</li>
+                      <li style="margin: auto 0 auto 0;padding-right: 0;max-width: 165px;">
+                        <select v-model="vpnmask[0]">
+                          <option v-for="mask in maskOption" :value="mask.value">{{mask.option}}</option>
+                        </select>
+                      </li>
+                      <li style="line-height: 35px;margin-left: 5px;padding-left: 2px;"><i class="fa fa-minus-square-o" aria-hidden="true" style="font-size: 20px;cursor: pointer;margin-right:5px;" @click="addmask(0,'jian')" v-if="0 == vpnmaskNum && vpnlan[0] != ''"></i><i :class="actionIcon[0]" aria-hidden="true" style="font-size: 20px;cursor: pointer;" @click="addmask(0)"></i></li>
+                    </ul>
+                    <div class="col-lg-12 col-xs-12" style="padding-left: 0" v-if="vpnmaskNum == 0">
+                    <span>({{ lang_t('modem.eg') }}:192.168.0.0 / 255.255.255.0)</span>
+                  </div>
+                  </td>
+              </tr>
+              <tr v-for="idx in vpnmaskNum">
+                  <td></td>
+                  <td>
+                    <ul class="list-inline" >
+                      <li style="margin-right: 0;padding-right: 0;max-width: 165px;"><input type="text" v-model="vpnlan[idx]"/></li>
+                      <li style="margin: 0;padding: 5px 0 5px 0;">/</li>
+                      <li style="margin: auto 0 auto 0;padding-right: 0;max-width: 165px;">
+                        <select v-model="vpnmask[idx]">
+                          <option v-for="mask in maskOption" :value="mask.value">{{mask.option}}</option>
+                        </select>
+                      </li>
+                      <li style="line-height: 35px;margin-left: 5px;padding-left: 2px;"><i class="fa fa-minus-square-o" aria-hidden="true" style="font-size: 20px;cursor: pointer;margin-right:5px;" @click="addmask(idx,'jian')" v-if="idx == vpnmaskNum"></i><i :class="actionIcon[idx]" aria-hidden="true" style="font-size: 20px;cursor: pointer;" @click="addmask(idx)"></i></li>
+                    </ul>
+                    <div class="col-lg-12 col-xs-12" style="padding-left: 0" v-if="idx == vpnmaskNum">
+                    <span>({{ lang_t('modem.eg') }}:192.168.0.0 / 255.255.255.0)</span>
+                  </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('modem.ip')}}</td>
+                <td>
+                   <span>{{ addr }}</span>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.vpncDmzSupport">
+                <td>{{lang_t('vpninfo.mapping')}}</td>
+                <td>
+                  <input type="text" v-model="forms.mapping">
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit(1)">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>     
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      maskOption: cs.maskOption(),
+      pageIndex: "1",
+      enable: false,
+      ipMasq:false,
+      lanMasq:false,
+      forms: {
+        serverip:'',
+        user:'',
+        pass:'',
+        mapping:'',
+        localIp:'',
+        tunnelSecret:'',
+        localHostname:'',
+        remoteHostname:'',
+        defr: '0'
+      },
+      mppe: '0',
+
+      connect_status:'',
+      addr:'',
+      percent:0,
+      actionIcon: ['fa fa-plus-square-o'],
+      vpnlan: [''],
+      vpnmask: [''],
+      vpnmaskNum: 0
+    }
+  },
+  created:function() {
+    var _this = this;
+    var index = location.search.match(/index=(\d+)/);
+    if (index != null) {
+      this.pageIndex = index[1];
+    }
+    this.initFun();
+  },
+  mounted:function(){
+    var _this = this;
+    this.setState = addSwitch('#switch_status', function(data) {
+      if (_this.enable != data) {
+        _this.enable = data;
+        if (!data) _this.submit_client();
+      }
+    });
+  },
+  methods:{
+    gopage: function(index) {
+      location.search = "index=" + index + "&timestamp=" + Date.now();
+    },
+    initFun: function() {
+      var _this = this;
+      var postVar = {};
+      postVar.vpnType = this.pageIndex; //1:l2tp，0：pptp
+      uiPost.getVpdnCfg(postVar, function(data) {
+        set_obj_value(data, _this.forms, function(key, value) {
+          _this.forms[key] = value;
+        })
+        _this.enable = data.enablec == "1" ? true : false;
+        _this.setState && _this.setState(_this.enable);
+        _this.connect_status = data.connect;
+        _this.addr = data.addr;
+
+        _this.ipMasq = data.ipMasq == "1" ? true : false;
+        _this.lanMasq = data.lanMasq == "1" ? true : false;
+        
+        if (data.subnet && data.subnet.length != 0) {
+          _this.vpnmaskNum = data.subnet.length-1;
+          for(var i = 0;i <= _this.vpnmaskNum;i++){
+            _this.vpnlan[i] = data.subnet[i].net;
+            _this.vpnmask[i]= data.subnet[i].mask;
+            _this.actionIcon[i] = (i == _this.vpnmaskNum ? 'fa fa-plus-square-o' : 'fa fa-minus-square-o');
+          }
+        }
+      });
+    },
+    addmask:function(idx,type){
+      if(this.actionIcon[idx] == 'fa fa-minus-square-o' || type == 'jian'){
+        this.actionIcon.splice(idx,1);
+        this.vpnlan.splice(idx,1);
+        this.vpnmask.splice(idx,1);
+        if(type == 'jian' && idx == 0){
+          this.vpnlan[0] = '';
+          this.vpnmask[0] = '';
+        }else
+          this.vpnmaskNum--;
+      }else{
+        this.vpnmaskNum = idx + 1;
+        this.vpnlan.splice(idx+1,0,'');
+        this.vpnmask.splice(idx+1,0,'');
+      }
+      for(var i=0;i<=this.vpnmaskNum;i++){
+        this.actionIcon[i] = (i == this.vpnmaskNum ? 'fa fa-plus-square-o' : 'fa fa-minus-square-o');
+      }
+    },
+    submit_client:function(){
+      var _this = this
+      var postVar = {
+        enablec: "0",
+        addEffect: "0",
+        vpnType: this.pageIndex
+      };
+      this.post(postVar);
+    },
+    post: function(postVar) {
+      uiPost.setVpdnCfg(postVar, apply_callback);
+    },
+    handleSubmit: function(mode) {
+      var _this = this;
+      var postVar = {};
+      var _s = cs.string(_this.forms.user);
+      if(0 == _s){
+        errorAlert(lang_t('index.username')+lang_t('alert.msg5'));
+        return false;
+      }else if (1 == _s) {
+        errorAlert(lang_t('index.username')+lang_t('alert.msg6'));
+        return false;
+      }
+
+      _s = cs.string(_this.forms.pass);
+      if (0 == _s) {
+        errorAlert(lang_t('index.password')+lang_t('alert.msg5'));
+        return false;
+      }else if (1 == _s) {
+        errorAlert(lang_t('index.password')+lang_t('alert.msg6'));
+        return false;
+      }
+
+      _s = cs.ip(_this.forms.serverip);
+      if(0 == _s){
+        errorAlert(lang_t('vpninfo.server_ip') + lang_t('alert.msg5'));
+        return false;
+      }
+
+      if (!cs.isUrl(_this.forms.serverip)){
+        errorAlert( this.lang_t('vpninfo.server_ip')+this.lang_t('alert.msg42') );
+        return false;
+      }
+
+      if (this.pageIndex == 1){
+
+       if (99 != cs.ip(_this.forms.localIp) && 0 != cs.ip(_this.forms.localIp)){
+          errorAlert(lang_t('vpninfo.local_ip') + lang_t('alert.msg14'));
+          return false;
+        }
+
+        var _s = cs.string(_this.forms.tunnelSecret);
+        if (1 == _s) {
+          errorAlert(lang_t('vpninfo.tunnel_secret')+lang_t('alert.msg6'));
+          return false;
+        }
+        var _s = cs.string(_this.forms.localHostname);
+        if (1 == _s) {
+          errorAlert(lang_t('vpninfo.local_hostname')+lang_t('alert.msg6'));
+          return false;
+        }
+        var _s = cs.string(_this.forms.remote_hostname);
+        if (1 == _s) {
+          errorAlert(lang_t('vpninfo.remoteHostname')+lang_t('alert.msg6'));
+          return false;
+        }
+        
+      }
+ 
+
+      var arr = [];
+      for(var i=0;i<=this.vpnmaskNum;i++){
+        arr[i] = {};
+        arr[i].net = this.vpnlan[i];
+        arr[i].mask   = this.vpnmask[i];
+          if('' != arr[i].net){
+              var reg=/^(?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))$/;
+              if(!reg.test(arr[i].net)){
+                errorAlert(lang_t('vpninfo.msg1'));
+                  return false;
+              }
+          }
+      }
+
+      if (99 != cs.ip(_this.forms.mapping) && 0 != cs.ip(_this.forms.mapping)){
+        errorAlert(lang_t('vpninfo.mapping') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      set_obj_value(this.forms, this.forms, function(key, value) {
+        postVar[key] = value;
+      })
+
+      if (this.pageIndex == 0) postVar.mppe = this.mppe;
+      postVar.vpnType = this.pageIndex;
+      postVar.enablec = "1";
+      postVar.subnet = arr;
+      postVar.addEffect = "1";
+      postVar.ipMasq = _this.ipMasq ? "1":"0";
+      postVar.lanMasq = _this.lanMasq ? "1":"0"
+      this.post(postVar);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

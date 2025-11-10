@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style type="text/css">
+    
+    input[type="text"],
+    select{
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div>
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('net_strategy.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <select v-model="enabled" @change="changeMode">
+                    <option value="0">{{ lang_t('net_strategy.disabled') }}</option>
+                    <option value="1">{{ lang_t('net_strategy.master_mode') }}</option>
+                    <option value="2">{{ lang_t('net_strategy.slave_mode') }}</option>
+                  </select>
+                  <div class="tips" data-name="tips1">!</div>
+                  <!--<input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none">-->
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled">
+                <td colspan="2">{{ lang_t('net_strategy.basic_setup') }}</td>
+              </tr>
+              <tr v-show="'0' != enabled">
+                <td>{{ lang_t('node_info.device_name') }}</td>
+                <td>
+                  <input type="text" v-model="deviceName" maxlength="20">
+                  <div class="tips" data-name="tips2">!</div>
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled">
+                <td>{{ lang_t('node_info.net_id') }}</td>
+                <td>
+                  <input type="text" v-model="netId" maxlength="10" :readonly="netIdWrite">
+                  <div class="tips" data-name="tips3">!</div>
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled">
+                <td>{{ lang_t('net_strategy.net_pwd') }}</td>
+                <td v-show="'2' == enabled">
+                  <input type="text" v-model="password" maxlength="32">
+                </td>
+                <td v-show="'1' == enabled">
+                    <span style="color: #EA7105;cursor: pointer;" @click="showPwdList()">{{ lang_t('net_strategy.show_info') }}</span>
+                  <span>{{ lang_t('net_strategy.add_max_limit1') }}<span style="padding: 0 5px;color: #ea7105;">{{ maxLimitNum }}</span>{{ lang_t('net_strategy.add_max_limit2') }}</span>
+                  <div class="tips" data-name="tips4">!</div>
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled && globalConfig.diffnetSwitchSupport">
+                <td>{{ lang_t('net_strategy.ifname_model') }}</td>
+                <td>
+                  <select v-model="ifnameModel">
+                    <option value="switch">{{ lang_t('net_strategy.two_switch') }}</option>
+                    <option value="route">{{ lang_t('net_strategy.three_route') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled && ifnameModel == 'switch'">
+                <td>{{ lang_t('net_strategy.brigeIf_iface') }}</td>
+                <td>
+                  <select  v-model="brigeIf">
+                    <option v-for="(data,i) in lanNum" :key="i" :value="'LAN'+data">{{'LAN'+data}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled && ifnameModel == 'switch'">
+                <td>{{ lang_t('net_strategy.filter_dhcp') }}</td>
+                <td>
+                  <select v-model="filterDhcp">
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="'1' == enabled">
+                <td>{{ lang_t('net_strategy.port_range') }}</td>
+                <td>
+                  <input type="text" v-model="portStart" style="width: 80px;float: left;"  maxlength="5">
+                  <span style="float: left;padding: 5px;">-</span>
+                  <input type="text" v-model="portEnd" style="width: 80px;float:left;" maxlength="5">
+                </td>
+              </tr>
+              <tr v-if="false && '1' == enabled">
+                <td>{{ lang_t('net_strategy.declare_wan_subnet') }}</td>
+                <td>
+                  <input type="checkbox" id="declareWanStatus" :checked="declareWan_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+              <tr v-if="false && '1' == enabled">
+                <td>{{ lang_t('net_strategy.declare_lan_subnet') }}</td>
+                <td>
+                  <input type="checkbox" id="declareLanStatus" :checked="declareLan_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+              <tr v-if="false && '0' != enabled">
+                <td>{{ lang_t('net_strategy.receive_declare') }}</td>
+                <td>
+                  <input type="checkbox" id="receiveDeclareStatus" :checked="receiveDeclare_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+              <tr v-show="'2' == enabled">
+                <td>{{ lang_t('net_strategy.net_connect_type') }}</td>
+                <td v-show="'0' != connectType">
+                  <span>{{ '1' == connectType ? "P2P" : lang_t('net_strategy.transfer') }}</span>
+                </td>
+                <td v-show="'0' == connectType">{{ lang_t('net_strategy.unreachable') }}</td>
+              </tr>
+              <tr v-show="'2' == enabled">
+                <td>{{ lang_t('net_strategy.connect_status') }}</td>
+                <td>
+                  <span ref="connect_status" v-html="statusDesc"></span>
+                  <span v-show="'2' == typeMode" style="padding: 0 5px;cursor: pointer;font-weight: bold;text-decoration: underline;" @click="reConnect" :style="{color: ('4' == status || '5' == status) ? '#f00' : '#0f0'}">{{ '4' == status || '5' == status ? lang_t('net_strategy.disreconnect') : lang_t('net_strategy.reconnect') }}</span>
+                </td>
+              </tr>
+              <tr v-show="'2' == enabled && ('5' == status || '4' == status)">
+                <td>{{ lang_t('net_strategy.connect_time') }}</td>
+                <td>
+                  {{ connectTime }}
+                </td>
+              </tr>
+              <tr v-show="'0' != enabled">
+                <td>{{ lang_t('net_strategy.advance_set') }}</td>
+                <td>
+                  <input type="checkbox" id="advanceStatus" :checked="advance_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+              <tr v-show="advance && '0' != enabled && (status==4 || status==5 || typeMode == '1') && ifnameModel == 'route'">
+                <td>{{ lang_t('net_strategy.my_ip') }}</td>
+                <td>
+                  <span>{{myIp}}</span>
+                </td>
+              </tr>
+              <tr v-show="advance && '0' != enabled && ifnameModel == 'route'">
+                <td>{{ lang_t('net_strategy.dmz_ip') }}</td>
+                <td>
+                  <input type="text" v-model="dmzIp" />
+                </td>
+              </tr>
+              <tr v-show="advance && '0' != enabled">
+                <td>{{ lang_t('net_strategy.default_route_node') }}</td>
+                <td>
+                  <input type="text" v-model="defaultRouteNode" />
+                  <div class="tips" data-name="tips5">!</div>
+                </td>
+              </tr>
+              <tr v-show="false && '0' != enabled">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                </td>
+              </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="'0' != enabled && ifnameModel != 'switch'">
+              <tr><td colspan="6"> {{ lang_t('net_strategy.custom_strategy') }}<div class="tips" data-name="tips6">!</div></td>
+              </tr>
+              <tr>
+                <td colspan="6" style="padding: 0;overflow-x: auto;max-width: 380px;">
+                <table class="table table-striped table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>{{ lang_t('net_strategy.ip_network') }}</th>
+                    <th>{{ lang_t('net_strategy.type') }}</th>
+                    <th>{{ lang_t('net_strategy.nexthop') }}</th>
+                    <th>{{ lang_t('net_strategy.comment') }}</th>
+                    <th>{{ lang_t('net_strategy.operation') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in strategyData" :key="index" @click="editItem(index,val)">
+                    <td>{{index+1}}</td>
+                    <td>
+                      <div v-if="editIdx == index" style="width: 210px;">
+                        <input type="text" v-model="editItemInfo.network_ip" style="width: 133px;float: left;" placeholder="192.168.0.2"  maxlength="15"/>
+                        <span style="float: left;padding: 5px;">/</span>
+                        <input type="text" v-model="editItemInfo.network_mask" style="width: 50px;float: left;" placeholder="24"/>
+                      </div>
+                      <span v-else>{{val.network}}</span>
+                    </td>
+                    <td>
+                      <select v-if="editIdx == index" v-model="editItemInfoType" data-style="btn-default" style="min-width: 90px;">
+                        <option value="1">{{ lang_t('net_strategy.policy_routing') }}</option>
+                        <option value="2">{{ lang_t('net_strategy.initiative_declare') }}</option>
+                      </select>
+                      <span v-else>{{'1' == val.type ? lang_t('net_strategy.policy_routing') : lang_t('net_strategy.initiative_declare')}}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index" :style="{width: 'IP' == editItemInfo.nexthop ? '240px;':'142px;' }">
+                        <div v-show="'1' == editItemInfoType"> 
+                          <select v-model="editItemInfoNexthop" data-style="btn-default" style="width: 90px; float: left;">
+                            <option value="WAN">WAN</option>
+                            <option value="IP">IP</option>
+                            <option value="P2P" v-if="false">P2P</option>
+                          </select>
+                          <input v-show="'IP' == editItemInfoNexthop" type="text" v-model="editItemInfo.nexthop_ip" maxlength="15" style="width:145px;float: left;" :placeholder="lang_t('net_strategy.ip_address')"/>
+                        </div> 
+                      </div>
+                      <div v-else>
+                        <span>{{val.nexthop}}</span>
+                        <span v-show="'IP' == val.nexthop">
+                          - {{val.nexthop_ip}}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <input v-if="editIdx == index" type="text" v-model="editItemInfo.comment" maxlength="32" style="width:145px;" :placeholder="lang_t('ipf.comment')"/>
+                      <span v-else>{{val.comment}}</span>
+                    </td>
+                    <td class="operation">
+                      <div style="word-break: keep-all;">
+                        <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                        <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                        <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td>
+                      <div style="width: 210px;">
+                        <input type="text" v-model="network_ip" style="width: 133px;float: left;" placeholder="192.168.0.2"  maxlength="15"/>
+                        <span style="float: left;padding: 5px;">/</span>
+                        <input type="text" v-model="network_mask" style="width: 50px;float: left;" placeholder="24"/>
+                      </div>
+                    </td>
+                    <td>
+                      <div style="width: 142px;">
+                        <select v-model="type" data-style="btn-default" style="min-width: 90px;">
+                          <option value="1">{{ lang_t('net_strategy.policy_routing') }}</option>
+                          <option value="2">{{ lang_t('net_strategy.initiative_declare') }}</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td>
+                     <div :style="{width: 'IP' == nexthop ? '240px;':'142px;' }" v-show="'1' == type">
+                        <select v-model="nexthop" data-style="btn-default" style="width: 90px; float: left;">
+                          <option value="WAN">WAN</option>
+                          <option value="IP">IP</option>
+                          <option value="P2P" v-if="false">P2P</option>
+                        </select>
+                        <input v-show="'IP' == nexthop" type="text" v-model="nexthop_ip" maxlength="15" style="width:145px;float: left;" :placeholder="lang_t('net_strategy.ip_address')"/>
+                      </div>
+                      <span v-show="'2' == type">*</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="comment" maxlength="32" style="width:145px;" :placeholder="lang_t('ipf.comment')"/>
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td> 
+                  </tr>
+                </tbody>
+                </table>
+                  </td>
+                </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="'0' != enabled">
+               <tr>
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal fade" id="pwdModal" tabindex="-1" role="dialog" aria-labelledby="myPwdModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myPwdModalLabel">
+                {{ lang_t('net_strategy.add_net_pwd') }}
+              </h4>
+            </div>
+            <div class="modal-body" >
+              <table class="table table-striped" v-show="'0' != enabled">
+                <tbody>
+                  <tr>
+                    <td>{{ lang_t('net_strategy.net_pwd') }}</td>
+                    <td>
+                      <input type="text" v-model="netPwd" maxlength="32" v-pass>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button  @click="closeFrame('pwdModal')" class="btn btn-default all-but">{{ lang_t("common.disabled") }}</button>&nbsp;&nbsp;
+                    <button  @click.prevent="doAddPwd()" :disabled="addPwdFlag" class="btn btn-primary all-but">{{ lang_t("common.add") }}</button></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="addPwdModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">
+                {{ lang_t('net_strategy.net_pwd_list') }}
+                <span><a style="cursor: pointer;padding: 0 10px;" @click="showAddPwd()">{{ lang_t('net_strategy.add') }}</a></span>
+                <span><a style="cursor: pointer;padding: 0" @click="refreshPwd()">{{ lang_t('net_strategy.refresh') }}</a></span>
+              </h4>
+            </div>
+            <div class="modal-body" >
+              <table class="table table-striped table-bordered table-hover" v-show="'0' != enabled">
+                  <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>{{ lang_t('net_strategy.net_pwd') }}</th>
+                    <th>{{ lang_t('net_strategy.device_id') }}</th>
+                    <th>{{ lang_t('net_strategy.operation') }}</th>
+                  </tr>
+                  </thead>
+                <tbody>
+                  <tr v-for="(item,idx) in pwdListData">
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ item.password }}</td>
+                    <td>{{ item.devId }}</td>
+                    <td><a style="cursor: pointer;" @click="delPwd(item,idx)">{{ lang_t('common.delete') }}</a></td>
+                  </tr>
+                  <tr v-if="'0' == pwdListData.length">
+                    <td colspan="4" align="center">{{ lang_t('net_strategy.no_data') }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t,
+      enabled: '1',
+      orgNetId:"",
+      netId:"",
+      netIdTmp:"",
+      netIdWrite:false,
+      password:"",
+      deviceName:"",
+      pwdTmp:"",
+      declareWan: false,
+      declareLan:false,
+      receiveDeclare:false,
+      advance:false,
+      defaultRouteNode:"",
+      dmzIp: '',
+      myIp: '',
+
+      //组网连接状态
+      connectType:"0",
+      status:"0",
+      warning:"",
+      connectTime:"",
+
+      network_ip:"",
+      network_mask:"",
+      type:"1",
+      nexthop:"WAN",
+      nexthop_ip:"",
+      comment:"",
+
+      strategyData:[],
+      // protocol:'ALL',
+      // ip:'',
+      // dFromPort:'1',
+      // dToPort:'65535',
+      // comment:'',
+      // input: '',
+      // output: '',
+      // dip: '0.0.0.0',
+      // dfPort: '1',
+      // dtPort: '65535',
+      // lanIp: [],
+      // lanNetmask: [],
+      // arpData:[],
+      // ipfData:[],
+      // interfaceArr: [],
+      editIdx: '-1',
+      editItemInfo: {},
+      editItemInfoType:"",
+      editItemInfoNexthop:"",
+
+      modelShow:false,
+      pwdListData:[],
+      netPwd:"",
+      maxLimitNum:"0",
+      portStart:"",
+      portEnd:"",
+      typeMode:"",
+      addPwdFlag:false,
+
+      ifnameModel: '',
+	  lanNum: 1,
+      brigeIf: '',
+      filterDhcp: '',
+      conflictType: ''
+    }
+  },
+  computed: {
+    statusDesc:function () {
+      var arr = [
+        {
+          "desc": lang_t('net_strategy.offline'),
+          "color":"#ff0000"
+        }, {
+          "desc": lang_t('net_strategy.connecting'),
+          "color":"#008000"
+        }, {
+          "desc": lang_t('net_strategy.net_id_error'),
+          "color":"#ff0000"
+        }, {
+          "desc": lang_t('net_strategy.net_fail'),
+          "color":"#ff0000"
+        },{
+          "desc": lang_t('net_strategy.connected'),
+          "color":"#008000"
+        }
+      ];
+      
+      var desc = "", color;
+      if (this.status == 5) {
+        color = "#FF9800";
+        if (this.conflictType == "lan") {
+          desc = lang_t("net_strategy.lan_conflict", [ '<a href="/net/network.html">' + lang_t('menu.network') + '</a>' ]);
+        } else {
+          desc = lang_t("net_strategy.wan_conflict");
+        }
+        this.$nextTick(function() {
+          this.$refs.connect_status.title = lang_t('net_strategy.subnet_conflict') + this.warning;
+        })
+      } else {
+        desc = arr[this.status].desc;
+        color = arr[this.status].color;
+      }
+      this.$nextTick(function() {
+        this.$refs.connect_status.style.color = color;
+      })
+      return desc;
+    },
+    declareWan_status:function(){
+        var _this = this;
+        $('#declareWanStatus').bootstrapSwitch('state',_this.declareWan);
+    },
+    declareLan_status:function(){
+        var _this = this;
+        $('#declareLanStatus').bootstrapSwitch('state',_this.declareLan);
+    },
+    receiveDeclare_status:function(){
+        var _this = this;
+        $('#receiveDeclareStatus').bootstrapSwitch('state',_this.receiveDeclare);
+    },
+    advance_status:function(){
+      var _this = this;
+      $('#advanceStatus').bootstrapSwitch('state',_this.advance);
+    }
+  },
+  watch:{
+  },
+  created:function() {
+    var _this = this;
+    var postVar = {};
+    uiPost.getNetStrategyCfg(postVar,function(data){
+      _this.typeMode = _this.enabled = data.enabled;
+      _this.netIdWrite = '2' != data.enabled;
+      _this.orgNetId = data.orgNetId;
+      _this.netIdTmp = data.netId;
+      _this.netId = '2' == data.enabled ? _this.netIdTmp : _this.orgNetId;
+      _this.password = _this.pwdTmp = data.password;
+      _this.deviceName = data.deviceName;
+      _this.declareWan = data.declareWan == "1" ?true :false;
+      _this.declareLan = data.declareLan == "1" ?true :false;
+      _this.receiveDeclare = data.receiveDeclare == "1" ?true :false;
+      _this.defaultRouteNode = data.defaultRouteNode;
+      _this.myIp = data.myIp;
+      _this.dmzIp = data.dmzIp;
+
+      _this.advance = '1' == data.advSetFlag;
+
+      _this.maxLimitNum = data.maxLimitNum;
+      _this.portStart = data.portStart;
+      _this.portEnd = data.portEnd;
+
+      _this.strategyData = data.rule;
+
+      _this.ifnameModel = data.mode;
+      _this.brigeIf = data.brigeIf;
+      _this.filterDhcp = data.filterDhcp;
+	  
+	  _this.lanNum = Number(globalConfig.lanNum);
+
+      if('2' == data.enabled){
+        _this.getNetStatus();
+        setInterval(function () {
+            _this.getNetStatus();
+        },5000);
+      }
+
+    //   if(data.lan){
+    //     for(var i in data.lan){
+    //       _this.lanIp[i] = data.lan[i].ip;
+    //       _this.lanNetmask[i] = data.lan[i].mask;
+    //     }
+    //   }
+    //   if(data.interface){
+    //     _this.interfaceArr = data.interface.split(',');
+    //     _this.input = _this.interfaceArr[0];
+    //     _this.output = _this.interfaceArr[0];
+    //   }
+
+    //   if(data.rule){
+    //     _this.ipfData = data.rule;
+    //   }
+    });
+  },
+  mounted:function(){
+    var _this = this;
+
+    addSwitch('#declareWanStatus', function(data) {
+      if(_this.declareWan != data){
+         _this.declareWan = data;
+      }
+    });
+    addSwitch('#declareLanStatus', function(data) {
+      if(_this.declareLan != data){
+         _this.declareLan = data;
+      }
+    });
+    addSwitch('#receiveDeclareStatus', function(data) {
+      if(_this.receiveDeclare != data){
+         _this.receiveDeclare = data;
+      }
+    });
+    addSwitch('#advanceStatus', function(data) {
+      if(_this.advance != data){
+        _this.advance = data;
+      }
+    });
+    $(".tips").on("click", function(){
+      Cstools.msg({
+        messgetype:'alert',
+        content: lang_t('net_strategy.'+ this.getAttribute('data-name'))
+      });
+    });
+  },
+  methods:{
+    refreshPwd:function () {
+        var _this = this;
+        uiPost.setUpdateInfoCfg(function(data){
+            location.reload();
+        });
+    },
+    doAddPwd:function () {
+        var _this = this;
+        if(_this.pwdListData.length >= _this.maxLimitNum){
+          errorAlert(lang_t('net_strategy.msg11'));
+          return false;
+        }
+
+        var reg = /^[0-9a-zA-Z]{4,32}$/;
+        if(!reg.test(_this.netPwd)){
+          errorAlert(lang_t('net_strategy.msg7'));
+          return false;
+        }
+
+        for(var i in _this.pwdListData){
+          if(_this.pwdListData[i].password == _this.netPwd){
+            errorAlert(lang_t('net_strategy.msg12'));
+            return false;
+          }
+        }
+
+        var postVar = {};
+        postVar.password = _this.netPwd;
+        _this.addPwdFlag = true;
+        uiPost.setNetStrategyPwdCfg(postVar,function(data){
+          apply_callback(data, function() {
+            $("#pwdModal").modal("hide");
+          })
+          _this.addPwdFlag = false;
+        });
+    },
+    closeFrame:function (modal) {
+        var _this = this;
+        $("#"+modal).modal('hide');
+    },
+    showAddPwd:function () {
+        var _this = this;
+        $("#pwdModal").modal("show");
+        _this.netPwd = "";
+        $("#addPwdModal").modal("hide");
+    },
+    delPwd:function (obj,idx) {
+      var _this = this;
+      Cstools.msg({
+        content: lang_t('policy_route.msg3'),
+        type: 'warn',
+        messgetype: 'confirm',
+        ok:function(){
+          var postVar = {};
+          postVar[obj.delRuleName] = String(idx);
+          postVar.password = obj.password;
+          postVar.devId = obj.devId;
+          $("#addPwdModal").modal("hide");
+          uiPost.delNetStrategyPwdCfg(postVar, apply_callback);
+        }
+      });
+    },
+    showPwdList:function () {
+      var _this = this;
+      _this.modelShow = true;
+      $("#addPwdModal").modal("show");
+      uiPost.getNetStrategyPwdCfg(function(data){
+        _this.pwdListData = data;
+      });
+    },
+    reConnect:function () {
+        var _this = this;
+        var postVar = {};
+        if('4' == _this.status || '5' == _this.status){
+          postVar.enabled = "0";
+        }else{
+          postVar.enabled = "1";
+        }
+        uiPost.setNetStrategyReconnect(postVar, apply_callback);
+    },
+    getNetStatus:function () {
+        var _this = this;
+        uiPost.getNetStrategyStatus(function(data){
+          if(data){
+            _this.connectType = data.type;
+            _this.status = data.status;
+            _this.conflictType = data.conflictType;
+            _this.warning = data.warning;
+            _this.connectTime = cs.formatDate(data.connectTime,"yyyy-MM-d hh:mm:ss");
+          }
+        });
+    },
+    changeMode:function () {
+        var _this = this;
+        if('2' != _this.enabled){
+            _this.netId = _this.orgNetId;
+            _this.netIdWrite = true;
+        }else{
+            if('2' != _this.typeMode){
+              _this.netId = "";
+            }else{
+              _this.netId = _this.netIdTmp;
+            }
+//            _this.netId = _this.netIdTmp;
+            _this.netIdWrite = false;
+        }
+        _this.submit_status();
+    },
+    saveInfo:function () {
+        var _this = this;
+        var postVar = {};
+        var _reg = /^[0-9a-zA-Z]{4,32}$/;
+        var arr = [];
+        postVar.enabled = _this.enabled;
+        // postVar.addFlag = "0";
+//        postVar.declareWan = _this.declareWan ? '1' : '0';
+//        postVar.declareLan = _this.declareLan ? '1' : '0';
+        if('2' == postVar.enabled){
+          postVar.declareWan = '0';
+          postVar.declareLan = '0';
+          postVar.receiveDeclare = "1";
+        }else{
+          postVar.declareWan = '1';
+          postVar.declareLan = '1';
+          postVar.receiveDeclare = "0";
+        }
+
+        if('2' == postVar.enabled){
+            var reg = /^[0-9a-fA-F]{10}$/;
+            if(!reg.test(_this.netId)){
+              errorAlert(lang_t('net_strategy.msg6'));
+              return false;
+            }
+            postVar.netId = _this.netId.toUpperCase();
+            if(!_reg.test(_this.password)){
+                errorAlert(lang_t('net_strategy.msg7'));
+                return false;
+            }
+            postVar.password = _this.password;
+        }else if('1' == postVar.enabled){
+            if(_this.password != _this.pwdTmp){
+              if(!_reg.test(_this.password)){
+                errorAlert(lang_t('net_strategy.msg7'));
+                return false;
+              }
+              postVar.password = _this.password;
+            }
+
+            var _ss = cs.num_range(_this.portStart,1,65535);
+            var _es = cs.num_range(_this.portEnd,1,65535);
+            if(99 != _ss || 99 != _es){
+                errorAlert(lang_t('net_strategy.msg13'));
+                return false;
+            }else if(Number(_this.portStart) > Number(_this.portEnd) ){
+                errorAlert(lang_t('net_strategy.msg14'));
+                return false;
+            }
+            postVar.portStart = _this.portStart;
+            postVar.portEnd = _this.portEnd;
+        }
+
+        postVar.deviceName = _this.deviceName;
+        var _s=cs.commentstr(postVar.deviceName);
+        if(_s == 1||_s == 2){
+          errorAlert(lang_t('net_strategy.msg8'));
+          return false;
+        }
+
+//        postVar.receiveDeclare = _this.receiveDeclare ? '1' : '0';
+        postVar.advSetFlag = _this.advance ? '1' : '0';
+        if(_this.advance){
+          if (this.ifnameModel == 'route') {
+            if (99 != cs.ip(this.dmzIp)) {
+              errorAlert(lang_t('net_strategy.dmz_ip')+lang_t('net_strategy.msg5'));
+              return false
+            }
+            postVar.dmzIp = this.dmzIp;
+          }
+
+          postVar.defaultRouteNode = _this.defaultRouteNode;
+          reg=/^(?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))$/;
+          if(!reg.test(postVar.defaultRouteNode)){
+            errorAlert(lang_t('net_strategy.msg9'));
+            return false
+          }
+        }
+
+        postVar.mode = _this.ifnameModel;
+        postVar.brigeIf = _this.brigeIf;
+        postVar.filterDhcp = _this.filterDhcp;
+
+        var arr = [];
+        arr = arr.concat( this.strategyData );
+        postVar.subnet = arr;
+        uiPost.setNetStrategyCfg(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      this.editItemInfo.type = this.editItemInfoType;
+      this.editItemInfo.nexthop = this.editItemInfoNexthop;
+      if('2' == this.editItemInfo.type){
+        this.editItemInfo.nexthop = "*";
+      }
+      if('IP' == this.editItemInfoNexthop){
+        this.editItemInfo.nexthop = this.editItemInfo.nexthop_ip;
+      }
+      this.editItemInfoType = "";
+      this.editItemInfoNexthop = "";
+      this.editItemInfo.network = this.editItemInfo.network_ip + '/' + this.editItemInfo.network_mask;
+
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.strategyData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.strategyData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      this.editItemInfo.network_ip = obj.network.split('/')[0];
+      this.editItemInfo.network_mask = obj.network.split('/')[1]; 
+      this.editItemInfoType = this.editItemInfo.type = obj.type;
+      this.editItemInfoNexthop = this.editItemInfo.nexthop = obj.nexthop;
+
+      if('1' == this.editItemInfo.type ){
+        if('WAN' != obj.nexthop){
+          if(obj.nexthop && 99 == cs.ip(obj.nexthop)){
+            this.editItemInfoNexthop = "IP";
+            this.editItemInfo.nexthop_ip = obj.nexthop;
+          }else{
+            this.editItemInfo.nexthop = "P2P";
+          }
+        }
+      }else{
+        this.editItemInfo.nexthop = "*";
+      }
+
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    cancelEdit:function (obj) {
+        this.editIdx = "-1";
+        this.editItemInfo = obj;
+    },
+    submit_status:function(){
+      var _this = this;
+      var postVar ={};
+      postVar.addFlag = "0";
+      postVar.enabled = this.enabled;
+      if('0' == this.enabled){
+        uiPost.setNetStrategyCfg(postVar, apply_callback);
+      }
+    },
+    veriyfun:function(val, flag){
+      var ip = val.network.split("/")[0],
+        mask = val.network.split("/")[1];
+      var _this = this, f = errorAlert;
+      if(0 == ip.length){
+        f(lang_t('net_strategy.msg1'));
+        return false;
+      }else if(!cs.ip_seg(ip)){
+        f(lang_t('net_strategy.msg2'));
+        return false;
+      }
+      var _s = cs.num(mask);
+      if(0 == _s){
+        f(lang_t('net_strategy.msg3'));
+        return false;
+      }else if(99 != _s){
+        f(lang_t('net_strategy.msg4'));
+        return false;
+      }
+      if('1' == val.type){ //策略路由
+        if('IP' == val.nexthop){
+          if(99 != cs.ip(val.nexthop_ip)){
+            f(lang_t('net_strategy.msg5'));
+            return false;
+          }
+        
+        }
+      }
+
+      return true;
+    },
+    addRule: function() {
+      var _this = this;
+      
+      var f = errorAlert;
+      var obj = {};
+      obj.idx = _this.strategyData.length+1;
+      obj.network = _this.network_ip + '/' + _this.network_mask;
+      obj.type = _this.type;
+      if('1' == _this.type){ //策略路由
+        obj.nexthop = _this.nexthop;
+        if('IP' == _this.nexthop){
+          if(99 != cs.ip(_this.nexthop_ip)){
+            f(lang_t('net_strategy.msg5'));
+            return false;
+          }
+          // obj.nexthop_ip = _this.nexthop_ip;  
+          obj.nexthop = _this.nexthop_ip;  
+        }
+      }else if('2' == _this.type){
+        obj.nexthop = "*";
+      }
+     
+      obj.comment = _this.comment;
+      // postVar.addFlag = '1';
+      if (!this.veriyfun(obj)) return;
+      _this.strategyData.push(obj);
+
+      _this.network_ip = "";
+      _this.network_mask = "";
+      _this.type = "1";
+      _this.nexthop = "WAN";
+      _this.nexthop_ip = "";
+      _this.comment = "";
+  
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+
+  

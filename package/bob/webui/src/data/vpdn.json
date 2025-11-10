@@ -1,0 +1,27 @@
+{
+    "enablec": "1",
+    "connect": "1",
+    "serverip": "192.168.3.3",
+    "user": "karen",
+    "pass": "123",
+    "defr": "1",
+    "mppe": "0",
+    "addr": "10.10.10.1",
+    "mapping": "10.10.10.1",
+    "ipMasq":"0",
+    "lanMasq":"1",
+    "localIp":"20.11.3.6",
+    "tunnelSecret":"use",
+    "localHostname":"cs",
+    "remoteHostname":"pasd",
+    "lanMasq":"1",
+    "subnet": [
+        {
+            "net": "192.168.0.1",
+            "mask": "255.255.255.0"
+        },{
+            "net": "192.168.0.2",
+            "mask": "255.255.255.0"
+        }
+    ]
+}

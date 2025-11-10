@@ -1,0 +1,14 @@
+{
+  "enable":"1",
+  "interface":"ALL,LAN1,LAN2,WAN1", 
+  "ip":"192.168.0.1",
+  "mask":"255.255.255.0",
+  "rule":[
+    {"idx":"1","ip":"192.168.0.8","proto":"TCP","sPort":"100","ePort":"199","dsPort":"1","dePort":"44","desc":"new","delRuleName":"delRule0","dip":"0.0.0.0","input":"ALL","output":"ALL"},
+    {"idx":"2","ip":"192.168.0.2","proto":"UDP","sPort":"200","ePort":"299","dsPort":"1","dePort":"144","desc":"love","delRuleName":"delRule1","dip":"192.168.0.5","input":"LAN","output":"LAN"},
+    {"idx":"3","ip":"192.168.0.86","proto":"ALL","sPort":"300","ePort":"399","dsPort":"1","dePort":"344","desc":"toto","delRuleName":"delRule2","dip":"192.168.0.6","input":"ALL","output":"LAN"},
+    {"idx":"4","ip":"192.168.0.8","proto":"TCP","sPort":"400","ePort":"499","dsPort":"1","dePort":"244","desc":"new","delRuleName":"delRule3","dip":"192.168.0.7","input":"LAN","output":"ALL"},
+    {"idx":"5","ip":"192.168.0.2","proto":"UDP","sPort":"500","ePort":"599","dsPort":"1","dePort":"444","desc":"love","delRuleName":"delRule4","dip":"192.168.0.8","input":"ALL","output":"WAN"},
+    {"idx":"6","ip":"192.168.0.86","proto":"ALL","sPort":"600","ePort":"699","dsPort":"1","dePort":"544","desc":"toto","delRuleName":"delRule5","dip":"192.168.0.9","input":"ALL","output":"WAN2"}
+  ]
+}

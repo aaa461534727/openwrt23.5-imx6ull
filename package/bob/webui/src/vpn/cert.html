@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+             <tr>
+               <td colspan="2"><strong>{{lang_t('vpn_detection.help')}}</strong></td>
+             </tr>         
+             <tr>
+               <td>{{ lang_t('common.state') }}</td>
+               <td>
+                 <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+               </td>
+             </tr>
+             <tr v-show="enabled">
+               <td>{{lang_t('vpn_detection.interval')}}</td>
+               <td>
+                 <input type="number" v-model="formValidate.interval" maxlength="4" />
+                 <span class="option">(30 - 7200)S</span>
+               </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('vpn_detection.flow_enable')}}</td>
+                <td>
+                  <select v-model="formValidate.flowStatus">
+                    <option value="0">{{lang_t('common.disabled')}}</option>
+                    <option value="1">{{lang_t('common.enabled')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.flowStatus == '1'">
+                <td>{{lang_t('vpn_detection.up')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.up" />
+                  <span class="option">Byte ({{ lang_t('vpn_detection.msg6') }})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.flowStatus== '1'">
+                <td>{{lang_t('vpn_detection.down')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.down" />
+                  <span class="option">Byte ({{ lang_t('vpn_detection.msg7') }})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('vpn_detection.vpn_redial')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.vpnRedial" maxlength="5"/>
+                  <span class="option">({{ lang_t('vpn_detection.msg2') }})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('vpn_detection.reconnect_wifi')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.reconnectwifi" maxlength="5"/>
+                  <span class="option">({{ lang_t('vpn_detection.msg3') }})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('vpn_detection.sys_reboot')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.sysReboot" maxlength="5"/>
+                  <span class="option">({{ lang_t('vpn_detection.msg4') }})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit()">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>   
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      enabled:false,
+      formValidate:{
+        flowStatus:'',
+        interval:'',
+        vpnRedial:'',
+        reconnectwifi:'',
+        sysReboot:'',
+        up:'',
+        down:''
+      }
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getVpnCheckCfg(function(data){
+      _this.enabled = data.vpncheckEnable == "1" ? true : false;
+      _this.formValidate.flowStatus = data.flowEnable;
+      _this.formValidate.interval = data.checkInterval;
+      _this.formValidate.vpnRedial = data.reconnectThreshold;
+      _this.formValidate.reconnectwifi = data.networkThreshold;
+      _this.formValidate.sysReboot = data.rebootThreshold;
+      _this.formValidate.up = data.flowUprate;
+      _this.formValidate.down = data.flowDownrate;
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    },
+    maskOption:function(){
+      return cs.maskOption();
+    }
+  },
+  created:function(){
+    
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.vpncheckEnable = "0";
+        uiPost.setVpnCheckCfg(postVar, apply_callback);
+      }
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if(99 != cs.num_range(_this.formValidate.interval,30,7200)){
+        errorAlert(_this.lang_t('vpn_detection.interval') + _this.lang_t('alert.msg15',[30,7200]));
+        return false;
+      }
+
+      if(_this.formValidate.flowStatus =='1'){
+        if(99 != cs.num_range(_this.formValidate.up,512,102400)){
+          errorAlert(_this.lang_t('vpn_detection.up') + _this.lang_t('alert.msg15',[512,102400]));
+          return false;
+        }
+
+        if(99 != cs.num_range(_this.formValidate.down,512,102400)){
+          errorAlert(_this.lang_t('vpn_detection.down') + _this.lang_t('alert.msg15',[512,102400]));
+          return false;
+        }
+      }
+
+      if(99 != cs.num(_this.formValidate.vpnRedial)){
+        errorAlert(_this.lang_t('vpn_detection.vpn_redial') + _this.lang_t('alert.msg18'));
+        return false;
+      }
+
+      if(99 != cs.num(_this.formValidate.reconnectwifi)){
+        errorAlert(_this.lang_t('vpn_detection.reconnect_wifi') + _this.lang_t('alert.msg18'));
+        return false;
+      }
+
+      if(99 != cs.num(_this.formValidate.sysReboot)){
+        errorAlert(_this.lang_t('vpn_detection.sys_reboot') + _this.lang_t('alert.msg18'));
+        return false;
+      }
+
+      postVar.vpncheckEnable = "1";
+      postVar.checkInterval = _this.formValidate.interval;
+      postVar.reconnectThreshold = Number(_this.formValidate.vpnRedial)+"";
+      postVar.networkThreshold = Number(_this.formValidate.reconnectwifi)+"";
+      postVar.rebootThreshold = Number(_this.formValidate.sysReboot)+"";
+      postVar.flowEnable = _this.formValidate.flowStatus;
+      if(_this.formValidate.flowStatus =='1'){
+        postVar.flowUprate = _this.formValidate.up;
+        postVar.flowDownrate = _this.formValidate.down;
+      }
+      uiPost.setVpnCheckCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

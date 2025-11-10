@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <main class="login-modal-container">
+        <h1 style="color: rgba(0, 0, 0, 0.98);text-align: center">{{lang_t('config.active_system')}}</h1>
+        <div class="content-box tab-content table-responsive __mb">
+          <table class="table table-striped hidden-xs hidden-sm" >
+            <tr>
+              <td>{{lang_t('config.backup_file')}}</td>
+            </tr>
+            <tr>
+              <td>
+                <button class="btn btn-primary all-but" @click.prevent="backupFun">{{lang_t('config.backup')}}</button>
+              </td>
+            </tr>
+          </table>
+          <form method="post" enctype="multipart/form-data">
+          <table class="table table-striped hidden-xs hidden-sm" >
+            <tr>
+              <td colspan="2">{{lang_t('config.import_file')}}</td>
+            </tr>
+            <tr v-if="isSafari">
+              <td colspan="2">
+                <input type="file" name="file" id="f_upload" @change="filechange">
+              </td>
+            </tr>
+            <tr v-else>
+              <td style="width: 260px;"> 
+                <input type="text" id="filename" v-model="filename" disabled>
+              </td>
+              <td>
+                <label class="input-group-btn">
+                  <span class="btn btn-default">
+                    <i class="glyphicon glyphicon-plus"></i> 
+                    {{lang_t('config.select_file')}}<input type="file" name="file" id="f_upload" style="display: none;" @change="filechange">
+                  </span>
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <button class="btn btn-primary all-but" @click.prevent="importFun">{{lang_t('config.import')}}</button>
+              </td>
+            </tr>
+          </table>
+          </form>
+        </div>
+      </main>
+      <div style="display: none;">
+        <form ref="save" method="post" :action="saveAction"></form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+      saveAction:'/cgi-bin/hardware_parms',
+      filename:'',
+      isSafari:false
+    }
+  },
+  created:function(){
+    var _this = this;
+    _this.isSafari = isSafari(); 
+  },
+  methods:{
+    backupFun:function(event){
+      this.$refs.save.submit();
+    },
+    importFun:function(){      
+      var _this = this; 
+      if($("#filename").val() == ""){
+        errorAlert(lang_t('config.msg1'));
+        return false;
+      }
+      var file = document.getElementById("f_upload").files[0];
+      upload.fileUpload({
+        data: file,
+        url: "cgi-bin/cstecgi.cgi?action=upload&setUpgradeActive",
+        success:function(result){
+         if(result.settingERR == "1"){
+            Cstools.msg({
+              content: _this.lang_t('config.active_success'),
+              type: 'success',
+              messgetype: 'no',
+              time: 3,
+              timeout:function(){
+                parent.location.href='http://' + lanip + '/login.html';				
+              }
+            });
+          }else{
+            errorAlert(lang_t('config.MM_upload_activecode_error'));
+            return false;
+          }
+        },
+        error:function(result){
+          errorAlert(lang_t('config.MM_upload_activecode_error'));
+          return false;
+        }
+      })
+    },
+    filechange:function(){
+      var file = document.getElementById("f_upload");
+      var name = file.files[0].name;
+      this.filename = name;
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

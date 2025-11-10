@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('syslog.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('index.type') }}</td>
+                <td>
+                  <select v-model="debugMode">
+                    <option value="0">{{ lang_t('common.close') }}</option>
+                    <option value="1">{{ lang_t('syslog.local_save') }}</option>
+                    <option value="2">{{ lang_t('syslog.server_save') }}</option>
+                    <option value="3">{{ lang_t('syslog.local_server_save') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tbody v-show="debugMode != '0'">
+                <tr>
+                  <td v-if="globalConfig.c735irSupport" style="width: 30%;">{{lang_t('syslog.lte_save_1')}}</td>
+                  <td v-else style="width: 30%;">{{lang_t('syslog.lte_save')}}</td>
+                  <td>
+                    <input type="checkbox" id="lteDial" :checked="toggle_status" data-on-color="warning" style="display: none">
+                  </td>
+                </tr> 
+                <tr>
+                    <td v-if="globalConfig.c735irSupport">{{lang_t('syslog.rsrp_save_1')}}</td>
+                    <td v-else>{{lang_t('syslog.rsrp_save')}}</td>
+                    <td>
+                        <input type="checkbox" id="lteRsrp" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                </tr>
+                <tr>
+                    <td v-if="globalConfig.c735irSupport">{{lang_t('syslog.csq_save_1')}}</td>
+                    <td v-else>{{lang_t('syslog.csq_save')}}</td>
+                    <td>
+                        <input type="checkbox" id="lteCsq" :checked="toggle_status" data-on-color="warning"  style="display: none">
+                    </td>
+                </tr>
+                <tr>
+                    <td v-if="globalConfig.c735irSupport">{{lang_t('syslog.lte_check_save_1')}}</td>
+                    <td v-else>{{lang_t('syslog.lte_check_save')}}</td>
+                    <td>
+                        <input type="checkbox" id="lteCheck" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                </tr>
+                <tr>
+                    <td>{{lang_t('syslog.wan_save')}}</td>
+                    <td>
+                        <input type="checkbox" id="wanDial" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                </tr>
+                <tr v-show="globalConfig.iotSupport || globalConfig.iotMqttSupport">
+                    <td>{{lang_t('syslog.iot_save')}}</td>
+                    <td>
+                        <input type="checkbox" id="iotDial" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                </tr>
+                <tr v-show="globalConfig.diffnetSupport" >
+                    <td>{{lang_t('syslog.tnt_save')}}<br><span>{{lang_t('syslog.tnt_save_msg')}}</span></td>
+                    <td>
+                        <input type="checkbox" id="tntLog" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                </tr>
+                <tr v-show="globalConfig.openVpnClientSupport">
+                    <td>{{lang_t('syslog.opvpn_save')}}<br><span>{{lang_t('syslog.opvpn_save_msg')}}</span></td>
+                    
+                    <td>
+                        <input type="checkbox" id="openvpnLog" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                </tr>
+            </tbody>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="submit_clear">{{ lang_t('common.apply') }}</button>&nbsp;&nbsp;               
+                  <button class="btn btn-primary all-but" @click="submit_save">{{ lang_t('syslog.download') }}</button>&nbsp;&nbsp;
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      <div style="display: none;">
+        <form ref="save" class="form-horizontal" method="post" :action="saveAction"></form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      debugMode:'0',
+      lteDial:false,
+      lteRsrp:false,
+      lteCsq:false,
+      lteCheck: false,
+      wanDial: false,
+      iotDial: false,
+      tntLog : false,
+      openvpnLog : false,
+      saveAction:'/cgi-bin/ExportSyslog.log'
+    }
+  },
+  computed:{
+    toggle_status:function() {
+      var _this = this;
+      $('#lteDial').bootstrapSwitch('state',_this.lteDial);
+      $('#lteRsrp').bootstrapSwitch('state',_this.lteRsrp);
+      $('#lteCsq').bootstrapSwitch('state',_this.lteCsq);
+      $('#lteCheck').bootstrapSwitch('state',_this.lteCheck);
+      $('#wanDial').bootstrapSwitch('state',_this.wanDial);
+      $('#iotDial').bootstrapSwitch('state',_this.iotDial);
+      $('#tntLog').bootstrapSwitch('state',_this.tntLog);
+      $('#openvpnLog').bootstrapSwitch('state',_this.openvpnLog);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getDebugLog(function(data){
+      _this.debugMode = data.debugMode;
+      _this.lteDial = data.lteDial == "1" ?true :false;
+      _this.lteRsrp = data.lteRsrp == "1" ?true :false;
+      _this.lteCsq = data.lteCsq == "1" ?true :false;
+      _this.lteCheck = data.lteCheck == "1" ?true :false;
+      _this.wanDial = data.wanDial == "1" ?true :false;
+      _this.iotDial = data.iotLog == "1" ?true :false;
+      _this.tntLog = data.tntLog == "1" ?true :false;
+      _this.openvpnLog = data.openvpnLog == "1" ?true :false;
+      _this.saveAction = data.saveAction;
+     
+    });
+  },
+  mounted:function(){
+      var _this = this;
+      addSwitch('#lteDial', function(data) {
+          _this.lteDial = data;
+      });
+      addSwitch('#lteRsrp', function(data) {
+          _this.lteRsrp = data;
+      });
+      addSwitch('#lteCsq', function(data) {
+          _this.lteCsq = data;
+      });
+      addSwitch('#lteCheck', function(data) {
+          _this.lteCheck = data;
+      });
+      addSwitch('#wanDial', function(data) {
+          _this.wanDial = data;
+      });
+      addSwitch('#iotDial', function(data) {
+          _this.iotDial = data;
+      });
+      addSwitch('#tntLog', function(data) {
+          _this.tntLog = data;
+      });
+      addSwitch('#openvpnLog', function(data) {
+          _this.openvpnLog = data;
+      });
+      
+  },
+  methods:{
+    submit_clear:function(status){
+      var _this = this;
+      var postVar = {};
+      postVar.debugMode = _this.debugMode;
+      postVar.lteDial = _this.lteDial == true ?"1" :"0";
+      postVar.lteRsrp = _this.lteRsrp == true ?"1" :"0";
+      postVar.lteCsq = _this.lteCsq == true ?"1" :"0";
+      postVar.lteCheck = _this.lteCheck == true ?"1" :"0";
+      postVar.wanDial = _this.wanDial == true ?"1" :"0";
+      postVar.iotLog = _this.iotDial == true ?"1" :"0";
+      postVar.tntLog = _this.tntLog == true ?"1" :"0";
+      postVar.openvpnLog = _this.openvpnLog == true ?"1" :"0";
+      uiPost.setDebugLog(postVar, apply_callback);
+       
+    },    
+    submit_save:function(){
+      this.$refs.save.submit();
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

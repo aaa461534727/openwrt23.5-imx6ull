@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <title></title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <div id="main">
+      <div class="row" v-cloak>
+		<br><br><br>
+        <main class="login-modal-container">
+		  <div align="center" ref="logo"></div>
+		  <h1 style="color: rgba(0, 0, 0, 0.98);text-align: center">{{lang_t('login.title')}}</h1>
+          <hr>
+          <div class="login-modal-content">
+            <input type="hidden" name="username" id="username" value="admin">
+            <div class="form-group">
+              <label>{{ lang_t('login.msg1') }} </label>
+              <input v-model="forms.password" type="text" name="password" id="password" autofocus="autofocus" :maxlength="32" v-pass data-type="pass" @keyup.enter="handleSubmit()">
+            </div>
+            <div class="form-group" v-show="0">
+              <a @click="forgetPwd()" style="cursor:pointer;">{{ lang_t('login.msg2') }}</a>
+            </div>
+            <input type="button" class="btn btn-primary btn-block" style="max-width: 348px;" @click="handleSubmit()" :value="lang_t('login.login_btn')">
+          </div>
+        </main>
+        <div class="container-flulogin-foot text-centerid" style="text-align: center">
+          <div v-html="copyright"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script src="/static/js/md5.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+      loginFlag:'',
+      forms:{
+        password:''
+      }
+    }
+  },
+  computed: {
+    copyright:function(){
+      return this.globalConfig.copyRight.replace(/\[date\]/i,(new Date).getFullYear());
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getLoginCfg(function(data){
+	  if('1' == data.loginFlag){
+	    Cstools.msg({
+		  type: 'error',
+		  messgetype:'alert',
+		  title: _this.lang_t('login.hint'),
+		  content: _this.lang_t('login.msg7')
+	    });
+	  }
+    });
+  },
+  mounted:function(){
+    var script = document.createElement('script');  
+    script.setAttribute('src', "/plugin/echarts.min.js");  
+    document.getElementsByTagName('head')[0].appendChild(script);
+  },
+  methods:{
+    focuspass: function(){
+      this.$refs.input && this.$refs.input.focus();
+    },
+	handleSubmit:function(){
+	  var _this = this;
+	  var postVar = {};
+	  if('' == _this.forms.password){
+	    errorAlert(lang_t('login.msg3'));
+	    return false;
+	  }
+
+		postVar.username = calcMD5("admin");
+		postVar.password = calcMD5(_this.forms.password);
+      
+	  postVar.verify = "0";
+    postVar.flag = "0";
+    uiPost.loginAuth(postVar,function(data){
+		if(data.loginFlag != undefined && '1' == data.loginFlag){
+
+          
+		  errorAlert(lang_t('login.msg7'));
+		  _this.focuspass();
+		}
+		else{
+          setTimeout(function(){
+            location.href = data.jump_page;
+          },500);
+		}
+      });
+    },
+    forgetPwd: function() {
+      errorAlert(lang_t('login.msg6'));
+    },
+	fileexit:function(){
+      var _this = this;
+      try{
+        var src = "/style/login_logo.png";
+        if (globalConfig.activation) {
+          src = "/style/login_logo2.png";
+        }
+        var img = new Image();
+        img.src = src;
+        img.height = 90;
+        img.onload = function() {
+          _this.$refs.logo.appendChild(img);
+        }
+        img.onerror = function() {
+          //img.src = "/static/images/logo_ori.png";
+        }
+      } catch(e) {
+
+      }
+    }
+  }
+};
+
+function encrypt() {
+	document.getElementById('username').value = calcMD5(document.getElementById('username').value)
+	document.getElementById('password').value = calcMD5(document.getElementById('password').value);
+}
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

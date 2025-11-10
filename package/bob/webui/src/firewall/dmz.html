@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('dmz.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>   
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enable">
+              <thead>
+                <!-- <tr><td colspan="12"> {{ lang_t('portfwd.portfwd_table') }}</td></tr> -->
+                <tr>
+                  <th>ID</th>
+                  <th>{{lang_t('common.interface')}}</th>
+                  <th>{{lang_t('dmz.sip')}}</th>
+                  <th>{{lang_t('dmz.dip')}}</th>
+                  <th>{{lang_t('macf.comment')}}</th>
+                  <th>{{lang_t('common.operation')}}</th>
+                </tr>
+              </thead>
+             <tbody>
+              <tr v-for="(val,index) in ruleDatas" :key="index" @click="editItem(index,val)">
+                <td>{{index+1}}</td>
+                <td>
+                  <select v-model="editItemInfo.port" v-if="editIdx == index">
+                    <option v-for="(data,v) in ifaces" :value="data">{{data}}</option>
+                  </select>
+                  <span v-else>{{val.port}}</span>
+                </td>
+                <td>
+                  <div v-if="editIdx == index">
+                    <input type="text" v-model="editItemInfo.sip" style="width: 68%;float: left;" ref="ip"/>&nbsp;&nbsp;
+                    <button class="btn btn-default all-but" @click="showClientList('edit')">{{ lang_t('common.scan') }}</button>
+                  </div>
+                  <span v-else>{{val.sip}}</span>
+                </td>
+                <td>
+                  <input type="text" v-model="editItemInfo.dip" v-if="editIdx == index"/>
+                  <span v-else>{{val.dip}}</span>
+                </td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.desc" maxlength="32" />
+                  <span v-else>{{val.desc}}</span>
+                </td>
+                <td class="operation">
+                  <div style="word-break: keep-all;">
+                    <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                    <a v-show="editIdx == index" @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                    <a v-show="editIdx != index" @click.stop="editItem(index,val)">{{ lang_t('common.edit') }}</a>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>
+                  <select v-model="port">
+                    <option v-for="(data,v) in ifaces" :value="data">{{data}}</option>
+                  </select>
+                </td>
+                <td>
+                  <div>
+                    <input type="text" v-model="sip" style="width: 68%;float: left;" />&nbsp;&nbsp;
+                    <button class="btn btn-default all-but" @click="showClientList('add')">{{ lang_t('common.scan') }}</button>
+                  </div>
+                </td>
+                <td>
+                  <input type="text" v-model="dip"  />
+                </td>
+                <td>
+                  <input type="text" v-model="desc" maxlength="32" :placeholder="lang_t('macf.comment')" />
+                </td>
+                <td class="operation">
+                  <a @click.stop="addRule">{{ lang_t('common.add') }}</a>
+                </td>
+              </tr>
+            </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enable">
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" :disabled="disApply" @click="saveInfo()">{{ lang_t('common.save') }}</button>&nbsp;
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      <modal-table id="show_mac" :modal-title="modalTable.modalTitle" :table="modalTable.table" @oncurrent="current_data" :show-search="false"></modal-table>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+	  lang: $.lang,
+      lang_t:lang_t,
+      enable: false,
+	  disApply: false,
+      wanNum: globalConfig.wanNum,
+      ifaces: [],
+      sip:'0.0.0.0',
+      dip: '',
+      desc:'',
+      port:'WAN',
+      modalTable:{
+        modalTitle:"",
+        table:{
+          th:[],
+          td:[]
+        }
+      },
+      lanIp: [],
+      lanNetmask: [],
+      arpData:[],
+      option:[],
+      ruleDatas:[],
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enable);
+    }
+  },
+  created:function() {
+    var _this = this;
+    var postVar = {};
+    uiPost.getDMZCfg(postVar,function(data){
+      _this.enable = data.enable == "1" ?true :false;
+      if (data.interface) {
+        _this.ifaces = data.interface.split(",");
+      }
+      if(data.lan){
+        for(var i in data.lan){
+          _this.lanIp[i] = data.lan[i].ip;
+          _this.lanNetmask[i] = data.lan[i].mask;
+        }
+      }
+      if(data.rule){
+        _this.ruleDatas = data.rule;
+      }
+    });
+  },
+  methods:{
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      var arr = [];
+      arr = arr.concat( this.ruleDatas );
+      postVar.subnet = arr;
+      postVar.addEffect = "1";
+      uiPost.setDMZCfg(postVar,function(data){
+        Cstools.msg({
+          content: _this.lang_t('common.success'),
+          type: 'success',
+          messgetype: 'no',
+          time: 1,
+          timeout:function(){
+            location.href=location.href;
+          }
+        });
+      });
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.ruleDatas[idx], this.editItemInfo);
+      this.editIdx = '-1';
+	  this.disApply = false;
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.ruleDatas.splice(idx, 1);
+	  this.disApply = false;
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+	  this.disApply = true;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+	  this.disApply = false;
+    },
+    submit_status:function(){
+       if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar ={};
+      postVar.addEffect = "0";
+      postVar.enable = this.enable ? "1" : "0";
+      uiPost.setDMZCfg(postVar);
+    },
+    showClientList:function(type){
+      var _this = this;
+      this.listType = type;
+      uiPost.getOnlineMsg(function(data){
+        _this.arpData = data;
+        _this.modalTable.modalTitle = _this.lang_t('portfwd.modal_title');
+        _this.modalTable.table.th = [_this.lang_t('index.device_name'),'IP','MAC'];
+        _this.modalTable.table.td = _this.arpData;
+        $('#show_mac').modal();
+      });
+    },
+    current_data:function(data) {
+      if(this.listType =="add")
+        this.sip = data.ip;
+      else{
+        this.$refs.ip[0].value = data.ip;
+        this.editItemInfo.sip = data.ip;
+      }
+    },
+    veriyfun:function(val, flag){
+      var _this = this;
+      var f = function(m){
+        Cstools.msg({
+          content: m,
+          type: 'error',
+          messgetype: 'alert'
+        });
+      };
+      if (!_this.checkIp(val.sip)){
+        f(this.lang_t('dmz.sip')+this.lang_t('portfwd.msg1'));
+        return false;
+      }
+	  if (val.dip){
+		  if (!_this.checkIp(val.dip)){
+			f(this.lang_t('dmz.dip')+this.lang_t('portfwd.msg1'));
+			return false;
+		  }
+	  }
+//      var flag = 0;
+      for(var k=0;k<this.lanIp.length;k++){
+        if(val.sip == this.lanIp[k]){
+          f(this.lang_t('portfwd.msg2'));
+          return false;
+        }
+      }
+
+      if(cs.byteLenght(val.desc, 32) == 1){
+        f(this.lang_t('ipf.comment') + this.lang_t('alert.msg28'));
+        return false;
+      }
+      var ret = cs.commentstr(val.desc);
+      if(ret == 1){
+        Cstools.msg({
+          content: _this.lang_t('ipf.comment')+_this.lang_t('alert.msg49'),
+          type: 'error'
+        });
+        return false;
+      }else if(ret == 2){
+        f(_this.lang_t('ipf.msg14'));
+        return false;
+      }
+      return true;
+    },
+    addRule: function(name) {
+      var _this = this;
+      var f = function(m){
+        Cstools.msg({
+          content: m,
+          type: 'error',
+          messgetype: 'alert'
+        });
+      };
+      if(_this.ruleDatas.length >= 32){
+        f(this.lang_t('portfwd.msg10'));
+        return false;
+      }
+      var temp = {
+        sip: this.sip,
+        dip: this.dip,
+        desc: this.desc,
+        port: this.port
+      };
+      if(!this.veriyfun(temp)) return;
+      this.ruleDatas.push(temp);
+      this.sip = "";
+      this.dip = "";
+      this.desc = "";
+      if (_this.ifaces) {
+        this.port = _this.ifaces[0];
+      }else{
+        this.port = "WAN";
+      }
+      
+    },
+    checkIp:function (ip) {
+      var obj = ip;
+      var exp = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+      var reg = obj.match(exp);
+      if(reg == null){
+        return false; //不合法
+      }else {
+        return true; //合法
+      }
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(_this.enable != data){
+        _this.enable = data;
+        _this.submit_status();
+      }
+    })
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=99
+
+USE_PROCD=1
+PROG=/usr/sbin/rid_service
+
+
+start_service() {
+	host=`uci get remoteId.main.host`
+	port=`uci get remoteId.main.port`
+	if [ -z "${host}" ];then
+	       return 
+	fi
+
+	if [ $port -lt 1 -o $port -gt 65535 ];then
+ 		return 		
+	fi
+
+	procd_open_instance
+	procd_set_param command "$PROG" $host $port
+	procd_set_param respawn 0
+	procd_close_instance
+}
+

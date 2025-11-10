@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+           <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{lang_t('ipsec.help_host2net')}}</strong></td>
+            </tr>         
+           </table>
+            <table class="table table-striped">
+              <tr>
+                <td style="width: 20%">{{ lang_t('ipsec.status') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('ipsec.local_subnet')}}</td>
+                <td>
+                  <input type="text" v-model="forms.leftsubnet" style="float: left;width: 79%;" maxlength="15"/>
+                  <span style="float: left;margin-top:6px">/</span>
+                  <input type="text" v-model="forms.mark" style="width: 50px;" maxlength="3"/>
+                </td>
+              </tr>               
+              <tr v-show="enabled">
+                <td>{{lang_t('ipsec.key')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecH2nPsk" maxlength="32" />
+                </td>
+              </tr>  
+              <tr v-show="enabled">
+                <td></td>
+                <td>
+                  <input type="checkbox" v-model="highSet" checked="checked" @click="highSwitch" />&nbsp;{{ lang_t('ipsec.high_set') }}
+                </td>
+              </tr>  
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.ike_version')}}</td>
+                <td>
+                  <select v-model="forms.ipsecH2nKeyexchange">
+                    <option value="ike">ike</option>
+                    <option value="ikev1">ikev1</option>
+                    <option value="ikev2">ikev2</option>
+                  </select>
+                </td>
+              </tr>                     
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.ike_cipher')}}</td>
+                <td>
+                <!--  
+                  <select v-model="forms.ipsecH2nIkeCipher">
+                    <option v-for="cipherOption in create_cipher" :value="cipherOption.value" :key="cipherOption.value">{{cipherOption.option}}</option>
+                  </select>
+                -->
+                  <textarea v-model="forms.ipsecH2nIkeCipher"></textarea>
+                </td>
+              </tr>
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.ike_lifetime')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecH2nIkelifetime" maxlength="5" />
+                  <span>(1-86400)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.esp_cipher')}}</td>
+                <td>
+                <!--  
+                  <select v-model="forms.ipsecH2nEspCipher">
+                    <option value="aes128-sha1">aes128-sha1</option>
+                    <option value="aes128-sha256">aes128-sha256</option>
+                    <option value="3des-sha1">3des-sha1</option>
+                  </select>
+                -->
+                  <textarea v-model="forms.ipsecH2nEspCipher"></textarea>
+                </td>
+              </tr>             
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.dpd_action')}}</td>
+                <td>
+                  <select v-model="forms.ipsecH2nDpdaction">
+                    <option value="0">none</option>
+                    <option value="1">restart</option>
+                    <option value="2">hold</option>
+                    <option value="3">clear</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && highSet && forms.ipsecH2nDpdaction != '0'">
+                <td>{{lang_t('ipsec.dpd_delay')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecH2nDpddelay" maxlength="2" />
+                  <span>(1~60)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && highSet && forms.ipsecH2nDpdaction != '0'">
+                <td>{{lang_t('ipsec.dpd_timeout')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecH2nDpdtimeout" maxlength="3" />
+                  <span>(1~300)</span>
+                </td>
+              </tr>   
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.sa_lifetime')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecH2nLifetime" maxlength="5" />   
+                  <span>(1-86400)</span>               
+                </td>
+              </tr>
+              <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.ip_compress')}}</td>
+                <td>
+                  <select v-model="forms.ipsecH2nCompress">
+                    <option value="0">{{lang_t('ipsec.off')}}</option>
+                    <option value="1">{{lang_t('ipsec.on')}}</option>
+                  </select>
+                </td>
+              </tr> 
+			  <tr v-show="enabled && highSet">
+                <td>{{lang_t('ipsec.rekey')}}</td>
+                <td>
+                  <select v-model="forms.ipsecH2nRekey">
+                    <option value="0">{{lang_t('ipsec.off')}}</option>
+                    <option value="1">{{lang_t('ipsec.on')}}</option>
+                  </select>
+                </td>
+              </tr> 			  
+              <tr v-show="enabled">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit()">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>   
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      enabled:false,
+      highSet:false,
+      forms: {
+        leftsubnet:'',
+        mark:'24',
+        ipsecH2nKeyexchange:'ikev1',
+        ipsecH2nPsk:'',
+        ipsecH2nIkeCipher:'aes128-sha1',
+        ipsecH2nIkelifetime:'3600',
+        ipsecH2nEspCipher:'aes128-sha1',
+        ipsecH2nDpdaction:'0',
+        ipsecH2nDpddelay:'10',
+        ipsecH2nDpdtimeout:'512',
+        ipsecH2nLifetime:'3600',
+        ipsecH2nCompress:'0',
+		ipsecH2nRekey:'0'
+      }
+    }
+  },
+  computed:{    
+/*
+    create_cipher:function(){
+      var option = [];
+      var arr1 = [
+        {option:'aes128-sha1-modp2048',value:'aes128-sha1-modp2048'},
+        {option:'3des-sha1-modp1536',value:'3des-sha1-modp1536'}
+      ];
+      var arr2 = [
+        {option:'3des-sha1-md5-modp1024',value:'3des-sha1-md5-modp1024'},
+        {option:'aes128-aes256-sha1-modp1536-modp2048',value:'aes128-aes256-sha1-modp1536-modp2048'}
+      ];
+      if(this.forms.ipsecH2nKeyexchange == 'ikev2'){
+        option = arr1.concat(arr2);
+      }else{
+        option = arr1;
+      }
+      return option;
+    },
+*/
+    toggle_status:function(){
+      $('#switch_status').bootstrapSwitch('state',this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getIpsecHost2NetCfg(function(data){
+      _this.enabled = data.ipsecH2nEnable == "1" ? true : false;
+      _this.forms.leftsubnet = data.ipsecH2nLeftsubnet.split("/")[0];
+      _this.forms.mark = data.ipsecH2nLeftsubnet.split("/")[1];
+      _this.forms.ipsecH2nKeyexchange = data.ipsecH2nKeyexchange;
+      _this.forms.ipsecH2nPsk = data.ipsecH2nPsk;
+      _this.forms.ipsecH2nIkeCipher = data.ipsecH2nIkeCipher;
+      _this.forms.ipsecH2nIkelifetime = data.ipsecH2nIkelifetime;
+      _this.forms.ipsecH2nEspCipher = data.ipsecH2nEspCipher;
+      _this.forms.ipsecH2nDpdaction = data.ipsecH2nDpdaction;
+      _this.forms.ipsecH2nDpddelay = data.ipsecH2nDpddelay;
+      _this.forms.ipsecH2nDpdtimeout = data.ipsecH2nDpdtimeout;
+      _this.forms.ipsecH2nLifetime = data.ipsecH2nLifetime;
+      _this.forms.ipsecH2nCompress = data.ipsecH2nCompress;
+	  _this.forms.ipsecH2nRekey = data.ipsecH2nRekey;
+    })
+  },
+  methods:{
+    highSwitch:function(){
+      this.highSet = this.highSet ? false : true;
+    },
+    submit_status:function(){
+      if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this
+      var postVar ={};
+      if(!_this.enabled){
+        postVar.ipsecH2nEnable = "0";
+        uiPost.setIpsecHost2NetCfg(postVar, apply_callback); 
+      }
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+
+      _s = cs.ip_mark(_this.forms.leftsubnet + "/" + this.forms.mark);
+      if(0 == _s){
+        errorAlert(_this.lang_t('ipsec.local_subnet') + _this.lang_t('ipsec.msg1'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('ipsec.local_subnet') + _this.lang_t('ipsec.msg6'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.forms.mark,1,32)){
+        errorAlert(_this.lang_t('ipsec.local_mark') + _this.lang_t('ipsec.msg5',[1,32]));
+        return false;
+      } 
+
+      _s = cs.string(_this.forms.ipsecH2nPsk);
+      if(0 == _s){
+        errorAlert(_this.lang_t('ipsec.key') + _this.lang_t('ipsec.msg1'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('ipsec.key') + _this.lang_t('ipsec.msg2'));
+        return false;
+      }
+
+      if(_this.forms.ipsecH2nIkeCipher){
+        if(1 == cs.string2(_this.forms.ipsecH2nIkeCipher)){
+          errorAlert(_this.lang_t('ipsec.ike_cipher') + _this.lang_t('ipsec.msg10'));
+          return false;
+        }
+      }
+
+      if(_this.forms.ipsecH2nEspCipher){
+        if(1 == cs.string2(_this.forms.ipsecH2nEspCipher)){
+          errorAlert(_this.lang_t('ipsec.esp_cipher') + _this.lang_t('ipsec.msg10'));
+          return false;
+        }
+      }
+
+      if(99 != cs.num_range(_this.forms.ipsecH2nIkelifetime,1,86400)){
+        errorAlert(_this.lang_t('ipsec.ike_lifetime') + _this.lang_t('ipsec.msg5',[1,86400]));
+        return false;
+      } 
+
+      if('0' != _this.forms.ipsecH2nDpdaction){
+        if(99 != cs.num_range(_this.forms.ipsecH2nDpddelay,1,60)){
+          errorAlert(_this.lang_t('ipsec.dpd_delay') + _this.lang_t('ipsec.msg5',[1,60]));
+          return false;
+        } 
+
+        if(99 != cs.num_range(_this.forms.ipsecH2nDpdtimeout,1,300)){
+          errorAlert(_this.lang_t('ipsec.dpd_timeout') + _this.lang_t('ipsec.msg5',[1,300]));
+          return false;
+        } 
+      }      
+
+      if(99 != cs.num_range(_this.forms.ipsecH2nLifetime,1,86400)){
+        errorAlert(_this.lang_t('ipsec.sa_lifetime') + _this.lang_t('ipsec.msg5',[1,86400]));
+        return false;
+      } 
+
+      postVar.ipsecH2nEnable = "1";
+      postVar.ipsecH2nLeftsubnet = _this.forms.leftsubnet + "/" + _this.forms.mark;
+      postVar.ipsecH2nKeyexchange = _this.forms.ipsecH2nKeyexchange;
+      postVar.ipsecH2nPsk = _this.forms.ipsecH2nPsk;
+      postVar.ipsecH2nIkeCipher = _this.forms.ipsecH2nIkeCipher;
+      postVar.ipsecH2nIkelifetime = _this.forms.ipsecH2nIkelifetime;
+      postVar.ipsecH2nEspCipher = _this.forms.ipsecH2nEspCipher;
+      postVar.ipsecH2nDpdaction = _this.forms.ipsecH2nDpdaction;
+      if('0' != _this.forms.ipsecH2nDpdaction){
+        postVar.ipsecH2nDpddelay = _this.forms.ipsecH2nDpddelay;
+        postVar.ipsecH2nDpdtimeout = _this.forms.ipsecH2nDpdtimeout;
+      }
+      postVar.ipsecH2nLifetime = _this.forms.ipsecH2nLifetime;
+      postVar.ipsecH2nCompress = _this.forms.ipsecH2nCompress;
+	  postVar.ipsecH2nRekey = _this.forms.ipsecH2nRekey;
+      uiPost.setIpsecHost2NetCfg(postVar, apply_callback);
+    }
+  /*  
+    ikeChange:function(){
+      var option = this.create_cipher, mark = false;
+      this.tempRate && (this.forms.ipsecH2nIkeCipher = this.tempRate);
+      for(var i = 0; i < option.length; i++){
+        if(option[i].option == this.forms.ipsecH2nIkeCipher){
+          mark = true;
+          break;
+        }
+      }      
+      if(!mark){
+        this.tempRate = this.forms.ipsecH2nIkeCipher;
+        this.forms.ipsecH2nIkeCipher = option[0].option;
+      }else{
+        this.tempRate = null;
+      }
+    },
+  */
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status',function(data){
+      if(_this.enabled != data){
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    });
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

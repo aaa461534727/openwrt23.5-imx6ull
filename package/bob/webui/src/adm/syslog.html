@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('syslog.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('index.type') }}</td>
+                <td>
+                  <select v-model="type">
+                    <option value="Message">{{ lang_t('syslog.message') }}</option>
+                    <option value="Kernel">{{ lang_t('syslog.kernel') }}</option>
+                    <option value="Application">{{ lang_t('syslog.application') }}</option>
+                    <option value="LTE">LTE</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="submit_clear(false)">{{ lang_t('syslog.view') }}</button>&nbsp;&nbsp;
+                  <button class="btn btn-primary all-but" @click="submit_clear(true)">{{ lang_t('syslog.clear') }}</button>&nbsp;&nbsp;               
+                  <button class="btn btn-primary all-but" @click="submit_save">{{ lang_t('syslog.save') }}</button>&nbsp;&nbsp;
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <textarea id="syslogText" rows="10" style="width:100%;min-width:100%;" v-model="syslog" readonly></textarea>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      <div style="display: none;">
+        <form ref="save" class="form-horizontal" method="post" :action="saveAction"></form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      type:'Message',
+      syslog:'',
+      saveAction:'/cgi-bin/ExportSyslog.log'
+    }
+  },
+  computed:{
+
+  },
+  created:function(){
+    var _this = this;
+    //_this.showlog();
+  },
+  methods:{
+    showlog:function(operation){
+      var _this = this;
+      var postVar = {};
+      postVar.type = _this.type;
+      postVar.operation = operation;
+      uiPost.showSyslog(postVar,function(data){
+        _this.syslog = data.syslog;
+        var len = data.syslog.length;
+        _this.setSelectionRange("syslogText",len,len);
+      });
+    },
+    setSelectionRange:function(id,selectionStart,selectionEnd){
+      var _this = this;
+      var input = document.getElementById(id);
+      if (input.createTextRange) {
+        var range = input.createTextRange();
+        range.collapse(true);
+        range.moveEnd('character', selectionEnd);
+        range.moveStart('character', selectionStart);
+        range.select();
+      }else if (input.setSelectionRange) {
+        input.focus();
+        input.setSelectionRange(selectionStart, selectionEnd);
+      }
+    },
+    submit_clear:function(status){
+      var _this = this;
+      var postVar = {};
+      if (status) {
+        postVar.type = _this.type;
+        uiPost.clearSyslog(postVar, function(data){
+          _this.showlog("0");
+        });
+       }else {
+        _this.showlog("1");
+      }
+    },    
+    submit_save:function(){
+      this.$refs.save.submit();
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

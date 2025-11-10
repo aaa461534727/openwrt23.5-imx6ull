@@ -1,0 +1,10 @@
+{
+  "ddnsEnabled":"1",
+  "ddnsProvider":"3322.org",
+  "ddnsDomain":"",
+  "ddnsAccount":"admin",
+  "ddnsPassword":"admin",
+  "ddnsDomainList":"www.noip.com;aaa.com;adsfaf.ddns.net",  
+  "ddnsMode":"0",
+  "ddnsOpcode":"123456"
+}

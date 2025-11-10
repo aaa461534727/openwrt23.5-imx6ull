@@ -1,0 +1,5 @@
+{
+	"ignoreFiles": ["data", "doc","tutorials","conf.json","README.md"],
+	"miniFiles": [],
+	"output": "dist"
+}

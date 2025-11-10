@@ -1,0 +1,27 @@
+{
+    "enable": "1",
+    "interface": "LAN,WAN",
+    "rule": [
+        {
+            "idx": 1,
+            "natType": "1",
+            "protocol": "tcp",
+            "oAddress": "192.168.0.33",
+            "addressType": "interface",
+            "mAddress": "eth0",
+            "oPort": "33",
+            "mPort": "44",
+            "delRuleName": "delRule0"
+        }, {
+            "idx": 2,
+            "natType": "1",
+            "protocol": "all",
+            "oAddress": "192.168.0.98",
+            "addressType": "staticIp",
+            "mAddress": "192.168.5.21",
+            "oPort": "654",
+            "mPort": "21",
+            "delRuleName": "delRule1"
+        }
+    ]
+}

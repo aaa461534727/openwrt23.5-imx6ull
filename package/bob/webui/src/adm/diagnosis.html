@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    @media screen and (min-width: 767px){
+      .my-textarea{
+        min-width:640px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{lang_t('diagnosis.help')}}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('diagnosis.detection_type')}}</td>
+                <td>
+                  <select v-model="testType">
+                    <option value="0">Ping</option>
+                    <option value="1" v-show="IfIpv6">Ping6</option>
+                    <option value="2">trace</option>
+                    <option value="3" v-show="IfIpv6">trace6</option>
+                    <option value="4">mtr</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('diagnosis.detection_addr')}}</td>
+                <td>
+                  <input type="text" v-model="pingAddr" :placeholder="lang_t('diagnosis.enter_addr')"  maxlength="32" />
+                </td>
+              </tr>
+              <tr>
+                <td v-show="'2' != testType && '3' != testType">{{lang_t('diagnosis.ping_num')}}</td>
+                <td v-show="'2' == testType || '3' == testType">{{lang_t('diagnosis.trace_num')}}</td>
+                <td>
+                  <input type="number" v-model="num" :placeholder="('2' != testType && '3' != testType) ? lang_t('diagnosis.detection_num') : lang_t('diagnosis.detection_trace')" /><small>(1~60)</small>
+                </td>
+              </tr>   
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" :disabled="applyBtnStatu"@click.prevent="handleSubmit">{{lang_t('diagnosis.apply')}}</button>                    
+                  <button class="btn btn-default all-but" @click.prevent="clearSubmit">{{lang_t('diagnosis.clear')}}</button>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <textarea style="width:100%;" rows="10" v-model="log" class="my-textarea" readonly></textarea>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return{
+      globalConfig: globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      applyBtnStatu:false,
+      testType:"0",
+      pingAddr:'',
+      num:'4',
+      log:'',
+      IfIpv6:false,
+      pingTime:null
+    }
+  },
+  computed:{
+    
+  },
+  watch: {
+    "pingAddr":function () {
+      this.pingAddr = this.pingAddr.replace(/[;]/g,'');
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getDiagnosisCfg(function(data){
+      _this.log = data.log;
+      _this.num = data.num;
+      if(data.status == '1'){
+        _this.applyBtnStatu = true;
+        _this.intervar();
+      }
+    });
+  },
+  methods:{
+    intervar:function(){
+      var _this = this;
+      this.pingTime = setInterval(function(){
+        _this.getDataAction();
+      },3000);
+    },
+    getDataAction:function(){
+      var _this = this;
+      var postVar = {};
+      uiPost.getDiagnosisCfg(function(data){
+        _this.log = data.log;
+        if(data.status == '0'){
+          _this.applyBtnStatu = false;
+          clearInterval(_this.pingTime);
+        }
+      });
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if(_this.pingAddr == '' || _this.pingAddr == undefined){
+        errorAlert(_this.lang_t('diagnosis.detection_addr') + _this.lang_t('alert.msg5'));
+        return false;
+      }
+
+      var tmp;
+      if('2' != _this.testType && '3' != _this.testType){
+        tmp = _this.lang_t('diagnosis.ping_num');
+      }else{
+        tmp = _this.lang_t('diagnosis.trace_num');      
+      }
+      
+      if(99 != cs.num_range(_this.num,1,60)){
+        errorAlert(tmp + _this.lang_t('alert.msg15',[1,60]));
+        return false;
+      }
+
+      _this.applyBtnStatu = true;
+      postVar.testType = _this.testType;
+      postVar.ip = _this.pingAddr;
+      postVar.num = _this.num;
+      uiPost.setDiagnosisCfg(postVar);
+      _this.log = '';
+      _this.intervar();
+    },
+    clearSubmit:function(){
+      uiPost.clearDiagnosisLog(function(data){
+        location.href = location.href;
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+	"lanPort": "LAN1,LAN2,LAN3",
+	"mirrorPortEnable": "1",
+	"mirrorMode": "1",
+	"monitorDestinatPort": "LAN1",
+	"monitorSourcePort": "LAN2,LAN3"
+}

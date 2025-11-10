@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box tab-content table-responsive __mb">
+          <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{ lang_t('tr069.help') }}</strong></td>
+            </tr>
+
+            <!-- <tr v-show="globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode"> -->
+            <tr v-show="0">
+               <td></td>
+              <td>
+                <input type="radio" value="0" v-model="modemIdx" id="radio_0"><label for="radio_0">Modem 1</label> &nbsp;&nbsp;&nbsp;&nbsp;
+                <input type="radio" value="1" v-model="modemIdx" id="radio_1"><label for="radio_1">Modem 2</label>
+              </td>
+            </tr>
+
+            <tr>
+              <td>{{lang_t('common.state')}}</td>
+              <td>
+                <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>URL</td>
+              <td>
+                <input type="text" v-model="acsUrl" maxlength="64">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('index.username')}}</td>
+              <td>
+                <input type="text" v-model="acsUsername" maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('index.password')}}</td>
+              <td>
+                <input type="text" v-model="acsPassword" maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('dtu.heart_tit')}}</td>
+              <td>
+                <select v-model="periodicEnable">
+                  <option value="0">{{ lang_t('common.off') }}</option>
+                  <option value="1">{{ lang_t('common.on') }}</option>
+                </select>
+              </td>
+            </tr>
+            <tr v-show="enable&&periodicEnable=='1'">
+              <td>{{lang_t('dtu.heart_interval')}}(S)</td>
+              <td>
+                <input type="text" v-model="periodicInterval" maxlength="5">
+                <span>(10-86400)</span>
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('index.connect_req')}}</td>
+              <td>
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('index.username')}}</td>
+              <td>
+                <input type="text" v-model="cpeUsername" maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('index.password')}}</td>
+              <td>
+                <input type="text" v-model="cpePassword" maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td>{{lang_t('index.port')}}</td>
+              <td>
+                <input type="text" v-model="port" maxlength="5">
+                <span>(1-65535)</span>
+              </td>
+            </tr>
+
+
+            <tr v-show="enable && globalConfig.xuJiRouteSupport">
+              <td>{{lang_t('index.uplink_routing_info')}}</td>
+              <td>
+              </td>
+            </tr>
+            <tr v-show="enable && globalConfig.xuJiRouteSupport">
+              <td>{{lang_t('network.ip')}}</td>
+              <td>
+                <input type="text" v-model="xuJiRouteIp" maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enable && globalConfig.xuJiRouteSupport">
+              <td>{{lang_t('index.username')}}</td>
+              <td>
+                <input type="text" v-model="xuJiUsername" maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enable && globalConfig.xuJiRouteSupport">
+              <td>{{lang_t('index.password')}}</td>
+              <td>
+                <input type="text" v-model="xuJiPassword" maxlength="32">
+              </td>
+            </tr>
+
+
+            <tr v-if="globalConfig.specialIotBanApply!='1'">
+              <td colspan="2">
+                <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+              </td>
+            </tr>
+         </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+      enable: "",
+      acsUrl: "",
+      acsUsername: "",
+      acsPassword: "",
+      periodicEnable: "",
+      periodicInterval: "",
+      cpeUsername: "",
+      cpePassword: "",
+      xuJiRouteIp: "",
+      xuJiUsername: "",
+      xuJiPassword: "",
+      modemIdx:'0',
+      port: ""
+  	}
+  },
+  watch:{
+      "modemIdx":function () {
+          this.getCwmpdConfig();
+      }
+  },
+  mounted:function(){
+    var _this = this;
+    var postVar = {};
+    var _this = this;
+    if(globalConfig.urlNetPage == '2') {
+      _this.modemIdx="1";
+    }else{
+      _this.modemIdx="0";
+    }
+    postVar.modemIdx = _this.modemIdx;
+    uiPost.getCwmpdCfg(postVar,function(data){
+      _this.enable = data.enable == "1" ? true : false;
+      _this.acsUrl = data.acsUrl;
+      _this.acsUsername = data.acsUsername;
+      _this.acsPassword = data.acsPassword;
+      _this.periodicEnable = data.periodicEnable;
+      _this.periodicInterval = data.periodicInterval;
+      _this.cpeUsername = data.cpeUsername;
+      _this.cpePassword = data.cpePassword;
+      if(globalConfig.xuJiRouteSupport){
+       _this.xuJiRouteIp = data.xuJiRouteIp;
+       _this.xuJiUsername = data.xuJiUsername;
+       _this.xuJiPassword = data.xuJiPassword;
+
+      }
+
+      _this.port = data.port;
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enable) _this.enable = data;
+//      _this.submit_status();
+    });
+  },
+  computed:{
+  	toggle_status:function(){
+  	  var _this = this;
+  	  $('#switch_status').bootstrapSwitch('state',_this.enable);
+  	}
+  },
+
+  methods:{
+    getCwmpdConfig:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.modemIdx = _this.modemIdx;
+      uiPost.getCwmpdCfg(postVar,function(data){
+        _this.enable = data.enable == "1" ? true : false;
+        _this.acsUrl = data.acsUrl;
+        _this.acsUsername = data.acsUsername;
+        _this.acsPassword = data.acsPassword;
+        _this.periodicEnable = data.periodicEnable;
+        _this.periodicInterval = data.periodicInterval;
+        _this.cpeUsername = data.cpeUsername;
+        _this.cpePassword = data.cpePassword;
+        if(globalConfig.xuJiRouteSupport){
+         _this.xuJiRouteIp = data.xuJiRouteIp;
+         _this.xuJiUsername = data.xuJiUsername;
+         _this.xuJiPassword = data.xuJiPassword;
+
+        }
+
+        _this.port = data.port;
+      });
+
+
+    },
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enable){
+        if(_this.enable == true)
+            postVar.enable = "1";     
+        else
+            postVar.enable = "0";   
+        postVar.modemIdx = _this.modemIdx;
+        uiPost.setCwmpdCfg(postVar, apply_callback);
+      }      
+    },
+  	handleSubmit:function(){
+  	  var _this = this;
+  	  var postVar = {};  	  
+  	  var _s;
+      
+
+
+        if(_this.enable == true){
+
+          if(_this.acsUrl == ''){
+            _this.errorAlert("URL" + _this.lang_t('alert.msg5'));
+            return false;
+          }
+
+          if(_this.acsUsername == ''){
+            _this.errorAlert(_this.lang_t('index.username') + _this.lang_t('alert.msg5'));
+            return false;
+          }
+
+          if(_this.acsPassword == ''){
+            _this.errorAlert(_this.lang_t('index.password') + _this.lang_t('alert.msg5'));
+            return false;
+          }
+
+          if(_this.periodicEnable == '1'){
+            if(_this.periodicInterval == ''){
+              _this.errorAlert(_this.lang_t('dtu.heart_interval') + _this.lang_t('alert.msg5'));
+              return false;
+            }
+            if(99 != cs.num_range(_this.periodicInterval,10,86400)){
+              errorAlert(_this.lang_t('dtu.heart_interval') + _this.lang_t('alert.msg15',[10,86400]));
+              return false;
+            }
+          }
+
+          if(_this.cpeUsername == ''){
+            _this.errorAlert(_this.lang_t('index.username') + _this.lang_t('alert.msg5'));
+            return false;
+          }
+
+          if(_this.cpePassword == ''){
+            _this.errorAlert(_this.lang_t('index.password') + _this.lang_t('alert.msg5'));
+            return false;
+          }
+
+          if(_this.port == ''){
+            _this.errorAlert(_this.lang_t('index.port') + _this.lang_t('alert.msg5'));
+            return false;
+          }
+
+          if(99 != cs.num_range(_this.port,1,65535)){
+            errorAlert(_this.lang_t('index.port') + _this.lang_t('alert.msg15',[1,65535]));
+            return false;
+          }
+
+          if(globalConfig.xuJiRouteSupport){
+
+
+             if(_this.xuJiRouteIp == ''){
+              _this.errorAlert(_this.lang_t('network.ip') + _this.lang_t('alert.msg5'));
+              return false;
+            }
+
+             if(_this.xuJiUsername == ''){
+              _this.errorAlert(_this.lang_t('index.username') + _this.lang_t('alert.msg5'));
+              return false;
+            }
+
+            if(_this.xuJiPassword == ''){
+              _this.errorAlert(_this.lang_t('index.password') + _this.lang_t('alert.msg5'));
+              return false;
+            }       
+          }
+          
+          postVar.enable = "1"; 
+
+          postVar.acsUrl = _this.acsUrl;
+          postVar.acsUsername = _this.acsUsername;
+          postVar.acsPassword = _this.acsPassword;
+          postVar.periodicEnable = _this.periodicEnable;
+          postVar.periodicInterval = _this.periodicInterval;
+          postVar.cpeUsername = _this.cpeUsername;
+          postVar.cpePassword = _this.cpePassword;
+          postVar.port = _this.port;
+         if(globalConfig.xuJiRouteSupport){
+            postVar.xuJiRouteIp = _this.xuJiRouteIp;
+            postVar.xuJiUsername = _this.xuJiUsername;
+            postVar.xuJiPassword = _this.xuJiPassword;
+         }
+        }
+               
+        else
+            postVar.enable = "0"; 
+
+
+
+      postVar.modemIdx = _this.modemIdx;
+  	  uiPost.setCwmpdCfg(postVar, apply_callback);
+  	},
+    errorAlert:function(data){
+      var _this = this;
+      Cstools.msg({
+        type: 'error',
+        messgetype: 'alert',
+        title: _this.lang_t('common.tips'),
+        content: data
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+	<div class="row" v-cloak>
+	  <!--****填充区******-->
+	  <section class="col-xs-12">
+		<div class="content-box">
+		  <div class="table-responsive">
+			<table class="table table-striped">
+			  <tr>
+				<td colspan="2"><strong>{{ lang_t('icmp.help') }}</strong></td>
+			  </tr>
+			  <tr>
+				<td colspan="2">
+				  <button class="btn btn-primary all-but" data-toggle="modal" data-target="#set_rule" @click="setIdx='0'">{{lang_t('common.add_rule')}}</button>
+				</td>
+			  </tr>
+			</table>
+			<table class="table table-striped table-bordered table-hover">
+			  <thead>
+				<tr>
+				  <th>ID&nbsp;&nbsp;<input type="checkbox" v-model="allSelect" @change="allChange"></th>
+				  <th>{{ lang_t('common.state') }}</th>
+				  <th>{{ lang_t('index.name') }}</th>
+				  <th>{{ lang_t('index.type') }}</th>
+				  <th>{{ lang_t('icmp.destination_addr') }}</th>
+				  <th>{{ lang_t('icmp.des_back_addr') }}</th>
+				  <th>{{ lang_t('icmp.detection_interval') }}</th>
+				  <th>{{ lang_t('icmp.repetitions') }}</th>
+				  <th>{{ lang_t('icmp.source_interface') }}</th>
+				  <th>{{ lang_t('icmp.check_fail_action') }}</th>
+				  <th>{{ lang_t('common.edit') }}</th>
+				</tr>
+			  </thead>
+			  <tbody>
+				<tr v-for="(val,index) in icmpData">
+				  <th>{{ index+1 }}&nbsp;&nbsp;<input type="checkbox" v-model="delRule[index]"></th>
+				  <th><a @click="submit_switch(val)" style="cursor: pointer;">{{ '1' == val.enabled ?  lang_t('common.on'):lang_t('common.off') }}</a></th>
+				  <th>{{ val.name }}</th>
+				  <th>{{ val.type }}</th>
+				  <th>{{ val.dstAddress }}</th>
+				  <th>{{ val.dstBackup }}</th>
+				  <th>{{ val.interval }}</th>
+				  <th>{{ val.retryTimes }}</th>
+				  <th>{{ 'default' == val.sourceInterface ? lang_t('icmp.default') : val.sourceInterface }}</th>
+				  <th>{{ timeoutActionDesc[val.timeoutAction] }}</th>
+				  <th><a @click="modify_modal(val)" style="cursor: pointer">{{ lang_t('common.edit') }}</a></th>
+				</tr>
+			  </tbody>
+			</table>
+			<table class="table table-striped table-bordered table-hover" v-show="icmpData.length > 0">
+			  <tr>
+				<td colspan="2">
+				  <button class="btn btn-danger all-but" @click.prevent="submit_delete">{{lang_t('common.delete')}}</button>&nbsp;&nbsp;
+                  <button class="btn btn-primary all-but" @click.prevent="submit_refresh">{{lang_t('common.refresh')}}</button>
+				</td>
+			  </tr>
+			</table>
+		  </div>
+		</div>
+	  </section>
+
+	  <div class="modal fade" id="set_rule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+		<div class="modal-dialog">
+		  <div class="modal-content">
+			<div class="modal-header">
+			  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			  <h4 class="modal-title" id="myModalLabel">
+				{{ '0' == setIdx ? lang_t('common.add_rule') : lang_t('common.edit_rule') }}
+			  </h4>
+			</div>
+			<div class="modal-body">
+			  <table class="table">
+				<tr>
+				  <td>{{ lang_t('common.state') }}</td>
+				  <td>
+					<select v-model="formValidate.enabled">
+					  <option value="0">{{ lang_t('common.off') }}</option>
+					  <option value="1">{{ lang_t('common.on') }}</option>
+					</select>
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('index.name') }}</td>
+				  <td>
+					<input type="text" v-model="formValidate.name" :disabled="'0' != setIdx" maxlength="8" />
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('index.type') }}</td>
+				  <td>
+					<select v-model="formValidate.type">
+					  <option value="icmp">ICMP</option>
+					  <option value="domain">{{ lang_t('icmp.domain') }}</option>
+					</select>
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('icmp.destination_addr') }}</td>
+				  <td>
+					<input type="text" v-model="formValidate.dstAddress" maxlength="32" />
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('icmp.des_back_addr') }}</td>
+				  <td>
+					<input type="text" v-model="formValidate.dstBackup" maxlength="32" />
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('icmp.detection_interval') }}</td>
+				  <td>
+					<input type="number" v-model="formValidate.interval" maxlength="5" />
+					<span>1-65535(S)</span>
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('icmp.repetitions') }}</td>
+				  <td>
+					<input type="number" v-model="formValidate.retryTimes" min="0" maxlength="5" />
+					  <span>0-65535</span>
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('icmp.source_interface') }}</td>
+				  <td>
+					<select v-model="formValidate.sourceInterface">
+					  <option value="default">{{ lang_t('icmp.default') }}</option>					
+					  <option value="br0">br0</option>
+					  <option value="eth2.2">eth2.2</option>
+					  <option value="modem">modem</option>
+					</select>
+				  </td>
+				</tr>
+				<tr>
+				  <td>{{ lang_t('icmp.check_fail_action') }}</td>
+				  <td>
+					<select v-model="formValidate.timeoutAction">
+					  <option value="modem-reset">{{ lang_t('icmp.modem_reset') }}</option>
+					  <option value="reboot">{{ lang_t('icmp.dev_reboot') }}</option>
+					  <option value="network">{{ lang_t('icmp.net_reboot') }}</option>
+					</select>
+				  </td>
+				</tr>
+			  </table>
+			</div>
+			<div class="modal-footer">
+			  <table>
+				<tr>
+				  <td colspan="2">
+					<button @click="closeFrame" class="btn btn-default all-but">{{ lang_t('common.cancel') }}</button>&nbsp;&nbsp;
+					<button @click.prevent="handleSubmit" class="btn btn-primary all-but">{{ '0' == setIdx ? lang_t('common.add') : lang_t('common.modify') }}</button>
+				  </td>
+				</tr>
+			  </table>
+			</div>
+		  </div>
+		</div>
+	  </div>
+	</div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+	return {
+	  globalConfig:globalConfig,
+	  lang:$.lang,
+	  lang_t:lang_t,
+	  rule_num:"",
+	  delRule:[],
+	  formValidate:{
+		enabled:'1',
+		name:"",
+		type:"icmp",
+		dstAddress:"",
+		dstBackup:"",
+		interval:"30",
+		retryTimes:"3",
+		sourceInterface:"default",
+		timeoutAction:"modem-reset"
+	  },
+	  icmpData:[],
+	  setIdx:"0",
+	  allSelect:false,
+	  maxLimit:10
+	}
+  },
+  watch:{
+  	delRule:function(){
+      var num=0;
+      for(var i=0;i<this.icmpData.length;i++){
+        if(this.delRule[i]) num++;
+      }
+      if(num == this.icmpData.length)
+        this.allSelect = true;
+      else
+        this.allSelect = false;
+    }
+  },
+  computed:{
+	timeoutActionDesc:function(){
+	  var _this = this;
+	  return {
+		"modem-reset":this.lang_t('icmp.modem_reset'),
+		"reboot":this.lang_t('icmp.dev_reboot'),
+		"network":this.lang_t('icmp.net_reboot')
+	  }
+	}
+  },
+  created:function(){
+	var _this = this;
+	uiPost.getIcmpCheckCfg(function(data){
+	  _this.rule_num = data.length;
+      if(_this.rule_num >= 1){
+        _this.icmpData = data;
+      }
+	})
+  },
+  methods:{
+	allChange:function(){
+	  var i;
+	  if(this.allSelect){
+		for(i=0;i<this.icmpData.length;i++){
+		  this.delRule[i] = true;
+		}
+	  }else{
+		for(i=0;i<this.icmpData.length;i++){
+		  this.delRule[i] = false;
+		}
+	  }
+	},
+	modify_modal:function(obj){
+	  var _this = this;
+	  _this.setIdx = obj.idx;
+	  _this.formValidate.enabled = obj.enabled;
+	  _this.formValidate.name = obj.name;
+	  _this.formValidate.type = obj.type;
+	  _this.formValidate.dstAddress = obj.dstAddress;
+	  _this.formValidate.dstBackup = obj.dstBackup;
+	  _this.formValidate.interval = obj.interval;
+	  _this.formValidate.retryTimes = obj.retryTimes;
+	  _this.formValidate.sourceInterface = obj.sourceInterface;
+	  _this.formValidate.timeoutAction = obj.timeoutAction;
+	  $('#set_rule').modal('show');
+	},
+	submit_switch:function(obj){
+	  var _this = this;
+	  _this.setIdx = obj.idx;
+	  _this.formValidate.enabled = '1' == obj.enabled ? '0' : '1';
+	  _this.formValidate.name = obj.name;
+	  _this.formValidate.type = obj.type;
+	  _this.formValidate.dstAddress = obj.dstAddress;
+	  _this.formValidate.dstBackup = obj.dstBackup;
+	  _this.formValidate.interval = obj.interval;
+	  _this.formValidate.retryTimes = obj.retryTimes;
+	  _this.formValidate.sourceInterface = obj.sourceInterface;
+	  _this.formValidate.timeoutAction = obj.timeoutAction;
+	  var actState = '1' == obj.enabled ? _this.lang_t('common.off') : _this.lang_t('common.on') ;
+	  Cstools.msg({
+		content: _this.lang_t('common.warn1') + actState + _this.lang_t('common.warn2') ,
+		type: 'warn',
+		messgetype: 'confirm',
+		ok:function(){
+		  _this.handleSubmit();
+		}
+	  });
+	},
+	closeFrame:function(){
+	  $('#set_rule').modal('hide');
+	},
+	submit_refresh:function(){
+      location.href = location.href;
+    },
+	submit_delete:function(){
+	  var _this = this;
+	  var postVar = {};
+	  var delnum = 0;
+	  for(var i in _this.delRule){
+		if(_this.delRule[i]){
+		  postVar[delnum] = _this.icmpData[i];
+		  delnum++;
+		}
+	  }
+	  if(delnum == 0){
+		errorAlert(_this.lang_t('alert.msg2'));
+		return false;
+	  }
+	  Cstools.msg({
+		content: _this.lang_t('alert.msg3'),
+		type: 'warn',
+		messgetype: 'confirm',
+		ok:function(){
+		  uiPost.delIcmpCheckCfg(postVar, apply_callback);
+		}
+	  });
+	},
+	handleSubmit:function(){
+	  var _this = this;
+	  var postVar = {};
+	  var _s;
+
+	  if('0' != _this.setIdx){
+		postVar.idx = _this.setIdx;
+		postVar.addEffect = "2";
+	  }else{
+	  	if(_this.rule_num >= 10){
+          errorAlert(_this.lang_t('alert.msg1',[10]));
+          return false;
+        }
+		postVar.addEffect = "1";
+	  }	  
+
+	  _s = cs.string1(_this.formValidate.name);
+	  if(0 == _s){
+		errorAlert(_this.lang_t('index.name') + _this.lang_t('alert.msg5'));
+		return false;
+	  }else if(99 != _s){
+		errorAlert(_this.lang_t('index.name') + _this.lang_t('alert.msg23'));
+		return false;
+	  }
+	  
+	  if('domain' == _this.formValidate.type){
+		if("" == _this.formValidate.dstAddress){
+          errorAlert(_this.lang_t('icmp.destination_addr') + _this.lang_t('alert.msg5'));
+          return false;
+      	}else if(99 != cs.domain(_this.formValidate.dstAddress)){
+		  errorAlert(_this.lang_t('icmp.destination_addr') + _this.lang_t('alert.msg30'));
+		  return false;
+		}		
+		if(_this.formValidate.dstBackup){
+		  if(99 != cs.domain(_this.formValidate.dstBackup)){
+			errorAlert(_this.lang_t('icmp.des_back_addr') + _this.lang_t('alert.msg30'));
+			return false;
+		  }
+		}
+	  }else{
+	  	_s = cs.ip(_this.formValidate.dstAddress);
+		if(0 == _s){
+		  errorAlert(_this.lang_t('icmp.destination_addr') + _this.lang_t('alert.msg5'));
+		  return false;
+		}else if(99 != _s){
+		  errorAlert(_this.lang_t('icmp.destination_addr') + _this.lang_t('alert.msg14'));
+		  return false;
+		}
+		if(_this.formValidate.dstBackup){
+		  if(99 != cs.ip(_this.formValidate.dstBackup)){
+			errorAlert(_this.lang_t('icmp.des_back_addr') + _this.lang_t('alert.msg14'));
+			return false;
+		  }
+		}
+	  }
+
+	  if(99 != cs.num_range(_this.formValidate.interval,1,65535)){
+	  	errorAlert(_this.lang_t('icmp.detection_interval') + _this.lang_t('alert.msg15',[1,65535]));
+		return false;
+	  }
+
+	  if(99 != cs.num_range(_this.formValidate.retryTimes,0,65535)){
+		errorAlert(_this.lang_t('icmp.repetitions') + _this.lang_t('alert.msg15',[0,65535]));
+		return false;
+	  }
+
+	  postVar.enabled = _this.formValidate.enabled;
+	  postVar.name = _this.formValidate.name;
+	  postVar.type = _this.formValidate.type;
+	  postVar.dstAddress = _this.formValidate.dstAddress;
+	  postVar.dstBackup = _this.formValidate.dstBackup;
+	  postVar.interval = _this.formValidate.interval;
+	  postVar.retryTimes = _this.formValidate.retryTimes;
+	  postVar.sourceInterface = _this.formValidate.sourceInterface;
+	  postVar.timeoutAction = _this.formValidate.timeoutAction;	  
+	  uiPost.setIcmpCheckCfg(postVar, apply_callback);
+	}
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

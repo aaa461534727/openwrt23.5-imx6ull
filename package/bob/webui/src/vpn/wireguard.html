@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<style>
+  .privateKey_style{
+    position: relative;
+    width:500px;
+    background-color: #f1f1f1;
+  }
+  .privateKey_style input{
+    width: 100%;
+    height: 30px;
+  }
+  .privateKey_style button{
+    position: absolute;
+    top: 15px;
+    left: 360px;
+    background-color: #fff;
+    border: none;
+    outline: none;
+  }
+
+</style>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('wireguard.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <input type="radio" value="0" v-model="interface.mode" @click="modeChange('0')">&nbsp;&nbsp;{{lang_t('wireguard.server')}} &nbsp;&nbsp;&nbsp;&nbsp;
+                  <input type="radio" value="1" v-model="interface.mode" @click="modeChange('1')">&nbsp;&nbsp;{{lang_t('wireguard.client')}}
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 20%">{{ lang_t('wireguard.switch') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tbody v-show="enabled">
+              <tr></tr>
+              <tr v-show="interface.mode == '1'">
+                <td>{{lang_t('wireguard.loadConf')}}</td>
+                <td>
+                  <ul class="list-inline">
+                    <li>
+                      <input type="text" v-model="filename" disabled>
+                    </li>
+                    <li>
+                      <label class="input-group-btn">
+                        <span class="btn btn-default">
+                          <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="wg_upload" style="display: none;" @change="filechange()" />
+                        </span>
+                      </label>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+
+              <tr></tr>
+              <tr>
+                <td colspan="2">{{ lang_t('wireguard.local') }}</td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('wireguard.prikey') }}</td>
+                <td class="privateKey_style">
+                  <input type="text" v-model="interface.privateKey" maxlength="44" @change="privateComplete" />
+                  <button class="fa fa-refresh" @click.prevent="refresh_key"></button>
+                </td>
+              </tr>
+
+              <tr v-if="interface.privateKey != ''">
+                <td>{{ lang_t('wireguard.pubKey') }}</td>
+                <td>
+                  <span>{{ interface.publicKey }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('wireguard.ips') }}</td>
+                <td>
+                  <input type="text" v-model="interface.ip" maxlength="64" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('wireguard.listenPort') }}</td>
+                <td>
+                  <input type="text" v-model="interface.listenPort" maxlength="5" />
+                  <span>(0-65535)</span>
+                </td>
+              </tr>
+              <tr></tr>
+
+              <!--Client Mode Section Start-->
+              <tr v-show="interface.mode=='1'">
+                <td colspan="2">{{ lang_t('wireguard.remote') }}</td>
+              </tr>
+              <tr v-show="interface.mode=='1'">
+                <td>{{ lang_t('wireguard.pubKey') }}</td>
+                <td>
+                  <input type="text" v-model="peer.pubKey" maxlength="44" />
+                </td>
+              </tr>
+              <tr v-show="interface.mode=='1'">
+                <td>{{ lang_t('wireguard.prekey') }}</td>
+                <td>
+                  <input type="text" v-model="peer.preKey" maxlength="44" />
+                </td>
+              </tr>
+              <tr v-show="interface.mode==1">
+                <td>{{ lang_t('wireguard.remoteHost') }}</td>
+                <td>
+                    <input type="text" v-model="peer.host" maxlength="64"/>
+                </td>
+              </tr>
+              <tr v-show="interface.mode==1">
+                <td>{{ lang_t('wireguard.remotePort') }}</td>
+                <td>
+                  <input type="text" v-model="peer.port" maxlength="5" />
+                </td>
+              </tr>
+              <tr v-show="interface.mode=='1'">
+                <td>{{ lang_t('wireguard.allowIps') }}</td>
+                <td>
+                  <input type="text" v-model="peer.route_ips" maxlength="128" />
+                </td>
+              </tr>
+              <tr v-show="interface.mode=='1'">
+                <td>{{ lang_t('wireguard.routeAllow') }}</td>
+                <td>
+                  <input type="checkbox" v-model="peer.route_allow">
+                </td>
+              </tr>
+              <tr v-show="interface.mode=='1'">
+                <td>Keep Alive</td>
+                <td>
+                    <input type="text" v-model="peer.keepAlive" maxlength="3"/>
+                </td>
+              </tr>
+              <!--Client Section End-->
+
+              <tr>
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="applySubmit">{{ lang_t("common.apply") }}</button>
+                </td>
+              </tr>
+
+              <!--Server Section Start-->
+              <tr v-show="interface.mode != '1'">
+                <td>{{ lang_t('wireguard.remote') }}</td>
+                <td>
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="addNewPeer"> + </button>
+                </td>
+              </tr>
+              
+              <table class="table table-striped table-bordered table-hover" v-show="enabled && interface.mode != '1'">
+                <thead>
+                  <tr><td colspan="6">{{ lang_t('wireguard.list_table') }}</td></tr>
+                  <tr>
+                    <th>ID</th>
+                    <th>{{lang_t('wireguard.comment')}}</th>
+                    <th>{{lang_t('wireguard.pubKey')}}</th>
+                    <th>{{lang_t('wireguard.allowIps')}}</th>
+                    <th>{{lang_t('wireguard.status')}}</th>
+                    <th>{{lang_t('common.operation')}}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in peerData" :key="index">
+                    <td>{{ index+1 }}</td>
+                    <td>
+                      <span>{{val.comment}}</span>
+                    </td>
+                    <td>
+                      <span>{{val.pubKey}}</span>
+                    </td>
+                    <td>
+                      <span>{{val.route_ips}}</span>
+                    </td>
+                    <td class="operation">
+                      <span>{{show_peer_status(val.wg_show)}} <a @click.prevent="show_peer_info(val.wg_show)">{{ lang_t('wireguard.details') }}</a></span>
+                    </td>
+                    <td class="operation">
+                      <a @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                      <a v-show="interface.mode=='0'" @click.prevent="downloadPrepare(index,val)">{{ lang_t('wireguard.downLoad') }}</a>
+                    </td>
+                  </tr>
+                
+                </tbody>
+              </table>
+              <!--Server Section End-->
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal fade" id="modal_info" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" style="width:900px">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">{{lang_t('wireguard.addPeer')}}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table table-striped table-bordered table-hover">
+                <tbody>
+                  <tr>
+                    <td>{{ lang_t('wireguard.comment') }}</td>
+                    <td>
+                      <input type="text" v-model="peer.comment" maxlength="20" />
+                    </td>
+                  </tr>
+                  <tr></tr>
+                  <tr v-show="interface.mode=='0'">
+                    <td>{{ lang_t('wireguard.prikey') }}</td>
+                    <td class="privateKey_style">
+                      <input type="text" v-model="peer.priKey" maxlength="44" />
+                      <button class="fa fa-refresh" @click.prevent="refresh_key1"></button>
+                    </td>
+                  </tr>
+                  <tr v-show="interface.mode=='1'">
+                    <td>{{ lang_t('wireguard.pubKey') }}</td>
+                    <td>
+                      <input type="text" v-model="peer.pubKey" maxlength="44" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('wireguard.prekey') }}</td>
+                    <td class="privateKey_style">
+                      <input type="text" v-model="peer.preKey" maxlength="44" />
+                      <button v-show="interface.mode=='0'" class="fa fa-refresh" @click.prevent="refresh_prekey"></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('wireguard.allowIps') }}</td>
+                    <td>
+                      <input type="text" v-model="peer.route_ips" maxlength="128" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('wireguard.routeAllow') }}</td>
+                    <td>
+                      <input type="checkbox" v-model="peer.route_allow">
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td>
+                    <button v-if="link_idx == '-1'" @click="addPeerRule" class="btn btn-default all-but">{{ lang_t('common.add') }}</button>
+                    <button v-else @click="modifyRule1" class="btn btn-default all-but">{{ lang_t('common.modify') }}</button>
+                    <button @click="closeFrame" class="btn btn-default all-but">{{ lang_t('common.close') }}</button>&nbsp;&nbsp;
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--开始配置远程节点参数，用于生成配置文件-->
+      <div class="modal fade" id="modal_cli" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" style="width:900px">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">{{lang_t('wireguard.remoteCfg')}}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table table-striped table-bordered table-hover">
+                <tbody>
+                  <tr></tr>
+                  <tr>
+                    <td>{{ lang_t('wireguard.server_host') }}</td>
+                    <td>
+                      <input type="text" v-model="cli.host" maxlength="64" />
+                      <input type="checkbox" v-model="cli.ddns" @change="ddnsClick">&nbsp;&nbsp;{{ lang_t('wireguard.ddns_use') }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('wireguard.lanIp') }}</td>
+                    <td>
+                      <input type="text" v-model="cli.lanIp" maxlength="64" />
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td>
+                    <button @click="downLoadCfg" class="btn btn-default all-but">{{ lang_t('wireguard.completed') }}</button>
+                    <button @click="closeFrame1" class="btn btn-default all-but">{{ lang_t('common.close') }}</button>&nbsp;&nbsp;
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--配置远程节点结束-->
+
+      <!--节点连接信息显示-->
+      <div class="modal fade" id="wgPeerInfo" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" style="width:900px">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">{{lang_t('wireguard.connectInfo')}}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table table-striped table-bordered table-hover">
+                <tbody>
+                  <tr></tr>
+                  <tr>
+                    <td colspan="2">
+                      <textarea rows="10" style="width:100%;min-width:100%;" v-model="wgConnInfo" readonly></textarea>
+                    </td>
+                  </tr>
+                </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td>
+                    <button @click="closeFrame2" class="btn btn-default all-but">{{ lang_t('common.close') }}</button>&nbsp;&nbsp;
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--节点连接信息显示结束-->
+
+      <div style="display: none;">
+        <form ref="download" class="form-horizontal" method="post" :action="downloadAction"></form>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      enabled:false,
+      uploadApi:"/uploadfile.cgi?topic=UploadWireguardConfig",
+      downloadAction:"/cgi-bin/cstecgi.cgi?action=DownloadWireguardConfig",
+      filename:'',
+      interface: {
+        ip:'',
+        privateKey:'',
+        publicKey:'',
+        listenPort:'0', 
+        mode:'0',
+      },
+      peer:{
+        comment: '',
+        pubKey:'',
+        priKey:'',
+        host:'',
+        port:'',
+        keepAlive:'',
+        route_ips:'',
+        route_allow: '',
+        preKey:'',
+        wg_show:'',
+        status:'',
+        section: '',
+        action: ''
+      },
+      cli:{
+        host:'',
+        ddns:false,
+        lanIp:''
+      },
+      ddns:{
+        enable:'0',
+        host:'',
+      },
+      old:{
+        privateKey:"",
+      },
+      peerData:[],
+      wgConnInfo:'',
+
+      editItemInfo: {},
+      editIdx: '-1',
+
+      fileData:'',
+
+      link_idx:'-1',
+      allSelect:false,
+      delRule:[],
+      setIdx:"0",
+    }
+  },
+  watch:{
+    delRule:function(){
+   
+    }
+  },
+  computed:{
+    toggle_status:function(){
+      $('#switch_status').bootstrapSwitch('state',this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    var postVar = {};
+    var idx_from = location.href.split('idx=');
+	  if(idx_from[1] != undefined){
+		  _this.interface.mode = idx_from[1];
+	  }
+    _this.interface.mode = cs.localUrl(this.interface.mode);
+    this.getWireguardCfg();
+  },
+  methods:{
+    modeChange:function(idx){
+	    cs.localUrl(idx, 'href');
+	  },
+    getWireguardCfg:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.mode = _this.interface.mode;
+      uiPost.getWireguardCfg(postVar, function(data){
+        _this.enabled = data.enable == "1" ? true : false;
+        _this.interface.ip = data.ip;
+        _this.interface.privateKey = data.privateKey;
+        _this.old.privateKey = data.privateKey;
+        _this.interface.publicKey = data.publicKey;
+        _this.interface.listenPort = data.listenPort;
+        if (data.peer && data.peer.length > 0) {
+          if(_this.interface.mode == '1'){
+            _this.peer = data.peer[0];
+            _this.peer.route_allow = data.peer[0].route_allow === '1';
+          }
+          _this.peerData = data.peer;
+        }
+        //ddns info
+        _this.ddns.enable = data.ddnsEnable;
+        _this.ddns.host = data.ddnsHost;
+
+      });
+    },
+    checkIp:function(ip){
+      var obj = ip;
+      var exp = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+      var reg = obj.match(exp);
+      if(reg == null){
+        return false;
+      }else{
+        return true;
+      }
+    }, 
+    checkIp_mask:function (str){
+      var ret = 99;
+      if(undefined == str || str=="") { ret = 0;  return ret; }
+      var reg = /^(?:(\,)?(?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))(?:\/([0-2]?[0-9]|3[0-2]))?){1,}$/;
+      if(!reg.test(str)) ret = 1;
+      var buf=str.split(".");
+      //if(buf[0]<1||buf[0]>254) ret = 2;
+      if(buf[1]>254||buf[2]>254) ret = 3;
+      if(buf[3]>254) ret = 4;
+      return ret;
+    },
+
+    check_port:function(str, start, end){
+      var ret = 99;		
+      if(str == undefined || str=="") { ret = 0;  return ret; }//不能为空
+      var reg=/^[0-9]*$/;
+      if(!reg.test(str)) ret = 1;	//无效，必须是数字	
+      if(parseInt(str)<start||parseInt(str)>end) ret = 2;//无效，必须是0~65535之间的数字
+      return ret;
+
+    },
+    veriyfun1:function(val) {
+
+      return true;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    modifyRule:function (idx) {
+      var _this=this;
+      _this.link_idx=idx;
+
+      _this.peer = {..._this.peerData[idx],route_allow: _this.peerData[idx].route_allow === '1' ? true : false};
+      $('#modal_info').modal('show');
+
+    },
+    modifyRule1:function(){
+      var _this=this;
+
+      if(_this.peer.priKey == ''){
+        errorAlert(lang_t('wireguard.prikey') + lang_t('wireguard.msg2'));
+        return false;
+       }
+
+      var _s = _this.checkIp_mask(_this.peer.route_ips);
+      if(_s == 0){
+        errorAlert(lang_t('wireguard.allowIps') + lang_t('alert.msg5'));
+        return false;
+      }
+      if(99 != _s){
+        errorAlert(lang_t('wireguard.allowIps') + lang_t('common.msg8'));
+        return false;
+      }
+
+      var postVar = {};
+      _this.peer.action = "modify";
+
+      postVar = { ..._this.peer, route_allow: _this.peer.route_allow ? '1' : '0' };
+      uiPost.setWireguardPeerCfg(postVar, apply_callback);
+
+      $('#modal_info').modal('hide');
+
+      _this.link_idx='-1';
+    },
+    delRuleFun:function (idx,obj) {
+      var postVar = {};
+
+      console.log(obj.section);
+
+      postVar.action = "delete";
+      postVar.section = obj.section;
+
+      uiPost.setWireguardPeerCfg(postVar, apply_callback);
+
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    show_peer_status:function(data){
+      if(data.includes('handshake')){
+        return lang_t('wireguard.connected');
+      }else{
+        return lang_t('wireguard.unconnected');
+      }
+    },
+    show_peer_info:function(data){
+      this.wgConnInfo=data;
+      $('#wgPeerInfo').modal('show');
+    },
+    addNewPeer:function(){
+      var _this=this;
+      //reset peer
+      _this.peer.priKey='';
+      _this.peer.preKey='';
+      _this.peer.comment='';
+      _this.peer.host='';
+      _this.peer.port='';
+      _this.peer.keepAlive='';
+      _this.peer.route_ips='';
+      _this.peer.route_allow=false;
+      _this.peer.status='';
+      _this.peer.section='';
+      _this.peer.action='';
+
+      $('#modal_info').modal('show');
+    },
+    filechange:function(){
+      var file = document.getElementById("wg_upload");
+      var data = file.files[0];
+      var name = data.name;
+      if((name.indexOf('.conf') < 0)/*&&(name.indexOf('.zip') < 0)*/){
+        Cstools.msg({ content: this.lang_t('common.msg2',['.conf、.zip']),type: 'error',messgetype: 'alert'});
+        file.value = '';
+        return false;
+      }
+      this.filename = name;
+      this.upload(data,'');
+    },
+    upload:function(file,flag){
+      var _this = this;
+      _tempCount_ = 0;
+	    var token_tmp=get_token_from_url();
+      var token="";
+      if(token_tmp!=""){
+        token=token_tmp.split('=')[1];
+      }
+      upload.fileUpload({
+        data:file,
+		    url: this.uploadApi + "&" + token,
+        progress:function(v){
+          if(_tempCount_ == 0){
+            Cstools.count(1,'load');
+          }
+          _tempCount_ = v;
+          if(v >= 100){
+            Cstools.msg({content: _this.lang_t('firmware.msg5'),type: 'info',messgetype: 'no',time: 6});
+          }
+        },
+        success:function(result){
+          if(result.uploadStatus == "1"){
+            Cstools.msg({content: _this.lang_t('wireguard.msg1'),type: 'success',messgetype: 'alert'});
+            
+            _this.interface.ip = result.ip;
+            _this.interface.privateKey = result.privateKey;
+            _this.old.privateKey = result.privateKey;
+            _this.interface.publicKey = result.publicKey;
+            _this.interface.listenPort = result.listenPort;
+            
+            _this.peer={};
+            if(result.peer.route_allow == '1')
+              result.peer.route_allow = true;
+            else
+              result.peer.route_allow = false;
+            _this.peer = result.peer;
+          }else{
+            Cstools.msg({content: _this.lang_t('firmware["'+result.upgradeERR+'"]'),type: 'error',messgetype: 'alert'});
+          }
+        },
+        error:function(result){
+          _tempCount_ = "temp-end";
+          Cstools.msg({content: _this.lang_t('wireguard.MM_upload_error'),type: 'error',messgetype: 'alert'});
+        }
+      })
+    },
+    ddnsClick:function(){
+      var _this=this;
+      
+      if(_this.cli.ddns == true)
+        if(_this.ddns.enable == '1')
+          _this.cli.host=_this.ddns.host;
+        else{
+          Cstools.msg({content: _this.lang_t('wireguard.MM_ddns_error'),type: 'error',messgetype: 'alert'});
+          _this.cli.ddns=false;
+        }
+      else
+        _this.cli.host='';
+
+    },
+    downloadPrepare:function(idx,val){
+      var _this=this;
+
+      _this.cli = {};
+
+      this.$refs.download.action = this.downloadAction+'&'+val.section;
+      $('#modal_cli').modal('show');
+    },
+    downLoadCfg:function(){
+      var _this=this;
+
+      if(_this.cli.host == ''){
+        Cstools.msg({content: _this.lang_t('wireguard.MM_host_error'),type: 'error',messgetype: 'alert'});
+        return false;
+      }
+      if(_this.cli.lanIp == ''){
+        Cstools.msg({content: _this.lang_t('wireguard.MM_LanIp_error'),type: 'error',messgetype: 'alert'});
+        return false;
+      }
+
+      _this.$refs.download.action = _this.$refs.download.action + '&' + _this.cli.lanIp + '&' + _this.cli.host;
+
+      _this.$refs.download.submit();
+
+      $('#modal_cli').modal('hide');
+    },
+    addPeerRule:function(){
+      var _this=this;
+      var postVar = {};
+
+      _this.peer.action = "add";
+      var temp = {
+        comment: _this.peer.comment,
+        priKey: _this.peer.priKey,
+        pubKey: _this.peer.pubKey,
+        host: _this.peer.host,
+        port: _this.peer.port,
+        keepAlive: _this.peer.keepAlive,
+        route_ips: _this.peer.route_ips,
+        route_allow: _this.peer.route_allow == true? '1':'0',
+        preKey: _this.peer.preKey,
+        action: _this.peer.action,
+        mode: _this.interface.mode,
+      };
+      if(_this.peer.priKey == ''){
+        errorAlert(lang_t('wireguard.prikey') + lang_t('wireguard.msg2'));
+        return false;
+      }
+      var _s = _this.checkIp_mask(_this.peer.route_ips);
+      if(_s == 0){
+        errorAlert(lang_t('wireguard.allowIps') + lang_t('alert.msg5'));
+        return false;
+      }
+      if(99 != _s){
+        errorAlert(lang_t('wireguard.allowIps') + lang_t('common.msg8'));
+        return false;
+      }
+      //if(!this.veriyfun1(temp)) return;
+      //_this.peerData.push(temp);
+
+      postVar = temp;
+
+      uiPost.setWireguardPeerCfg(postVar, apply_callback);
+
+      $('#modal_info').modal('hide');
+
+    },
+    privateComplete:function(){
+      var _this=this;
+      if(_this.interface.privateKey.length == 44){
+        if(_this.old.privateKey == _this.interface.privateKey)
+          return false;
+
+        var postVar = {};
+        postVar.privateKey = _this.interface.privateKey;
+
+        uiPost.getWireguardKey(postVar, function(data){
+          _this.interface.privateKey = data.privateKey;
+          _this.old.privateKey = data.privateKey;
+          _this.interface.publicKey = data.publicKey;
+        });
+      }
+    },
+    refresh_key:function(){
+      var _this = this;
+      uiPost.getWireguardKey(function(data){
+        _this.interface.privateKey = data.privateKey;
+        _this.old.privateKey = data.privateKey;
+        _this.interface.publicKey = data.publicKey;
+      });
+    },
+    refresh_key1:function(){
+      var _this = this;
+      uiPost.getWireguardKey(function(data){
+        _this.peer.priKey = data.privateKey;
+        _this.peer.pubKey = data.publicKey;
+      });
+    },
+    refresh_prekey:function(){
+      var _this = this;
+      uiPost.getPreshareKey(function(data){
+        _this.peer.preKey = data.preKey;
+      });
+    },
+    applySubmit:function(){
+      var _this=this;
+      var postVar = {};
+      
+      postVar.mode = _this.interface.mode;
+
+      if(_this.enabled == true)
+        postVar.enable = "1";
+      else
+        postVar.enable = "0";
+
+      if(_this.interface.privateKey == ''){
+        errorAlert(lang_t('wireguard.prikey') + lang_t('wireguard.msg2'));
+        return false;
+      }
+
+      var _s = cs.ip(_this.interface.ip);
+      if(_s == 0){
+        errorAlert(lang_t('wireguard.ips') + lang_t('alert.msg5'));
+        return false;
+      }
+      if(99 != _s){
+        errorAlert(lang_t('wireguard.allowIps') + lang_t('common.msg8'));
+        return false;
+      }
+
+      if(_this.interface.listenPort != ''){
+        if(99 != _this.check_port(_this.interface.listenPort, 1, 65535)){
+          errorAlert(lang_t('wireguard.listenPort') + lang_t('wireguard.msg3',[1,65535]));
+          return false;
+        }
+      }
+      
+      postVar.listenPort = _this.interface.listenPort;
+
+      postVar.privateKey = _this.interface.privateKey;
+
+      postVar.ip = _this.interface.ip;
+
+      if(_this.interface.mode == '1'){
+        if(_this.peer.pubKey == ''){
+          errorAlert(lang_t('wireguard.pubKey') + lang_t('wireguard.msg2'));
+          return false;
+        }
+
+        if(_this.peer.host == ''){
+          errorAlert(lang_t('wireguard.remoteHost') + lang_t('wireguard.msg2'));
+          return false;
+        }
+
+        if(_this.peer.port != ''){
+          if(99 != _this.check_port(_this.peer.port, 1, 65535)){
+            errorAlert(lang_t('wireguard.remotePort') + lang_t('wireguard.msg3',[1,65535]));
+            return false;
+          }
+        }
+        var _s = _this.checkIp_mask(_this.peer.route_ips);
+        if(_s == 0){
+          errorAlert(lang_t('wireguard.allowIps') + lang_t('alert.msg5'));
+          return false;
+        }
+
+        //postVar.peer=_this.peer;
+        postVar.peer = { ..._this.peer, route_allow: _this.peer.route_allow ? '1' : '0' };
+      }
+
+      uiPost.setWireguardCfg(postVar, function(data){
+        if(data.wtime != undefined && data.wtime != 0){
+          Cstools.count(data.wtime,'js',function(){
+            cs.localUrl(_this.interface.mode, 'href');
+          });
+        }else{
+          cs.localUrl(_this.interface.mode, 'href');
+        }
+      });
+    },
+    closeFrame2:function(){
+      $('#wgPeerInfo').modal('hide');
+    },
+    closeFrame1:function(){
+      $('#modal_cli').modal('hide');
+    },
+    closeFrame:function(id){
+      var _this=this;
+
+	    $('#modal_info').modal('hide');
+      _this.link_idx='-1';
+    },
+    allChange:function(){
+      
+    },
+    submit_status:function(){
+      var _this=this;
+      var postVar = {};
+
+      postVar.mode = _this.interface.mode;
+      postVar.enable = _this.enabled == true? '1':'0';
+
+      uiPost.setWireguardSwitch(postVar, function(data){
+        if(data.wtime != undefined && data.wtime != 0){
+          Cstools.count(data.wtime,'js',function(){
+            cs.localUrl(_this.interface.mode, 'href');
+          });
+        }else{
+          cs.localUrl(_this.interface.mode, 'href');
+        }
+      });
+    },
+  },
+
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(_this.enabled == false && data){
+        _this.enabled = data;
+        _this.submit_status();
+      }
+      if(_this.enabled && data == false){
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    })
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

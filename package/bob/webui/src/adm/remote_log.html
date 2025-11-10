@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('syslog.help_remote') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.server_addr') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.host" maxlength="32">
+                  <span>{{ lang_t('index.domain_ip') }}</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.port') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.port" :maxlength="5">
+                </td>
+              </tr>
+              <tr v-show="enabled && globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      enabled:'',
+      formValidate:{
+        host:'',
+        port:''
+      }
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getSyslogCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.host = data.host;
+      _this.formValidate.port = data.port;
+    });
+    addSwitch('#switch_status', function(data){
+      if(globalConfig.specialIotBanApply ==1 ) return;
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed: {
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function() {
+    
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";
+        uiPost.setSyslogCfg(postVar, apply_callback);
+      }      
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if(0 == cs.ip(_this.formValidate.host)){
+        errorAlert(_this.lang_t('index.server_addr') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != cs.ip_domain(_this.formValidate.host)){
+        errorAlert(_this.lang_t('index.server_addr') + _this.lang_t('alert.msg19'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.port,0,65535)){
+        errorAlert(_this.lang_t('index.port') + _this.lang_t('alert.msg15',[0,65535]));
+        return false;
+      }
+
+      postVar.enabled = "1";
+      postVar.host =  _this.formValidate.host;
+      postVar.port =  _this.formValidate.port;
+      uiPost.setSyslogCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('macf.help') }}</strong></td>
+              </tr>
+              <!-- <tr>
+                    <td>{{lang_t('common.state')}}</td>
+                    <td>
+                      <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none">
+                    </td>
+                  </tr> --> 
+              <tr >
+                <td style="width: 30%">{{lang_t('wifi.auth_mode')}}</td>
+                <td>
+                  <select v-model="authMode" data-style="btn-default" @change="submit_status">
+                    <option value="0">{{ lang_t('common.disabled') }}</option>
+                    <option value="1">{{ lang_t('filter.white_list') }}</option>
+                    <option value="2">{{ lang_t('filter.black_list') }}</option>
+                  </select>
+                </td>
+              </tr>   
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="authMode != 0">
+              <thead>
+                <tr><td colspan="6"> {{ lang_t('macf.macf_table') }}</td></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>{{lang_t('macf.mac')}}</th>
+                  <th>{{lang_t('macf.comment')}}</th>
+                  <th>{{lang_t('common.operation')}}</th>
+                </tr>
+              </thead>
+             <tbody>
+              <tr v-for="(val,index) in macfData" :key="index" @click="editItem(index,val)" >
+                <td>{{index+1}}</td>
+                <td>
+                  <div v-if="editIdx == index">
+                    <input type="text" v-model="editItemInfo.mac" style="width: 80%;float: left;" ref="mac"/>&nbsp;&nbsp;
+                    <button class="btn btn-default all-but" @click="showClientList('edit')">{{ lang_t('macf.scan') }}</button>
+                  </div>
+                  <span v-else>{{val.mac}}</span>
+                </td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.desc" maxlength="32" />
+                  <span v-else>{{val.desc}}</span>
+                </td>
+                <td class="operation">
+                  <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                  <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                  <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>
+                  <input type="text" v-model="mac" style="width: 80%;float: left;"/>&nbsp;&nbsp;
+                  <Button class="btn btn-default all-but" @click="showClientList('add')">{{ lang_t('macf.scan') }}</Button>
+                </td>
+                <td>
+                  <input type="text" v-model="desc" maxlength="32" :placeholder="lang_t('macf.comment')"/>
+                </td>
+                <td class="operation">
+                  <a @click="addRule">{{ lang_t('common.add') }}</a>
+                </td>
+              </tr>
+            </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="authMode != 0">
+               <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      <modal-table id="show_mac" :modal-title="modalTable.modalTitle" :table="modalTable.table" @oncurrent="setMacfData" :show-search="false"></modal-table>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t,
+      enable: false,
+      mac:'00:00:00:00:00:00',
+      desc:'',
+      modalTable:{
+        modalTitle:"",
+        table:{
+          th:[],
+          td:[]
+        }
+      },
+      arpData:[],
+      macfData:[],
+      authMode: '',
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enable);
+    },
+  },
+  created:function() {
+    var _this = this;
+    var postVar = {};
+    uiPost.getMacFilterRules(postVar,function(data){
+      _this.enable = data.enable == "1" ?true :false;
+      _this.authMode = Number(data.authMode);
+      if(data.rule){
+        _this.macfData = data.rule;
+      }
+    });
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if(_this.enable != data){
+        _this.enable = data;
+        _this.submit_status();
+      }
+    });
+  },
+  methods:{
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.subnet = [].concat( this.macfData );
+      postVar.addEffect = "1";
+      postVar.authMode = this.authMode;
+      uiPost.setMacFilterRules(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.macfData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.macfData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    veriyfun:function(val, flag) {
+      var _this = this;
+      if(val.mac == ''){
+        errorAlert(lang_t('macf.msg1'));
+        return false;
+      }
+      var ret = cs.mac(val.mac);
+      if(ret == 1){
+        errorAlert(lang_t('macf.msg2'));
+        return false;
+      }else if(ret == 2){
+        errorAlert(lang_t('macf.msg3'));
+        return false;
+      }else if(ret == 3){
+        errorAlert(lang_t('macf.msg4'));
+        return false;
+      }
+      if(cs.byteLenght(val.desc,32) == 1) {
+        errorAlert(_this.lang_t('macf.comment') + _this.lang_t('alert.msg50',[32]));
+        return false;
+      }
+      ret = cs.commentstr(val.desc);
+      if(ret == 1){
+        Cstools.msg({
+          content: _this.lang_t('macf.comment')+_this.lang_t('alert.msg49'),
+          type: 'error'
+        });
+        return false;
+      }else if(ret == 2){
+        Cstools.msg({
+          content: _this.lang_t('macf.msg11'),
+          type: 'error'
+        });
+        return false;
+      }
+      for(var i=0; i<_this.macfData.length; i++) {
+        if(flag != undefined && i == flag) continue;
+        if(val.mac.toUpperCase() == _this.macfData[i].mac.toUpperCase()) {
+          Cstools.msg({
+            content: this.lang_t('macf.msg6'),
+            type: 'error',
+            messgetype: 'alert',
+            time:1
+          });
+          return false;
+        }
+      }
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.macfData.length >= 32){
+        Cstools.msg({
+          content: this.lang_t('macf.msg7'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+      }
+      var temp = {
+        mac: this.mac,
+        desc: this.desc
+      };
+      if(!this.veriyfun(temp)) return;
+      this.macfData.push(temp);      
+      this.mac = "";
+      this.desc = "";
+    },
+    submit_status:function(){
+       if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar ={};
+      postVar.addEffect = "0";
+      postVar.authMode = this.authMode;
+      uiPost.setMacFilterRules(postVar, apply_callback);
+    },
+    showClientList:function(type){
+      var _this = this;
+      this.listType = type;
+      uiPost.getOnlineMsg(function(data){
+        _this.arpData = data;
+        _this.modalTable.modalTitle = _this.lang_t('macf.modal_title');
+        _this.modalTable.table.th = [_this.lang_t('index.device_name'),'IP','MAC'];
+        _this.modalTable.table.td = _this.arpData;
+        $('#show_mac').modal();
+      });
+    },
+    setMacfData:function(data) {
+      if(this.listType == "add")
+        this.mac = data.mac;
+      else{
+        this.$refs.mac[0].value = data.mac;
+        this.editItemInfo.mac = data.mac;
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+
+  

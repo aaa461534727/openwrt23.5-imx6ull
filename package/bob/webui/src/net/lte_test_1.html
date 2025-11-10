@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('internet.help_lte_1') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('internet.self_check') }}</td>
+                <td>
+                  <select v-model="formValidate.abnormalCheck" style="display: inline-block;">
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                  </select>
+                  <div class="tips" @click="tipsFun()">!</div>
+                </td>
+              </tr>
+              <tr v-show="formValidate.abnormalCheck=='1'">
+                <td>{{ lang_t('internet.registration') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.registratNum" maxlength="2">
+                  <span>{{ lang_t('internet.registration_msg') }}</span>
+                </td>
+              </tr>
+              <tr>
+                <!-- <td v-if="globalConfig.csid =='C735PR'" style="width: 27%;">{{ lang_t('internet.pub_pri_set') }}</td> -->
+
+                
+                <td  style="width: 27%;">{{ lang_t('internet.lte_test_1') }}</td>
+                <td>
+                  <select v-model="formValidate.ltecheckEnable">
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.test_interval') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.checkInterval" maxlength="5">
+                  <span>(3-86400)S</span>
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.lost_num') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.lostNum" maxlength="2">
+                  <span>(1-20) {{ lang_t('internet.lost_msg') }}</span>
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.redial_times') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.redialTimes" maxlength="2">
+                  <span>(3-10) <div v-show="false">{{ lang_t('internet.redial_times_msg') }},{{ lang_t('internet.reboot_zero_msg') }}</div></span>
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.restart_times') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.restartTimes" maxlength="2">
+                  <span>(3-10) <!-- <div v-show="false">{{ lang_t('internet.restart_times_msg') }}</div>,{{ lang_t('internet.reboot_zero_msg') }} --></span>
+                </td>
+              </tr>
+			  <tr v-show="formValidate.ltecheckEnable=='1' && globalConfig.csid !='C735PR'">
+                <td>{{ lang_t('internet.reboot_times') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.rebootTimes" maxlength="2">
+                  <span>(0-10) <div v-show="false">{{ lang_t('internet.restart_times_msg') }}</div>,{{ lang_t('internet.reboot_zero_msg') }}</span>
+                </td>
+              </tr>
+
+              <tr v-if="formValidate.ltecheckEnable=='1'" >
+                <td>{{ lang_t('internet.lte_address_1')+"1"+lang_t('net_strategy.type') }}</td>
+                <td>
+                  <select v-model="formValidate.checkType" @change="typeChange">
+                    <option value="0">{{ lang_t('internet.gateway_check') }}</option>
+                    <option value="1">{{ lang_t('modem.other') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.lte_address_1') }} 1</td>
+                <td>
+                  <input type="text" v-model="formValidate.ip1" maxlength="32" :disabled="formValidate.checkType == '0'">
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.lte_address_1') }} 2</td>
+                <td>
+                  <input type="text" v-model="formValidate.ip2" maxlength="32">
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.lte_address_1') }} 3</td>
+                <td>
+                  <input type="text" v-model="formValidate.ip3" maxlength="32">
+                </td>
+              </tr>
+              <tr v-show="formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.data_test') }}</td>
+                <td>
+                  <select v-model="formValidate.datacheckEnable">
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="formValidate.datacheckEnable == '1'&& formValidate.ltecheckEnable=='1'">
+                <td>{{ lang_t('internet.data_size') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.dataSize">
+                  <span>(1-65535) {{ lang_t('internet.data_size_msg') }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button @click="handleSubmit()" class="btn btn-primary all-but">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      modem_ip: '',
+      formValidate:{
+        ltecheckEnable: "0",
+        checkInterval: "",
+      	redialTimes: "0",
+      	restartTimes: "0",
+		rebootTimes: "0",
+        ip1:"",
+        ip2:"",
+        ip3:"",
+        datacheckEnable:"1",
+        dataSize:"",
+        lostNum: '',
+        checkType: '',
+        registratNum: '',
+        abnormalCheck: "0"
+      }
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getLteCheckCfg(function(data){
+      _this.formValidate.ltecheckEnable = data.ltecheckEnable;
+      _this.formValidate.abnormalCheck = data.abnormalCheck;
+      _this.formValidate.checkInterval = data.checkInterval;
+      _this.formValidate.lostNum = data.lostNum;
+      _this.formValidate.redialTimes = data.redialTimes;
+      _this.formValidate.restartTimes = data.restartTimes;
+	  _this.formValidate.rebootTimes = data.rebootTimes;
+    _this.formValidate.registratNum = data.registratNum;
+    _this.modem_ip = data.ip1;
+      _this.formValidate.ip1 = data.ip1;
+      _this.formValidate.ip2 = data.ip2;
+      _this.formValidate.ip3 = data.ip3;
+      _this.formValidate.datacheckEnable = data.datacheckEnable;
+      _this.formValidate.dataSize = data.dataSize;
+      _this.formValidate.checkType = data.checkType;
+    });
+  },
+  methods:{
+    tipsFun: function() {
+      Cstools.msg({
+        messgetype:'alert',
+        content: lang_t('internet.self_check_tips')
+      });
+    },
+    typeChange: function() {
+      var _this = this;
+      if (_this.formValidate.checkType == '0') {
+        _this.formValidate.ip1 = _this.modem_ip;
+      };
+    },
+    handleSubmit:function(){
+      var _this = this;
+
+      if(_this.formValidate.ltecheckEnable == "1"){
+        if(99 != cs.num_range(_this.formValidate.checkInterval,3,86400)){
+          errorAlert(lang_t('internet.test_interval') + lang_t('alert.msg15',[3,86400]));
+          return false;
+        }
+
+        if(99 != cs.num_range(_this.formValidate.lostNum, 1, 20)){
+          errorAlert(lang_t('internet.lost_num') + lang_t('alert.msg15', [1, 20]));
+          return false;
+        }
+
+        if(99 != cs.num_range(_this.formValidate.redialTimes,3,10)){
+          errorAlert(lang_t('internet.redial_times') + lang_t('alert.msg15',[3,10]));
+          return false;
+        }
+        
+        if(99 != cs.num_range(_this.formValidate.restartTimes,3,10)){
+          errorAlert(lang_t('internet.restart_times') + lang_t('alert.msg15',[3,10]));
+          return false;
+        }
+        
+        if(_this.globalConfig.csid !='C735PR'){
+  		    if(99 != cs.num_range(_this.formValidate.rebootTimes,0,10)){
+            errorAlert(lang_t('internet.reboot_times') + lang_t('alert.msg15',[0,10]));
+            return false;
+          }
+        }
+
+        /* if(99 != cs.num_range(_this.formValidate.registratNum,1,10)){
+          errorAlert(lang_t('internet.registration') + lang_t('alert.msg15',[1,10]));
+          return false;
+        }*/
+
+        if(_this.formValidate.ip1){
+          if(99 != cs.ip_domain(_this.formValidate.ip1)){
+            errorAlert(lang_t('internet.lte_address_1') + " 1 " + lang_t('index.server_addr') + lang_t('alert.msg19'));
+            return false;
+          }  
+        }
+
+        if(_this.formValidate.ip2){
+          if(99 != cs.ip_domain(_this.formValidate.ip2)){
+            errorAlert(lang_t('internet.lte_address_1') + " 2 " + lang_t('index.server_addr') + lang_t('alert.msg19'));
+            return false;
+          }
+        }
+          
+        if(_this.formValidate.ip3){
+          if(99 != cs.ip_domain(_this.formValidate.ip3)){
+            errorAlert(lang_t('internet.lte_address_1') + " 3 " + lang_t('index.server_addr') + lang_t('alert.msg19'));
+            return false;
+          } 
+        }
+
+        if(_this.formValidate.datacheckEnable == "1"){
+          if(99 != cs.num_range(_this.formValidate.dataSize,1,65535)){
+            errorAlert(lang_t('internet.data_size') + lang_t('alert.msg15',[1,65535]));
+            return false;
+          } 
+        }                 
+      }
+
+      var postLteVar = {};
+      postLteVar.ltecheckEnable = _this.formValidate.ltecheckEnable;
+      postLteVar.abnormalCheck = _this.formValidate.abnormalCheck;
+      postLteVar.checkInterval = _this.formValidate.checkInterval;
+      postLteVar.lostNum = _this.formValidate.lostNum;
+      postLteVar.redialTimes = _this.formValidate.redialTimes;
+      
+      postLteVar.restartTimes = _this.formValidate.restartTimes;
+
+      if(_this.globalConfig.csid !='C735PR'){
+	     postLteVar.rebootTimes = _this.formValidate.rebootTimes;
+      }
+      postLteVar.registratNum= _this.formValidate.registratNum;
+      postLteVar.checkType = _this.formValidate.checkType;
+      postLteVar.ip1 = _this.formValidate.ip1;
+      postLteVar.ip2 = _this.formValidate.ip2;
+      postLteVar.ip3 = _this.formValidate.ip3;
+      postLteVar.datacheckEnable = _this.formValidate.datacheckEnable;
+      postLteVar.dataSize = _this.formValidate.dataSize;
+      uiPost.setLteCheckCfg(postLteVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+
+{
+"serverHost": "http://60.205.148.140:802/api/MapApi",
+"statName": "Test",
+"businessName": "智辅业务",
+"businessIP": "10.8.0.3",
+"signal": "-9",
+"sinr": "3",
+"latitude_longitude": "23.1,112.23",
+"date": "1635771443",
+"autoUpdate": "1",
+"enable": "0",
+"gpsReport": "0",
+"latitude": "44",
+"longitude": "88",
+"autoUpdateTime": "30"
+}

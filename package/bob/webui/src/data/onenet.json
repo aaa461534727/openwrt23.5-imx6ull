@@ -1,0 +1,8 @@
+{
+	"onenet_server":"iot.crabox-sys.com",
+	"onenet_port":"80",
+	"enabled":"1",
+	"onenet_client_id":"55",
+	"onenet_username":"test",
+	"onenet_key":"12345678"
+}

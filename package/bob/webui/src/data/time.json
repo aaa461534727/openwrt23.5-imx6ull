@@ -1,0 +1,8 @@
+
+{
+	"tz":"UTC-8",
+	"server":"pool.ntp.org*cn.pool.ntp.org*europe.pool.ntp.org",
+	"enable":"1",
+	"hostFlag":"0",
+	"currentTime":"Fri Nov 3 08:58:18 GMT 2018"
+}

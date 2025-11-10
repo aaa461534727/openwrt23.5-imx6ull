@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('link_switch.help') }}</strong></td>
+              </tr>              
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.link_status') }}</td>
+                <td>{{ linkStatus }}</td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" style="font-weight:bold;color: #EA7105;">{{ lang_t('link_switch.main') }}</td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.interface') }}</td>
+                <td style="font-weight:bold;color: #ff0000;">WAN</td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.server_addr') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.mainServer" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.normal_interval') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.mainNormalInterval" :maxlength="5" />
+                  <span>(1~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.retry_times') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.mainRetryTimes" :maxlength="5" />
+                  <span>(1~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.interface_binding') }}</td>
+                <td>
+                  <select v-model="formValidate.mainInterfaceBind" data-style="btn-default">
+                    <option value="none">none</option>
+					          <option value="tunnelDMVPN1">tunnelDMVPN1</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" style="font-weight:bold;color: #EA7105;">{{ lang_t('link_switch.backup') }}</td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.interface') }}</td>
+                <td style="font-weight:bold;color: #ff0000;">SIM1</td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.server_addr') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.sim1Server" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.normal_interval') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.sim1NormalInterval" :maxlength="5" />
+                  <span>(1~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.retry_times') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.sim1RetryTimes" :maxlength="5" />
+                  <span>(1~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.interface_binding') }}</td>
+                <td>
+                  <select v-model="formValidate.sim1InterfaceBind" data-style="btn-default">
+                    <option value="none">none</option>
+					          <option value="tunnelDMVPN1">tunnelDMVPN1</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" style="font-weight:bold;color: #EA7105;">{{ lang_t('link_switch.backup') }}</td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.interface') }}</td>
+                <td style="font-weight:bold;color: #ff0000;">SIM2</td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.server_addr') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.sim2Server" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.normal_interval') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.sim2NormalInterval" :maxlength="5" />
+                  <span>(1~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.retry_times') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.sim2RetryTimes" :maxlength="5" />
+                  <span>(1~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('link_switch.interface_binding') }}</td>
+                <td>
+                  <select v-model="formValidate.sim2InterfaceBind" data-style="btn-default">
+                    <option value="none">none</option>
+					          <option value="tunnelDMVPN1">tunnelDMVPN1</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2">
+                  <button @click="handleSubmit()" class="btn btn-primary all-but">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+      enabled:'',
+      mainInterface:"WAN",
+      linkStatus:'none',
+      formValidate:{
+  	    mainServer:'',
+        mainNormalInterval:'',
+        mainRetryTimes:'',
+        mainInterfaceBind:"none",
+        sim1Server:'',
+        sim1NormalInterval:'',
+        sim1RetryTimes:'',
+        sim1InterfaceBind:"none",
+        sim2Server:'',
+        sim2NormalInterval:'',
+        sim2RetryTimes:'',
+        sim2InterfaceBind:"none"
+      }
+  	}
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getLinkSwitchCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.linkStatus = data.linkStatus;
+      _this.mainInterface = data.mainInterface;
+      _this.formValidate.mainServer = data.mainServer;
+      _this.formValidate.mainNormalInterval = data.mainNormalInterval;
+      _this.formValidate.mainRetryTimes = data.mainRetryTimes;
+      _this.formValidate.mainInterfaceBind = data.mainInterfaceBind;
+      _this.sim1Interface = data.sim1Interface;
+      _this.formValidate.sim1Server = data.sim1Server;
+      _this.formValidate.sim1NormalInterval = data.sim1NormalInterval;
+      _this.formValidate.sim1RetryTimes = data.sim1RetryTimes;
+      _this.formValidate.sim1InterfaceBind = data.sim1InterfaceBind;
+      _this.sim2Interface = data.sim2Interface;
+      _this.formValidate.sim2Server = data.sim2Server;
+      _this.formValidate.sim2NormalInterval = data.sim2NormalInterval;
+      _this.formValidate.sim2RetryTimes = data.sim2RetryTimes;
+      _this.formValidate.sim2InterfaceBind = data.sim2InterfaceBind;
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+  	
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";
+        uiPost.setLinkSwitchCfg(postVar, apply_callback);
+      }
+    },
+  	handleSubmit:function(){
+  	  var _this = this;
+  	  var postVar = {};
+      var _s ;
+
+      //main
+      _s = cs.ip(_this.formValidate.mainServer);
+      if(0 == _s){
+        _this.errorAlert(_this.lang_t('link_switch.main') + _this.lang_t('index.server_addr') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != cs.ip_domain(_this.formValidate.mainServer)){
+        _this.errorAlert(_this.lang_t('link_switch.main') + _this.lang_t('index.server_addr') + _this.lang_t('alert.msg19'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.mainNormalInterval,1,65535)){
+        _this.errorAlert(_this.lang_t('link_switch.main') + _this.lang_t('link_switch.normal_interval') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.mainRetryTimes,1,65535)){
+        _this.errorAlert(_this.lang_t('link_switch.main') + _this.lang_t('link_switch.retry_times') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+
+      //backup1
+      _s = cs.ip(_this.formValidate.sim1Server);
+      if(0 == _s){
+        _this.errorAlert(_this.lang_t('link_switch.backup') + "1" + _this.lang_t('index.server_addr') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != cs.ip_domain(_this.formValidate.sim1Server)){
+        _this.errorAlert(_this.lang_t('link_switch.backup') + "1" + _this.lang_t('index.server_addr') + _this.lang_t('alert.msg19'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.sim1NormalInterval,1,65535)){
+        _this.errorAlert(_this.lang_t('link_switch.backup') + "1" + _this.lang_t('link_switch.normal_interval') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.sim1RetryTimes,1,65535)){
+        _this.errorAlert(_this.lang_t('link_switch.backup')  + "1" + _this.lang_t('link_switch.retry_times') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+
+      //backup2
+      _s = cs.ip(_this.formValidate.sim2Server);
+      if(0 == _s){
+        _this.errorAlert(_this.lang_t('link_switch.backup') + "2" + _this.lang_t('index.server_addr') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != cs.ip_domain(_this.formValidate.sim2Server)){
+        _this.errorAlert(_this.lang_t('link_switch.backup') + "2" + _this.lang_t('index.server_addr') + _this.lang_t('alert.msg19'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.sim2NormalInterval,1,65535)){
+        _this.errorAlert(_this.lang_t('link_switch.backup') + "2" + _this.lang_t('link_switch.normal_interval') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.sim2RetryTimes,1,65535)){
+        _this.errorAlert(_this.lang_t('link_switch.backup')  + "2" + _this.lang_t('link_switch.retry_times') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+
+      postVar.enabled = "1";
+  	  postVar.mainServer = _this.formValidate.mainServer;
+      postVar.mainNormalInterval = _this.formValidate.mainNormalInterval;
+      postVar.mainRetryTimes = _this.formValidate.mainRetryTimes;
+      postVar.mainInterfaceBind = _this.formValidate.mainInterfaceBind;
+      postVar.sim1Server = _this.formValidate.sim1Server;
+      postVar.sim1NormalInterval = _this.formValidate.sim1NormalInterval;
+      postVar.sim1RetryTimes = _this.formValidate.sim1RetryTimes;
+      postVar.sim1InterfaceBind = _this.formValidate.sim1InterfaceBind;
+      postVar.sim2Server = _this.formValidate.sim2Server;
+      postVar.sim2NormalInterval = _this.formValidate.sim2NormalInterval;
+      postVar.sim2RetryTimes = _this.formValidate.sim2RetryTimes;
+      postVar.sim2InterfaceBind = _this.formValidate.sim2InterfaceBind;
+  	  uiPost.setLinkSwitchCfg(postVar, apply_callback);
+  	},
+    errorAlert:function(data){
+      var _this = this;
+      Cstools.msg({
+        type: 'error',
+        messgetype: 'alert',
+        title: _this.lang_t('common.tips'),
+        content: data
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

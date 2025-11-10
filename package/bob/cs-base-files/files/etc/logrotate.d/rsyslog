@@ -1,0 +1,20 @@
+/var/log/app
+/var/log/iotm
+/var/log/modem
+/var/log/dtu_ctrl
+/var/log/status
+{
+    compress
+    delaycompress
+    rotate 4
+    maxsize 3M
+    create 644 root root
+    copytruncate
+    notifempty
+    missingok
+    sharedscripts
+    postrotate
+        kill -HUP `cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}
+

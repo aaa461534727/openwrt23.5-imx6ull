@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{lang_t('changepwd.help')}}</strong></td>
+              </tr> 
+              <tr>
+                <td>{{lang_t('changepwd.orig_pass')}}</td>
+                <td>
+                  <input type="text" v-model="formData.origPass" maxlength="32" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('changepwd.new_pass')}}</td>
+                <td>
+                  <input v-model="formData.newPass" maxlength="32" v-pass />
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('changepwd.confirm_pass')}}</td>
+                <td>
+                  <input v-model="formData.confirmPass" maxlength="32" v-pass />
+                </td>
+              </tr>    
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script src="/static/js/base64.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+      formData:{
+        user:'',
+        origPass:'',
+        newPass:'',
+        confirmPass:''
+      } 
+    }
+  },
+  computed:{
+    
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getPasswordCfg(function(data){
+      _this.user = data.admuser;
+    });
+  },
+  methods:{
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if(0 == cs.string(_this.formData.origPass)){
+        errorAlert(_this.lang_t('changepwd.orig_pass') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(1 == cs.string(_this.formData.origPass)){
+        errorAlert(_this.lang_t('changepwd.orig_pass') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(0 == cs.string(_this.formData.newPass)){
+        errorAlert(_this.lang_t('changepwd.new_pass') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(1 == cs.string(_this.formData.newPass)){
+        errorAlert(_this.lang_t('changepwd.new_pass') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(_this.formData.newPass != _this.formData.confirmPass){
+        errorAlert(_this.lang_t('changepwd.msg2'));
+        return false;
+      }
+
+      postVar.admuser = _this.user;
+      postVar.admpass = Base64.encode(_this.formData.newPass);
+      postVar.origPass = Base64.encode(_this.formData.origPass);
+      uiPost.setPasswordCfg(postVar,function(data){
+        if(data.success == true){
+          location.href='/formLogoutAll.htm';
+        }else{
+          errorAlert(_this.lang_t('changepwd.msg1'));
+        }
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

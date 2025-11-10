@@ -1,0 +1,42 @@
+#!/bin/sh
+
+fixed_cfg() {
+
+	LoginPassword=$(uci -c /etc/ -q get product.custom.login_password)
+	[ -z "$LoginPassword" ] && {
+		uci -c /etc/ -q set product.custom.login_password=admin
+	}
+
+	password=$(uci -q get system.main.password)
+	[ -z "$password" ] && {
+		uci set system.main.password=admin
+	}
+	uci -c /etc/ -q commit
+	uci -q commit
+}
+
+
+conf_default() {
+	echo conf_default start >> /tmp/zdbg
+	echo conf_default done >> /tmp/zdbg
+}
+
+# the first boot
+[ -f /etc/config/restoredefault ] && {
+	echo "- defaut config -"  >> /tmp/zdbg
+	conf_default
+
+	#cs_boot remove /etc/config/restoredefault
+}
+
+# each upgrade
+# config restore again, the first is 80_mount_root
+[ -f /tmp/sysupgrade.tgz ] && {
+	echo "- config restore2 -"  >> /tmp/zdbg
+	cd /
+	tar xzf /tmp/sysupgrade.tgz
+	#cs_boot delete /tmp/sysupgrade.tgz
+	sync
+}
+
+exit 0

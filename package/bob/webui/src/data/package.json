@@ -1,0 +1,6 @@
+{
+    "iface": "lan",
+    "interface":"modem",
+    "fileSize": "50",
+    "enable": "1"
+}

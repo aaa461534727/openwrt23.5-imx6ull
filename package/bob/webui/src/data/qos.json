@@ -1,0 +1,7 @@
+{
+    "speedMax":"1000",
+	"upPercent": "30",
+    "downPercent": "30",
+    "totalUp": "40",
+    "totalDown": "200"
+}

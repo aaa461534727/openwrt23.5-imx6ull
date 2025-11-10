@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <form method="post" id="iform">
+        <section class="col-xs-12">
+          <div class="content-box tab-content table-responsive __mb">
+            <table class="table table-striped">
+              <tr>
+                <td><strong>{{lang_t('cloud_man.help')}}</strong></td>
+              </tr> 
+              <tr>
+                <td>
+                  <button class="btn btn-primary all-but" @click.prevent="submit_reboot">{{lang_t('cloud_man.cloud_manage')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </section>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t
+    }
+  },
+  computed: {
+    
+  },
+  created:function(){
+   
+  },
+  methods:{
+    submit_reboot:function(){ 
+      window.open("http://iot.crabox-sys.com/");   
+    }  
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+

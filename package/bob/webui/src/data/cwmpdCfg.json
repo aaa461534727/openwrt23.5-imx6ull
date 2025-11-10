@@ -1,0 +1,15 @@
+
+{
+    "enable": "1",
+    "acsUrl": "https://192.168.7.51:8443/nariacs/acs",
+    "acsUsername": "cwmp",
+    "acsPassword": "cwmp",
+    "periodicEnable": "1",
+    "periodicInterval": "120",
+    "cpeUsername": "admin",
+    "cpePassword": "admin",
+    "port": "1008",
+	"xuJiRouteIp": "192.168.8.1",
+	"xuJiUsername": "admin",
+	"xuJiPassword": "admin"
+}

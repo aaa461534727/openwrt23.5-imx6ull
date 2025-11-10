@@ -1,0 +1,15 @@
+{
+  "enable":"1",
+  "cretIdx":"11",
+  "isRewrite":"1",
+  "country":"CN",
+  "province":"gx",
+  "local":"WZ",
+  "org":"CN",
+  "ou":"gx",
+  "topic":"KKK",
+  "loadCretIdx":"11",
+  "loadCertIdxEnc":"12",
+  "loadRewrite":"1"
+
+}

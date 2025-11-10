@@ -1,0 +1,7 @@
+{
+      "heartCheckEnable":"0",
+      "heartCheckIp":"192.168.3.33",
+      "heartCheckTime":"300",
+      "debugAction":"/cgi-bin/cstecgi.cgi?action=exportInfo&type=ipsec",
+      "debugOption":"dmn 4, mgr 4, ike 4"
+}

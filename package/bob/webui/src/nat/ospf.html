@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('ospf.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('rip.re_direct_route') }}</td>
+                <td>
+                  <input type="checkbox" id="connect_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('rip.re_static_route') }}</td>
+                <td>
+                  <input type="checkbox" id="static_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('rip.re_kernel') }}</td>
+                <td>
+                  <input type="checkbox" id="kernel_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="submit_basic()">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+            <div class="table-phone-width">
+              <table class="table table-striped table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 3%;">ID</th>
+                    <th style="width: 10%;">{{ lang_t('index.type') }}</th>
+                    <th style="width: 24%;">{{ lang_t('index.address') }}</th>
+                    <th style="width: 10%;">{{ lang_t('ospf.area_value') }}</th>
+                    <th style="width: 10%;">{{ lang_t('index.interface') }}</th>
+                    <th style="width: 10%;">{{ lang_t('ospf.interface_attribute') }}</th>
+                    <th style="width: 10%;">{{ lang_t('ospf.cost_value') }}</th>
+                    <th style="width: 15%;">{{ lang_t('ospf.network_type') }}</th>
+                    <th>{{lang_t('common.operation')}}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in ospfData" :key="index" @click="editItem(index,val)">
+                    <td>{{ index+1 }}</td>
+                    <td>
+                      <select v-model="editItemInfo.type" v-if="editIdx == index" @change="SHFun()">
+                        <option value="network">network</option>
+                        <option value="neighbour">neighbour</option>
+                        <option value="interface">interface</option>
+                      </select>
+                      <span v-else>{{ val.type }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input type="text" v-model="editItemInfo.address" ref="addr" />
+                        <span ref="addr_h">--</span>
+                      </div>
+                      <span v-else>{{ get_val('interface' != val.type, val.address) }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <div ref="area">
+                          <input type="text" v-model="editItemInfo.areaNumber" maxlength="5" placeholder="(0-65535)"/>
+                        </div>
+                        <span ref="area_h">--</span>
+                      </div>
+                      <div v-else>{{ get_val('network' == val.type, val.areaNumber) }}</div>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <select v-model="editItemInfo.interface" ref="iface">
+                          <option value="lan">lan</option>
+                          <option value="wan">wan</option>
+                          <option value="modem">modem</option>
+                        </select>
+                        <span ref="iface_h">--</span>
+                      </div>
+                      <div v-else>{{ get_val('interface' == val.type, val.interface) }}</div>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <select v-model="editItemInfo.interfaceType" ref="ifaceT" @change="SHFun()">
+                          <option value="cost">{{ lang_t('ospf.cost_value') }}</option>
+                          <option value="network">{{ lang_t('ospf.network_type') }}</option>
+                        </select>
+                        <span ref="ifaceT_h">--</span>
+                      </div>
+                      <div v-else>{{ get_val('interface' == val.type, val.cost ? lang_t('ospf.cost_value') : lang_t('ospf.network_type')) }}</div>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <div ref="cost">
+                          <input type="text" v-model="editItemInfo.cost" maxlength="5" placeholder="(1-65535)" />
+                        </div>
+                        <span ref="cost_h">--</span>
+                      </div>
+                      <div v-else>{{ get_val('interface' == val.type, val.cost) }}</div>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <select v-model="editItemInfo.networkType" ref="netT">
+                          <option value="broadcast">broadcast</option>
+                          <option value="non-broadcast">non-broadcast</option>
+                          <option value="point-to-multipoint">point-to-multipoint</option>
+                          <option value="point-to-point">point-to-point</option>
+                        </select>
+                        <span ref="netT_h">--</span>
+                      </div>
+                      <div v-else>{{ get_val('interface' == val.type, val.networkType) }}</div>
+                    </td>
+                    <td class="operation">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+
+                  <tr >
+                    <td></td>
+                    <td>
+                      <select v-model="type">
+                        <option value="network">network</option>
+                        <option value="neighbour">neighbour</option>
+                        <option value="interface">interface</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" v-model="address" :placeholder="'network' == type ? lang_t('index.net_addr') : lang_t('index.ip_addr')" v-if="type!='interface'"/>
+                      <span v-else>--</span>
+                    </td>
+                    <td>
+                      <div v-if="type=='network'">
+                        <input type="text" v-model="areaNumber" maxlength="5" placeholder="(0-65535)"/>
+                      </div>
+                      <span v-else>--</span>
+                    </td>
+                    <td>
+                      <select v-model="interface" v-if="type=='interface'">
+                        <option value="lan">lan</option>
+                        <option value="wan">wan</option>
+                        <option value="modem">modem</option>
+                      </select>
+                      <span v-else>--</span>
+                    </td>
+                    <td>
+                      <select v-model="interfaceType" v-if="type=='interface'">
+                        <option value="cost">{{ lang_t('ospf.cost_value') }}</option>
+                        <option value="network">{{ lang_t('ospf.network_type') }}</option>
+                      </select>
+                      <span v-else>--</span>
+                    </td>
+                    <td>
+                      <div v-if="type=='interface' && interfaceType=='cost'">
+                        <input type="text" v-model="cost" maxlength="5" placeholder="(1-65535)"/>
+                      </div>
+                      <span v-else>--</span>
+                    </td>
+                    <td>
+                      <select v-model="networkType" v-if="type=='interface' && interfaceType=='network'">
+                        <option value="broadcast">broadcast</option>
+                        <option value="non-broadcast">non-broadcast</option>
+                        <option value="point-to-multipoint">point-to-multipoint</option>
+                        <option value="point-to-point">point-to-point</option>
+                      </select>
+                      <span v-else>--</span>
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              </div>
+            <table class="table table-striped table-bordered table-hover">
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+               <td colspan="2">
+                 <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                 <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+               </td>
+             </tr>
+           </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      redistributeConnect:false,
+      redistributeStatic:false,
+      redistributeKernel:false,
+      type:"network",
+      address:"",
+      areaNumber:"0",
+      interface:"",
+      interfaceType:"cost",
+      cost:"1",
+      networkType:"broadcast",
+      ospfData:[],
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    this.connectState = addSwitch('#connect_status', function(data){
+      if(data != _this.redistributeConnect) _this.redistributeConnect = data;
+    });
+    this.staticState = addSwitch('#static_status', function(data){
+      if(data != _this.redistributeStatic) _this.redistributeStatic = data;
+    });
+    this.kernelState = addSwitch('#kernel_status', function(data){
+      if(data != _this.redistributeKernel) _this.redistributeKernel = data;
+    });
+    uiPost.getRoutingOspfCfg(function(data){
+      if(data){
+        _this.redistributeConnect = '1' == data.redistributeConnect;
+        _this.connectState(_this.redistributeConnect);
+        _this.redistributeStatic = '1' == data.redistributeStatic;
+        _this.staticState(_this.redistributeStatic);
+        _this.redistributeKernel = '1' == data.redistributeKernel;
+        _this.kernelState(_this.redistributeKernel);
+        if (data.rule)
+          _this.ospfData = data.rule;
+      }
+    });
+  },
+  methods:{
+    get_val: function(c, v) {
+      if (c) {
+        return v || "--";
+      } else {
+        return "--";
+      }
+    },
+    SHFun: function() {
+      var ref = this.$refs;
+      var edit = this.editItemInfo;
+      var show = function(t) {
+        $(ref[t]).show();
+        $(ref[t + "_h"]).hide();
+      };
+      var hide = function(t) {
+        $(ref[t]).hide();
+        $(ref[t + "_h"]).show();
+      };
+      hide("addr");
+      hide("area");
+      hide("iface");
+      hide("ifaceT");
+      hide("cost");
+      hide("netT");
+      if (edit.type == "network") {
+        show("addr");
+        show("area");
+        $(ref.addr).attr("placeholder", lang_t('index.net_addr'));
+      } else if (edit.type == "neighbour") {
+        show("addr");
+        $(ref.addr).attr("placeholder", lang_t('index.ip_addr'));
+      } else {
+        show("iface");
+        show("ifaceT");
+        if (edit.interfaceType == "cost") show("cost");
+        else show("netT");
+        if (!edit.interfaceType) this.$set(edit, "interfaceType", "cost");
+        if (!edit.interface) this.$set(edit, "interface", "lan");
+        if (!edit.networkType) this.$set(edit, "networkType", "broadcast");
+      }
+      
+    },
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.rule = [].concat( this.ospfData );
+      postVar.addEffect = "1";
+      uiPost.setRoutingOspfCfg(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.reload();
+    },
+    modifyRule:function (idx) {
+      if (this.editItemInfo.interfaceType == "network") this.editItemInfo.cost = ""; 
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.ospfData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.ospfData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      if (obj.networkType) this.editItemInfo.interfaceType = "network";
+      else this.editItemInfo.interfaceType = "cost";
+      this.editIdx = index;
+      this.$nextTick(function() {
+        this.SHFun();
+      })
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    veriyfun:function(val, flag) {
+      var _s;
+      if ('network' == val.type) {  // network
+        _s = cs.ip_mark(val.address);
+        if (0 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg5'));
+          return false;
+        } else if(1 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg17'));
+          return false;
+        } else if(2 == _s || 3 == _s || 4 == _s || 5 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg14'));
+          return false;
+        } else if(6 == _s || 7 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('network.mark') + lang_t('alert.msg15',[1, 32]));
+          return false;
+        }
+        
+        if (99 != cs.num_range(val.areaNumber, 0, 65535)) {
+          errorAlert(lang_t('ospf.area_value') + lang_t('alert.msg15',[0, 65535]));
+          return false;
+        } 
+      } else if('neighbour' == val.type) { // neighbour
+        _s = cs.ip(val.address);
+        if (0 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg5'));
+          return false;
+        } else if(99 != _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg14'));
+          return false;
+        }
+      } else {  // interface
+        if (val.cost) {
+          if (99 != cs.num_range(val.cost, 1, 63335)) {
+            errorAlert(lang_t('ospf.cost_value') + lang_t('alert.msg15',[1, 65535]));
+            return false;
+          } 
+        }
+      }  
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.ospfData.length >= 32){
+        errorAlert(lang_t('alert.msg1',[32]));
+        return false;
+      }
+      var temp = {
+        type: this.type
+      };
+      if (this.type == "network") {
+        temp.address = this.address;
+        temp.areaNumber = this.areaNumber;
+      } else if (this.type == "neighbour") {
+        temp.address = this.address;
+      } else {
+        temp.interface = this.interface;
+        if (this.interfaceType == "cost")
+          temp.cost = this.cost;
+        else
+          temp.networkType = this.networkType;
+      }
+      if(!this.veriyfun(temp)) return;
+      this.ospfData.push(temp);      
+      this.type = "network";
+      this.address = "";
+      this.areaNumber = "0";
+      this.interface = "lan";
+      this.cost = "1";
+      this.networkType = "broadcast";
+    },
+    submit_basic:function() {
+      var postVar = {};
+      postVar.setType = "1";
+      postVar.redistributeConnect = this.redistributeConnect ? '1' : '0';
+      postVar.redistributeStatic = this.redistributeStatic ? '1' : '0';
+      postVar.redistributeKernel = this.redistributeKernel ? '1' : '0';
+      uiPost.setBasicRoutingCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

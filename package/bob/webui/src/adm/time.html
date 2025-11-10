@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{lang_t('time.help')}}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t("time.currenttime") }}</td>
+                <td>
+                  <input type="text" format="yyyy-MM-dd HH:mm:ss" :value="date" @on-change="getDate" readonly>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1' && !globalConfig.timingSupport">
+                <td colspan="2">
+                  <button type="primary" @click="submitLocaltime" class="btn btn-primary all-but">{{ lang_t('time.manntpsyncwithhost') }}</button>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.timingSupport">
+                <td>{{ lang_t("time.timing_mode") }}</td>
+                <td>
+                  <select v-model="time_mode" >
+                      <option value="1">{{ lang_t('time.timing_local') }}</option>
+                      <option value="2">{{ lang_t('time.timing_internet') }}</option>
+                      <!--option value="3">{{ lang_t('time.timing_base') }}</option-->
+                      <option value="4">{{ lang_t('time.timing_beidou') }}</option>
+                      <option value="5">{{ lang_t('time.timing_auto') }}</option>
+                    </select>
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t("time.timezone") }}</td>
+                <td>
+                  <select v-model="tz" >
+                      <option value="UTC+12">(UTC-12:00) {{lang_t('time.ntp25')}}</option>
+                      <option value="UTC+11">(UTC-11:00) {{lang_t('time.ntp1')}}</option>
+                      <option value="UTC+10">(UTC-10:00) {{ lang_t('time.ntp2') }}</option>
+                      <option value="UTC+9">(UTC-09:00) {{ lang_t('time.ntp3') }}</option>
+                      <option value="UTC+8">(UTC-08:00) {{ lang_t('time.ntp4') }}</option>
+                      <option value="UTC+7">(UTC-07:00) {{ lang_t('time.ntp5') }}</option>
+                      <option value="UTC+6">(UTC-06:00) {{ lang_t('time.ntp6') }}</option>
+                      <option value="UTC+5">(UTC-05:00) {{ lang_t('time.ntp7') }}</option>
+                      <option value="UTC+4">(UTC-04:00) {{ lang_t('time.ntp8') }}</option>
+                      <option value="UTC+3">(UTC-03:00) {{ lang_t('time.ntp9') }}</option>
+                      <option value="UTC+2">(UTC-02:00) {{ lang_t('time.ntp10') }}</option> 
+                      <option value="UTC+1">(UTC-01:00) {{ lang_t('time.ntp11') }}</option>
+                      <option value="UTC+0">(UTC-00:00) {{ lang_t('time.ntp12') }}</option>
+                      <option value="UTC-1">(UTC+01:00) {{ lang_t('time.ntp13') }}</option>
+                      <option value="UTC-2">(UTC+02:00) {{ lang_t('time.ntp14') }}</option>
+                      <option value="UTC-3">(UTC+03:00) {{ lang_t('time.ntp15') }}</option>
+                      <option value="UTC-4">(UTC+04:00) {{ lang_t('time.ntp16') }}</option>
+                      <option value="UTC-5">(UTC+05:00) {{ lang_t('time.ntp17') }}</option>
+                      <option value="UTC-6">(UTC+06:00) {{ lang_t('time.ntp18') }}</option>
+                      <option value="UTC-7">(UTC+07:00) {{ lang_t('time.ntp19') }}</option>
+                      <option value="UTC-8">(UTC+08:00) {{ lang_t('time.ntp20') }}</option>
+                      <option value="UTC-9">(UTC+09:00) {{ lang_t('time.ntp21') }}</option>
+                      <option value="UTC-10">(UTC+10:00) {{ lang_t('time.ntp22') }}</option>
+                      <option value="UTC-11">(UTC+11:00) {{ lang_t('time.ntp23') }}</option>
+                      <option value="UTC-12">(UTC+12:00) {{ lang_t('time.ntp24') }}</option>
+                    </select>
+                </td>
+              </tr>
+              <tr v-if="!globalConfig.timingSupport">
+                <td>{{ lang_t('time.ntpclientupdate')}}</td>
+                <td >
+                  <input type="checkbox"  v-model="ntpEnabled" checked="checked" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t("time.ntpserver") }} 1</td>
+                <td>
+                  <input type="text" v-model="ntpServerIp1" :disabled="Enabled" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t("time.ntpserver") }} 2</td>
+                <td>
+                  <input type="text" v-model="ntpServerIp2" :disabled="Enabled" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t("time.ntpserver") }} 3</td>
+                <td>
+                  <input type="text" v-model="ntpServerIp3" :disabled="Enabled" />
+                </td>
+              </tr>    
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button type="primary" @click.prevent="handleSubmit" class="btn btn-primary all-but">{{ lang_t("common.apply") }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+        <opnsense-messge ref="Message"></opnsense-messge>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t,
+      date:'',
+      time_mode:'',
+      tz:'',
+      ntpClientEnabled:'',
+      ntpEnabled: false,
+      Enabled: true,
+      ntpServerIp1: '',
+      ntpServerIp2: '',
+      ntpServerIp3: ''
+    }
+  },
+  created:function() {
+  var _this = this;
+  uiPost.getNtpCfg(function(data) {
+    var month=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    for(var j=0; j<12; j++){
+      if(data.currentTime.split(" ")[1] == month[j]){
+      var time = j+1;
+      }
+    }
+    var currtime=data.currentTime.replace(/\s+/g, ' '); 
+    _this.date = currtime.split(" ")[5] +"-"+ time +"-"+ currtime.split(" ")[2]+" "+ currtime.split(" ")[3];
+    var server = data.server.split("*");
+    _this.ntpServerIp1 = server[0];
+    _this.ntpServerIp2 = server[1];
+    _this.ntpServerIp3 = server[2];
+    _this.tz = data.tz;
+    _this.time_mode = data.time_mode;
+    _this.ntpEnabled = data.enable== "1";
+
+    if(data.time_mode == 2){
+      _this.Enabled =false;
+    }else{
+      _this.Enabled =true;
+    }
+  });
+  },
+  methods:{
+    addZero:function(str){
+      if (str < 10) {
+        str = "0" + str;
+      }
+      return str;
+    },
+    handleSubmit: function(name) {
+      var _this = this;
+      if(_this.date == ""){
+        errorAlert(lang_t('time.msg1'));
+        return false;
+      }
+      var v = _this.date.split(" ");
+      /*if (v[0].split("-")[0]<1970 || v[0].split("-")[0]>2038) {
+        errorAlert(lang_t('time.msg2'));
+        return false;
+      }*/
+      var tmp = '';
+      var _s = cs.string(this.ntpServerIp1);
+      if (0 == _s) {
+        errorAlert(lang_t("time.ntpserver") +"1"+ lang_t("alert.msg5"));
+        return false;
+      } else if (1 == _s) {
+        errorAlert(lang_t("time.ntpserver") +"1"+ lang_t("alert.msg19"));
+        return false;
+      } else {
+        tmp = this.ntpServerIp1;
+      }
+
+      _s = cs.string(this.ntpServerIp2);
+      if (0 == _s) {
+        errorAlert(lang_t("time.ntpserver") +"2"+ lang_t("alert.msg5"));
+        return false;
+      } else if (1 == _s) {
+        errorAlert(lang_t("time.ntpserver") +"2"+ lang_t("alert.msg19"));
+        return false;
+      } else {
+        tmp += "*" + this.ntpServerIp2;
+      }
+
+      _s = cs.string(this.ntpServerIp3);
+      if (0 == _s) {
+        errorAlert(lang_t("time.ntpserver") +"3"+ lang_t("alert.msg5"));
+        return false;
+      } else if (1 == _s) {
+        errorAlert(lang_t("time.ntpserver") +"3"+ lang_t("alert.msg19"));
+        return false;
+      } else {
+        tmp += "*" + this.ntpServerIp3;
+      }
+      var postVar = {};
+
+      if(globalConfig.timingSupport)
+      {
+	      if( _this.time_mode=='1' )
+	      {
+          var myDate = new Date();
+          var year = myDate.getFullYear();
+      	  var month = this.addZero(myDate.getMonth() + 1);
+      	  var day = this.addZero(myDate.getDate());
+      	  var hour = this.addZero(myDate.getHours());
+      	  var minute = this.addZero(myDate.getMinutes());
+      	  var second = this.addZero(myDate.getSeconds());
+      	  var currentDate = year + "-" + month + "-" + day +" "+ hour + ":" + minute + ":" + second;
+      	  this.date = currentDate;
+      	  postVar.host_time = this.date;
+	      }
+
+        postVar.time_mode = _this.time_mode;
+
+        if(_this.time_mode == 2){
+          _this.Enabled =false;
+        }else{
+          _this.Enabled =true;
+        }
+
+      }else{
+        postVar.enable = (_this.ntpEnabled) ? '1' : '0';
+      }
+
+      postVar.tz = _this.tz;
+      postVar.server = tmp;
+      uiPost.setNtpCfg(postVar, apply_callback);
+    },
+    getDate:function(val){
+      this.date = val;
+    },
+    submitLocaltime: function() {
+      var myDate = new Date();
+      var year = myDate.getFullYear();
+      var month = this.addZero(myDate.getMonth() + 1);
+      var day = this.addZero(myDate.getDate());
+      var hour = this.addZero(myDate.getHours());
+      var minute = this.addZero(myDate.getMinutes());
+      var second = this.addZero(myDate.getSeconds());
+      var currentDate = year + "-" + month + "-" + day +" "+ hour + ":" + minute + ":" + second;
+      this.date = currentDate;
+      var postVar = {};
+      postVar.host_time = this.date;
+      uiPost.NTPSyncWithHost(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

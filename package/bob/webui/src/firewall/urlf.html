@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('urlf.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td v-if="globalConfig.aiotSupport">
+                  <select v-model="enable" data-style="btn-default" @change="submit_status">
+                    <option value="0">{{ lang_t('common.disabled') }}</option>
+                    <option value="1">{{ lang_t('filter.white_list') }}</option>
+                    <option value="2">{{ lang_t('filter.black_list') }}</option>
+                  </select>
+                </td>
+                <td v-else>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="(!globalConfig.aiotSupport&&enable)||(globalConfig.aiotSupport&&enable != '0')">
+              <thead>
+                <tr><td colspan="6"> {{ lang_t('urlf.urlf_table') }}</td></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>{{lang_t('urlf.url_keyword')}}</th>
+                  <th>{{lang_t('common.operation')}}</th>
+                </tr>
+              </thead>
+             <tbody>
+              <tr v-for="(val,index) in urlfData" :key="index" @click="editItem(index,val)">
+                <td>{{index+1}}</td>
+                <td>
+                  <div v-if="editIdx == index">
+                    <input type="text" v-model="editItemInfo.url" maxlength="40" />
+                  </div>
+                  <span v-else>{{val.url}}</span>
+                </td>
+                <td class="operation">
+                  <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                  <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                  <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>
+                  <input type="text" v-model="url" maxlength="40" />
+                </td>
+                <td class="operation">
+                  <a @click="addRule">{{ lang_t('common.add') }}</a>
+                </td>
+              </tr>
+            </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="(!globalConfig.aiotSupport&&enable)||(globalConfig.aiotSupport&&enable != '0')">
+               <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+    lang: $.lang,
+      lang_t:lang_t,
+      enable:"",
+      url:'',
+      urlfData:[],
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enable);
+    },
+  },
+  created:function() {
+    var _this = this;
+    var postVar = {};
+    uiPost.getUrlFilterRules(postVar,function(data){
+
+      if(_this.globalConfig.aiotSupport){
+         _this.enable = data.enable;
+      }else {
+         _this.enable = data.enable == "1" ?true :false;
+      }
+
+
+      if(data.rule){
+        _this.urlfData = data.rule;
+      }
+    });
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if (data != _this.enable) {
+        _this.enable = data;
+        _this.submit_status();
+      }
+    });
+  },
+  methods:{
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.subnet = [].concat( this.urlfData );
+      postVar.addEffect = "1";
+      uiPost.setUrlFilterRules(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.urlfData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.urlfData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    submit_status:function(){
+      if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar ={};
+      postVar.addEffect = "0";
+      if(_this.globalConfig.aiotSupport){
+        postVar.enable = _this.enable;
+      }else{
+        postVar.enable = _this.enable ? "1" : "0";
+      }
+
+      uiPost.setUrlFilterRules(postVar, apply_callback);
+    },
+    veriyfun:function(val, flag) {
+      val = val.url;
+      var _this = this, _s = cs.string(val);
+      if(_s == 0){
+        Cstools.msg({
+          content: this.lang_t('urlf.msg1'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+      }
+      if(1 == _s){
+        Cstools.msg({
+          content: this.lang_t('urlf.msg2'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+      }
+
+      for(var i=0; i<_this.urlfData.length; i++) {
+        if(flag != undefined && i == flag) continue;
+        if(val.toUpperCase() == _this.urlfData[i].url.toUpperCase()) {
+          Cstools.msg({
+            content: this.lang_t('urlf.msg3'),
+            type: 'error',
+            messgetype: 'alert'
+          });
+          return false;
+        }
+      }
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.urlfData.length >= 32){
+        Cstools.msg({
+          content: this.lang_t('urlf.msg4'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+      }
+      var temp = {
+        url: this.url
+      };
+      if(!this.veriyfun(temp)) return;
+      this.urlfData.push(temp);
+      this.url = "";
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

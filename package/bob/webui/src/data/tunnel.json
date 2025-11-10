@@ -1,0 +1,25 @@
+{
+    "rule": [
+        {
+            "idx": 1,
+            "enabled": "1",
+            "name": "888",
+            "mode": "ipip",
+            "localVirtualIp": "10.1.1.1",
+            "peerVirtualIp": "10.1.1.2",
+            "peerExternIp": "192.168.30.211",
+            "interfaceType": "interface",
+            "localInterface": "wan"
+        }, {
+            "idx": 2,
+            "enabled": "1",
+            "name": "777",
+            "mode": "gre",
+            "localVirtualIp": "10.3.1.1",
+            "peerVirtualIp": "10.3.1.2",
+            "peerExternIp": "192.168.30.211",
+            "interfaceType": "staticIp",
+            "localExternIp": "192.168.30.241"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+#!/bin/sh 
+
+sleep 8
+
+find_modem_id()
+{
+	for file in /sys/bus/usb/devices/*
+	do
+		if [ ! -f $file/idProduct ]; then
+			continue
+		fi
+		idProduct=$(cat $file/idProduct)
+		idVendor=$(cat $file/idVendor)
+		if [ "$idProduct" = "$1" -a "$idVendor" = "$2" ];then
+			echo $(basename $file)
+			break;
+		fi
+	done
+}
+
+gd212_pid=$(lsusb | grep 19d2:0579 | wc -l)
+gd212_ecm=$(dmesg | grep "Ethernet Device" | wc -l)
+if [ $gd212_pid -ge 0 -a $gd212_ecm -eq 0 ]; then
+	usb_path=$(find_modem_id 0579 19d2)
+	tty_name=$(ls /sys/bus/usb/devices/$usb_path:1.2/ | grep ttyUSB)
+	if [ -d /sys/bus/usb/devices/$usb_path:1.2/$tty_name ];then
+		echo "- gd212 usb modem is rndis,  fix it !!! -" >> /tmp/zdbg
+		echo "- gd212 usb modem tty path:/sys/bus/usb/devices/$usb_path:1.2/$tty_name !!! -" >> /tmp/zdbg
+		cli_atc AT+ZNETCARDTYPE=1 /dev/$tty_name >> /tmp/zdbg
+		cli_atc AT+ZNETCARDTYPE=1 /dev/$tty_name >> /tmp/zdbg
+		sleep 1
+		cs modem power 0
+		sleep 1
+		cs modem power 1
+	fi
+fi
+
+cs modem power 1

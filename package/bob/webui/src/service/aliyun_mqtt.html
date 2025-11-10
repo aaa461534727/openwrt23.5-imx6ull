@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{  lang_t('aliyun.help') }}</strong></td>
+              </tr>         
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td style="width: 25%;">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+             
+             <tbody>
+              <tr v-show="enabled">
+                <td>{{ lang_t('aliyun.serverHost') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.serverHost" maxlength="128">
+                </td>
+              </tr>
+              
+              <tr v-show="enabled">
+                <td>{{ lang_t('aliyun.productKey') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.productKey" maxlength="128">
+                </td>
+              </tr>
+
+              <tr v-show="enabled">
+                <td>{{ lang_t('aliyun.deviceName') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.deviceName" maxlength="128">
+                </td>
+              </tr>
+
+               <tr v-show="enabled">
+                <td>{{ lang_t('aliyun.deviceSecret') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.deviceSecret" maxlength="128">
+                </td>
+              </tr>             
+
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.status') }}</td>
+                <td>
+                 <span  v-if="connStatus == 0"><span style="color:#fff;background-color:#e19641;">{{ lang_t('aliyun.no_conn') }}</span></span>
+                  <span  v-if="connStatus == 1"><span style="color:#fff;background-color:#e14141;">{{ lang_t('aliyun.conn_ing') }}</span></span>
+                  <span  v-if="connStatus == 2"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('aliyun.conn_fail') }}</span></span>
+                  <span  v-if="connStatus == 3"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('aliyun.conn_success') }}</span></span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+           
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      enabled:false,
+      formValidate: {
+        serverHost:'',
+        productKey : '',
+        deviceName:'',
+        deviceSecret:'',
+      },
+	    connStatus:'0'
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getAliyunInfo(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.serverHost = data.serverHost;
+	    _this.formValidate.productKey = data.productKey;
+      _this.formValidate.deviceName = data.deviceName;
+      _this.formValidate.deviceSecret = data.deviceSecret;
+    });
+    _this.getAliyunStatus();
+      _this.percentTimer = setInterval(function(){
+        if(_this.connStatus == 2 || _this.connStatus == 3 || _this.enabled == false)
+          clearInterval(_this.percentTimer);
+        _this.getAliyunStatus();
+      },5000);
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){        
+        postVar.enabled = "0";
+        uiPost.setAliyunInfo(postVar, apply_callback);
+      }      
+    },
+    getAliyunStatus:function(){
+      var _this = this;
+      uiPost.getAliyunStateCfg(function(data){
+        _this.connStatus = data.connStatus;
+      });    
+    },
+
+    handleSubmit: function(){
+      var _this = this;
+      var postVar = {};
+        if(_this.formValidate.serverHost == ""){
+          errorAlert(lang_t('aliyun.serverHost') + lang_t('alert.msg5'));
+          return false;
+        }
+        if(_this.formValidate.productKey == ""){
+          errorAlert(lang_t('aliyun.productKey') + lang_t('alert.msg5'));
+          return false;
+        }
+         if(_this.formValidate.deviceName == ""){
+          errorAlert(lang_t('aliyun.deviceName') + lang_t('alert.msg5'));
+          return false;
+        }
+        if(_this.formValidate.deviceSecret == ""){
+          errorAlert(lang_t('aliyun.deviceSecret') + lang_t('alert.msg5'));
+          return false;
+        }     
+      postVar.enabled = "1";
+			postVar.serverHost = _this.formValidate.serverHost;
+			postVar.productKey = _this.formValidate.productKey;
+			postVar.deviceName = _this.formValidate.deviceName;
+			postVar.deviceSecret = _this.formValidate.deviceSecret;
+      uiPost.setAliyunInfo(postVar, apply_callback)
+    }   
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

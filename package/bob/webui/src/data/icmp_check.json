@@ -1,0 +1,26 @@
+[
+  {
+    "idx":"1",
+	"enabled":"1",
+	"name":"22",
+	"type":"ipip",
+	"dstAddress":"114.114.114.114",
+	"dstBackup":"",
+	"interval":"20",
+	"retryTimes":"3",
+    "sourceInterface":"eth0",
+	"timeoutAction":"reboot"
+  },
+  {
+    "idx":"2",
+    "enabled":"1",
+    "name":"33",
+	"type":"domain",
+	"dstAddress":"www.qq.com",
+	"dstBackup":"",
+	"interval":"20",
+    "retryTimes":"3",
+	"sourceInterface":"modem",
+	"timeoutAction":"modem-reset"
+  }
+]

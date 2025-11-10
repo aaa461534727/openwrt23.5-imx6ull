@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('find_package.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td style="width: 30%;">{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.interface') }}</td>
+                <td style="display: flex; align-items: center;">
+                  <select v-model="iface">
+                    <option v-for="(item, index) in ifnamelist" :key="index" :value="item.value">{{ item.lable }}</option>
+                  </select>
+                  <span>{{ lang_t('find_package.describe') }}</span>
+                </td>
+              </tr>
+              <tr  v-show="enabled">
+                <td>{{ lang_t('find_package.fize_size') }}</td>
+                <td>
+                  <input type="text" v-model="fileSize" /><span>(30-1024KB)</span>
+                </td>
+              </tr>
+              <tr  v-show="enabled">
+                <td>{{ lang_t('find_package.status') }}</td>
+                <td>
+                  {{statusMsg}}
+                </td>
+              </tr>
+              <tr  v-show="enabled && globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">                 
+                  <button class="btn btn-primary all-but" @click="submit_save">{{ lang_t('find_package.out') }}</button>&nbsp;&nbsp;
+                  <button class="btn btn-primary all-but" @click="submit_apply">{{ lang_t('common.apply') }}</button>&nbsp;&nbsp; 
+                </td>
+              </tr>
+             
+            </table>
+          </div>
+        </div>
+      </section>
+      <div style="display: none;">
+        <form ref="save" class="form-horizontal" method="post" :action="saveAction"></form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      enabled:'',
+      fileSize:'',
+      status:'',
+      iface:'',
+      ifaceSupport:'',
+      IntervalTimeout:'',
+      firstFlag:1,
+      ifnamelist: [],
+      saveAction:'/cgi-bin/DataPacket.pcap'
+    }
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);   
+    },
+    statusMsg:function(){
+      var _this = this;
+      if (_this.status == 'start') {
+         return _this.lang_t('find_package.start');
+      } else if (_this.status == 'ing') {
+        return _this.lang_t('find_package.ing');
+      } else if (_this.status == 'end') {
+        return _this.lang_t('find_package.end');
+      } else if (_this.status == 'ifaceError') {
+        return _this.lang_t('find_package.ifaceError');
+      }   
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if(_this.enabled == false && data){//启用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+      if(_this.enabled && data == false){//禁用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    })
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getTcpdumpPackCfg(function(data) {
+      _this.ifaceSupport = data.interface;
+      _this.enabled = data.enable == '1' ? true : false;
+      _this.iface = data.iface ;
+      _this.fileSize = data.fileSize ;
+      _this.ifnamelist = data.ifname_list;
+    });
+    _this.getStatus();
+    _this.IntervalTimeout=setInterval(function(){
+      _this.getStatus();
+    },3000);
+  },
+  methods:{
+    getStatus:function(){
+      var _this = this;
+      if (!_this.enabled) return;
+      if (_this.status =='end') {
+        clearInterval(IntervalTimeout);
+      }
+      uiPost.getTcpdumpPackStatus(function(data) {
+        _this.status =data.status;
+      })
+       
+    },
+    submit_status:function(){
+       if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";        
+        uiPost.setTcpdumpPackCfg(postVar, apply_callback);
+      }       
+    },
+    submit_apply:function(){
+      var _this = this;
+      if(99 != cs.num_range(_this.fileSize,30,1024)){
+        errorAlert(_this.lang_t('find_package.fize_size') + _this.lang_t('alert.msg15',[30,1024]));
+        return false;
+      }
+      var _this = this;
+      var postVar = {};
+      postVar.enabled = "1";
+      postVar.iface = _this.iface ;
+      postVar.fileSize = _this.fileSize ;
+      uiPost.setTcpdumpPackCfg(postVar, apply_callback);     
+    },
+    submit_save:function(){
+      this.$refs.save.submit();
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

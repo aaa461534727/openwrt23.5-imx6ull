@@ -1,0 +1,23 @@
+{
+
+  "ddnsEnabled": "0",
+  "ddnsStatus": "2",
+  "iptvEnabled":  "0",
+  "ipv6Enabled":  "0",
+  "ssClientConnect":  "0",
+  "l2tpServerEnabled":  "0",
+  "pptpServerEnabled":  "0",
+  "l2tpClientEnabled":  "0",
+  "pptpClientEnabled":  "1",
+  "l2tpClientConnect":  "1",
+  "pptpClientConnect":  "2",
+  "openvpnServerEnabled": "1",
+  "openvpnClientEnabled": "1",
+  "openvpnClientConnect": "1",
+  "ipsecEnabled":"1",
+  "ipsecConnect":"1",
+  "l2tpClientIp":"0.1.0.2",
+  "ipsecIp":"5.5.68.3",
+  "pptpClientIp":"8.20.36.3",
+  "openvpnClientIp":"0.0.0.0"
+}

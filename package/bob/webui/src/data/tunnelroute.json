@@ -1,0 +1,21 @@
+{
+    "rule": [
+        {
+            "idx": 1,
+            "routeEnabled": "1",
+            "tunnelName": "888",
+            "ip": "10.1.1.1",
+            "virtualIp": "10.1.1.22",
+            "mask": "255.255.255.0",
+            "desc": "10.1.1.2"
+        }, {
+            "idx": 2,
+            "routeEnabled": "1",
+            "tunnelName": "888",
+            "ip": "10.1.1.1",
+            "virtualIp": "10.1.1.22",
+            "mask": "255.255.255.0",
+            "desc": "10.1.1.2"
+        }
+    ]
+}

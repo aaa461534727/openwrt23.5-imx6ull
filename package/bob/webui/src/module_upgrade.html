@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+<div class="container">
+  <div id="main">
+    <div class="row" v-cloak>
+		<br><br><br>
+      <main class="login-modal-container">
+          <h1 style="color: rgba(0, 0, 0, 0.98);text-align: center">模组升级</h1>
+	    <div class="login-modal-content" style="padding: 0px 20px 20px 20px;">
+        <table class="table">
+        <tr>
+          <td style="width: 40%;">开关</td>
+          <td>
+          <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+          </td>
+        </tr>
+        <tr v-show="enable">
+          <td>当前模组版本</td>
+          <td>
+            <span>{{moduleVer}}</span>
+          </td>
+        </tr>
+        <tr v-show="enable">
+          <td>IP</td>
+          <td>
+            <input style="max-width: 150px;" type="text" v-model="ip" :disabled="!enable">
+          </td>
+        </tr>
+        <tr v-show="upgradeStatus&&enable">
+          <td>模组升级状态</td>
+          <td>
+            <span>{{upgradeStatus}}</span>
+          </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>
+            <button type="button" class="btn btn-primary all-but" @click="upgrade()" >升级</button>
+          </td>
+        </tr>
+      </table>
+      </div>
+	  </main>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+  var cs_main = {
+    template: '#main',
+    data:function() {
+      return {
+        globalConfig: globalConfig,
+        lang: $.lang,
+        lang_t: lang_t,
+        enable: false,
+        ip: '',
+        moduleVer: '',
+        status: ''
+      }
+    },
+    computed: {
+      upgradeStatus: function() {
+        var s = {
+          file_error: "升级文件错误",
+          upgrade_error: "升级失败",
+          upgrade_success: "升级成功",
+          upgrade_underway: "升级中"
+        };
+        return s[this.status] || ""
+      },
+      toggle_status:function() {
+        var _this = this;
+        $('#switch_status').bootstrapSwitch('state',_this.enable);
+      }
+    },
+    mounted:function(){
+      var _this = this;
+      addSwitch('#switch_status', function(data){
+        _this.enable = data;
+      })
+    },
+    created:function(){
+      var that = this;
+      this.$root.$children[0].disLogin = false;
+      this.$root.$children[0].langShow = false;
+      uiPost.getModuleUpgradeCfg(function(data){
+        that.enable = data.enable == "1";
+        that.ip = data.ip;
+        that.moduleVer = data.moduleVer;
+        that.getStatus(1);
+      })
+    },
+    methods: {
+      getStatus: function(type) {
+        var that = this;
+        uiPost.getModuleUpgradeStatus(function(data) {
+          switch(data.status) {
+            case "idle":
+              data.status = ""
+            case "file_error":
+            case "upgrade_error":
+            case "upgrade_success":
+              clearInterval(that.timeout)
+              break;
+            case "upgrade_underway":
+              if (type) {
+                that.loopCheck();
+              }
+          }
+          that.status = data.status;
+        })
+      },
+      loopCheck: function() {
+        var that = this;
+        that.getStatus();
+        that.timeout = setInterval(function() {
+          that.getStatus();
+        }, 3000)
+      },
+      upgrade: function(state) {
+        var postVar = {}, that = this;
+        clearInterval(that.timeout)
+        postVar.enable= this.enable ? "1" : "0";
+        if(this.enable)
+        postVar.ip= this.ip;
+        uiPost.setModuleUpgradeCfg(postVar, function(data) {
+          that.enable && that.loopCheck();
+        })
+      }
+    }
+  };
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

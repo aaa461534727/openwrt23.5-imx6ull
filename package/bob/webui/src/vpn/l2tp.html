@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+           <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{ l2tpMode == '0' ? lang_t('l2tp_server.help') : lang_t('wan.l2tp') }}</strong></td>
+            </tr>
+            <!--<tr v-if="globalConfig.vpnFunIsL2pptps">
+              <td style="width: 20%;">L2TP</td>
+              <td>
+                <select v-model="l2tpMode">
+                  <option value="0">{{lang_t('common.disabled')}}</option>
+                  <option value="1">{{lang_t('l2tp_server.server')}}</option>
+                  <option value="2">{{lang_t('l2tp_server.client')}}</option>
+                </select>
+              </td>
+            </tr>
+            <tr v-else>
+            <tr>
+              <td colspan="2">
+                <div>
+                  <span v-show="l2tpServerShow">
+                    <input type="radio" value="0" name="mode" v-model="l2tpMode"> {{lang_t('l2tp_server.server')}}&nbsp;&nbsp;&nbsp;&nbsp;
+                  </span>
+                  <span v-show="l2tpClientShow">
+                    <input type="radio" value="1" name="mode" v-model="l2tpMode"> {{lang_t('l2tp_server.client')}} 
+                  </span>
+                </div>
+              </td>
+            </tr>    -->     
+           </table>
+
+           <!--<div v-if="globalConfig.vpnFunIsL2pptps">
+              <table class="table table-striped" v-show="l2tpMode == 1">
+                <tr>
+                  <td style="width: 20%;">{{lang_t('node_info.net_id')}}</td>
+                  <td>
+                    <input type="text" maxlength="10" v-model="l2tpsSr.netId" readonly="readonly">
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('net_strategy.net_pwd') }}</td>
+                  <td>
+                    <input type="text"  maxlength="32" v-model="l2tpsSr.password">
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('wan.status')}}</td>
+                  <td>
+                    {{
+                      l2tpsSr.connect == '0' ? lang_t('status.link_server') 
+                        : l2tpsSr.connect == '1' ? lang_t('status.nolink_server')
+                        : l2tpsSr.connect == '2' ? lang_t('status.nolink_net') 
+                        : l2tpsSr.connect == '3' ? lang_t('status.link_server_fail') : ''
+                    }}
+                  </td>
+                </tr>
+              </table>
+
+              <table class="table table-striped" v-show="l2tpMode == 2">
+                <tr>
+                  <td style="width: 20%;">{{ lang_t('wan.status') }}</td>
+                  <td>
+                    <span>L2TP</span>
+                    <span style="color:#fff;background-color:#3399ff;" v-if="l2tpsCt.connect == 1">{{ lang_t('wan.connected') }}</span>
+                    <span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('wan.disconnected') }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('node_info.net_id')}}</td>
+                  <td>
+                    <input type="text" maxlength="10" v-model="l2tpsCt.netId">
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('net_strategy.net_pwd') }}</td>
+                  <td>
+                    <input type="text"  maxlength="32" v-model="l2tpsCt.password">
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('net_strategy.my_ip')}}</td>
+                  <td>{{l2tpsCt.addr}}</td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('account.mapping')}}</td>
+                  <td>
+                    <input type="text" v-model="l2tpsCt.dmzIp">
+                  </td>
+                </tr>
+              </table>
+
+              <table class="table table-striped">
+                <tr>
+                  <td colspan="2">
+                    <button type="button" class="btn btn-primary all-but" @click="submitSimplify()">{{lang_t('common.apply')}}</button>
+                  </td>
+                </tr>
+              </table>
+           </div>
+           <div v-else>-->
+           <div>
+            <table class="table table-striped" v-show="l2tpMode==0 && l2tpServerShow">
+              <tr>
+               <td style="width: 20%">{{ lang_t('common.state') }}</td>
+               <td>
+                 <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none" >
+               </td>
+             </tr>
+             <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.server_addr')}}</td>
+                <td>
+                  <input type="text" v-model="forms.serverAddr">
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.ip_start')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipStart" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.ip_end')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipEnd" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.pri_dns')}}</td>
+                <td>
+                  <input type="text" v-model="forms.priDns" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.sec_dns')}}</td>
+                <td>
+                  <input type="text"  v-model="forms.secDns" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-if="forms.status">
+                <td>{{ lang_t('account.ip_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.ipMasq">
+                </td>
+              </tr>
+              <tr v-if="forms.status">
+                <td>{{ lang_t('account.lan_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.lanMasq">
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.server_mtu')}}</td>
+                <td>
+                  <input type="text"  v-model="forms.servermtu" maxlength="32" />
+                  <span>(1400~1500)</span>
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.server_mru')}}</td>
+                <td>
+                  <input type="text"  v-model="forms.servermru" maxlength="32" />
+                  <span>(1400~1500)</span>
+                </td>
+              </tr>
+             <tr v-show="forms.status">
+                <td>{{lang_t('wan.tunnel_secret')}}</td>
+                <td>
+                  <input type="text" v-model="forms.tunnelSecret" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+             <tr v-show="forms.status">
+                <td>{{lang_t('wan.local_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localHostname" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('wan.remote_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.remoteHostname" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.allows_ip')}}</td>
+                <td>
+                  <input type="checkbox"  v-model="forms.allowsSpecifyIp" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit(0)">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+            <table class="table table-striped" v-show="l2tpMode == 1 && l2tpClientShow">
+             <tr>
+                <td style="width: 20%">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_client" :checked="toggle_status" data-on-color="warning" style="display: none" >
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{ lang_t('wan.status') }}</td>
+                <td>
+                  <span>L2TP</span>
+                  <span style="color:#fff;background-color:#3399ff;" v-if="l2tpConnect == 1">{{ lang_t('wan.connected') }}</span>
+                  <span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('wan.disconnected') }}</span>
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.server_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.l2tpServerIp" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.user')}}</td>
+                <td>
+                  <input type="text" v-model="forms.l2tpUser" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.pass')}}</td>
+                <td>
+                  <input type="text" v-model="forms.l2tpPass" maxlength="32" v-pass/>
+                </td>
+              </tr>
+            <!--
+             <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.local_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localIp" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+             <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.tunnel_secret')}}</td>
+                <td>
+                  <input type="text" v-model="forms.tunnelSecret" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+             <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.local_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localHostname" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('wan.remote_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.remoteHostname" maxlength="32" />
+                  <span>({{ lang_t('wan.can_be_null') }})</span>
+                </td>
+              </tr>
+            
+              <tr v-show="forms.l2tpEnable">
+                <td>{{ lang_t('wan.df_router') }}</td>
+                <td>
+                    <select v-model="dfRouter">
+                      <option value="0">{{ lang_t('common.off') }}</option>
+                      <option value="1">{{ lang_t('common.on') }}</option>
+                    </select>
+                </td>
+              </tr>
+            -->  
+              <tr v-if="forms.l2tpEnable">
+                <td>{{ lang_t('account.ip_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.clientipMask">
+                </td>
+              </tr>
+            <!--
+              <tr v-if="forms.l2tpEnable">
+                <td>{{ lang_t('account.lan_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.clientlanMasq">
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{ lang_t('account.bind_export') }}</td>
+                <td>
+                  <select v-model="forms.bindExport" style="display: inline-block;">
+                    <option value="NOT">{{ lang_t('account.unbound') }}</option>
+                    <option v-for="data in exportOption" :value="data.value" :key="data.value">{{data.name}}</option>
+                    <option value="CUSTOM">{{ lang_t('account.custom') }}</option>
+                  </select>
+                  <input type="text" v-model="customExport" v-if="forms.bindExport=='CUSTOM'" style="display: inline-block;width: 110px;" maxlength="15">
+                </td>
+              </tr>
+            -->
+              <tr v-show="forms.l2tpEnable">
+                <td colspan="2">
+                  <add-subnet ref="mysubnet" :label="lang_t('l2tp_server.custo_route')" :subnet="subnetInitial"></add-subnet>
+                </td>
+              </tr>
+              <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('l2tp_server.my_ip')}}</td>
+                <td>{{l2tpClientAddr}}</td>
+              </tr>
+            <!--
+              <tr v-show="forms.l2tpEnable">
+                <td>{{lang_t('account.mapping')}}</td>
+                <td>
+                  <input type="text" v-model="mapping"> -->
+                  <!-- <div>
+                    <input type="checkbox" @change="useIpFun">
+                    <span>{{ lang_t('wan.ip') + ': ' + l2tpClientAddr }}</span>
+                  </div> -->
+                <!--</td>
+              </tr>-->
+            
+              <tr v-show="forms.l2tpEnable">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit(1)">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+           </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      tabsParam:['l2tp_server.server','l2tp_server.client'],
+      l2tpMode:0,//默认第一个tab为激活状态
+      lang: $.lang,
+      lang_t: lang_t,
+      l2tpServerShow:false,
+      l2tpClientShow:true,
+      forms: {
+        status: '',
+        InitialStatusVal:false,
+        ipStart:'',
+        ipEnd:'',
+        serverAddr:'',
+        priDns:'',
+        secDns:'',
+        servermtu:'',
+        servermru:'',
+        ipMasq: false,
+        lanMasq: false,
+        //client
+        l2tpEnable:false,
+        l2tpInitialEnableVal:false,
+        l2tpServerIp:'',
+        l2tpUser:'',
+        l2tpPass:'',
+        localIp:'',
+        tunnelSecret:'',
+        localHostname:'',
+        remoteHostname:'',
+        allowsSpecifyIp: false,
+        clientipMask: false,
+        clientlanMasq: false,
+        bindExport: ''
+      },
+      mapping: '',
+      vpnType:'',
+      l2tpConnect:'',
+      l2tpClientAddr:'',
+      percent:0,
+      dfRouter: '0',
+      isslect: false,
+      refreshFlag:false,
+      customExport: '',
+      l2tpsSr: {
+        netId: '',
+        password: '',
+        connect: ''
+      },
+      l2tpsCt: {
+        netId: '',
+        password: '',
+        connect: '',
+        dmzIp: '',
+        addr: ''
+      },
+      subnetInitial: []
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.forms.status);
+      $('#switch_client').bootstrapSwitch('state',_this.forms.l2tpEnable);
+    },
+    maskOption:function(){
+      return cs.maskOption();
+    },
+    exportOption: function() {
+      var op = [];
+      if (globalConfig.multiWanSupport) {
+        for (var i = 1; i <= Number(globalConfig.wanNum); i++) {
+          op.push(
+            {
+              name: "WAN" + i,
+              value: "WAN" + i
+            }
+          )
+        }
+        for (var i = 1; i <= Number(globalConfig.lanNum); i++) {
+          op.push(
+            {
+              name: "LAN" + i,
+              value: "LAN" + i
+            }
+          )
+        }
+      } else {
+        op = [
+          {
+            value: "WAN",
+            name: "WAN"
+          }, {
+            value: "LAN",
+            name: "LAN"
+          }
+        ]
+      }
+      op.push(
+        {
+          name: "MODEM",
+          value: "MODEM"
+        }
+      )
+      return op;
+    }
+  },
+    created:function() {
+      var l2tpMode = cs.local(this.l2tpMode);
+      if (l2tpMode != '') {
+          this.refreshFlag = true;
+          this.l2tpMode = l2tpMode;
+      }
+      if (this.l2tpServerShow) {
+          this.l2tpServerInit();
+      } else {
+          this.l2tpMode = '1';
+      }
+      if (this.l2tpClientShow) {
+        this.l2tpClientInit();
+      }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if(_this.forms.status == false && data){
+        _this.forms.status = data;
+        _this.submit_server();
+      }
+      if(_this.forms.status && data == false){
+        _this.forms.status = data;
+        _this.submit_server();
+      }
+    });
+    addSwitch('#switch_client', function(data) {
+      if(_this.forms.l2tpEnable == false && data){
+        _this.forms.l2tpEnable = data;
+        _this.submit_client();
+      }
+      if(_this.forms.l2tpEnable && data == false){
+        _this.forms.l2tpEnable = data;
+        _this.submit_client();
+      }
+    });
+  },
+  methods:{
+    useIpFun: function(e) {
+      this.mapping = (e.target.checked ? this.l2tpClientAddr : this.tempdata.mapping) || '';
+    },
+    toggleTabs:function(index){
+      this.l2tpMode=index;
+    },
+    getL2tps: function() {
+      var that = this;
+      uiPost.getL2tpSimplifyCfg(function(data) {
+        that.l2tpMode = data.vpnType;
+        $.extend(that.l2tpsSr, data.server)
+        $.extend(that.l2tpsCt, data.client)
+      })
+    },
+    l2tpServerInit:function(){
+        var _this = this;
+        uiPost.getL2tpServerCfg(function(data) {
+          _this.forms.status = data.enable == "1" ?true :false;
+          _this.modeSelect(_this.forms.status,'server');
+          _this.forms.InitialStatusVal = data.enable == "1" ?true :false;
+          _this.forms.ipStart = data.sip;
+          _this.forms.ipEnd = data.eip;
+          _this.forms.serverAddr = data.serverip;
+          _this.forms.priDns = data.priDns;
+          _this.forms.secDns = data.secDns;
+          _this.forms.servermtu = data.mtu;
+          _this.forms.servermru = data.mru;
+          _this.forms.tunnelSecret = data.tunnelSecret;
+          _this.forms.localHostname = data.localHostname;
+          _this.forms.remoteHostname = data.remoteHostname;
+          _this.forms.allowsSpecifyIp = data.allowsSpecifyIp == "1" ? true : false;
+          _this.forms.ipMasq = data.ipMasq == '1';
+          _this.forms.lanMasq = data.lanMasq == '1';
+        });
+      },
+    l2tpClientInit:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.vpnType = "1";//1:l2tp，2：pptp
+      uiPost.getL2tpClientCfg(postVar,function(data) {
+        _this.tempdata = data;
+        _this.forms.l2tpEnable = data.enablec == "1" ? true : false;
+        _this.modeSelect(_this.forms.enablec,'client');
+        _this.forms.l2tpInitialEnableVal = data.enablec == "1" ? true : false;
+        _this.l2tpConnect = data.connect;
+        _this.forms.l2tpServerIp = data.serverip;
+        _this.forms.l2tpUser = data.user;
+        _this.forms.l2tpPass = data.pass;
+        _this.dfRouter = data.defr;
+        _this.l2tpClientAddr = data.addr;
+        _this.forms.localIp = data.localIp;
+        _this.forms.tunnelSecret = data.tunnelSecret;
+        _this.forms.localHostname = data.localHostname;
+        _this.forms.remoteHostname = data.remoteHostname;
+        _this.mapping = data.mapping;
+        _this.forms.clientipMask = data.ipMasq == '1';
+        _this.forms.clientlanMasq = data.lanMasq == '1';
+        if (data.subnet && data.subnet.length != 0) {
+          _this.subnetInitial = data.subnet;
+        }
+        if (!data.bindExport) {
+          _this.forms.bindExport = "NOT";
+        } else if (/^#/.test(data.bindExport)) {
+          _this.forms.bindExport = "CUSTOM";
+          _this.customExport = data.bindExport.replace(/^#/, '');
+        } else {
+          _this.forms.bindExport = data.bindExport;
+        }
+      });
+    },
+    modeSelect:function(flag,type){
+      if(!this.refreshFlag){
+          if(type == 'server'){
+            if(flag){
+              this.l2tpMode = '0';
+              this.isslect = true;
+            }
+          }else{
+            if(!this.isslect){
+              if(flag)
+                this.l2tpMode = '1';
+            }
+          }
+      }
+    },
+    submit_server:function(){
+      var _this = this
+      var postVar = {};
+      if(_this.forms.status == false && (_this.forms.status != _this.forms.InitialStatusVal )){
+        _this.handleSubmit(0);
+      }
+    },
+    submit_client:function(){
+      var _this = this
+      var postVar = {};
+      if(_this.forms.l2tpEnable == false && (_this.forms.l2tpEnable != _this.forms.l2tpInitialEnableVal)){
+        _this.handleSubmit(1);
+      }
+    },
+    submitSimplify: function() {
+      var postVar = {
+        vpnType: this.l2tpMode
+      }
+      if (this.l2tpMode != 0) {
+        $.extend(postVar, this.l2tpMode == '1' ? this.l2tpsSr : this.l2tpsCt)
+        if (!/^[0-9a-fA-F]{10}$/.test(postVar.netId)) {
+          this.errorTips(lang_t('net_strategy.msg6'));
+        }
+        if (!/^[0-9a-zA-Z]{4,32}$/.test(postVar.password)) {
+            this.errorTips(lang_t('net_strategy.msg7'));
+        }
+        if (this.l2tpMode == '2' && postVar.dmzIp && postVar.dmzIp != '0.0.0.0') {
+          if (cs.ip(postVar.dmzIp) != 99) {
+            this.errorTips(lang_t('account.mapping') + lang_t('ipv6.msg2'));
+          }
+        }
+      }
+      
+      uiPost.setL2tpSimplifyCfg(postVar, function(data) {
+        Cstools.count(data.wtime || 2, 'js' ,function(){
+          location.reload();
+        });
+      })
+    },
+    errorTips: function(m) {
+      Cstools.msg({
+        content: m,
+        type: 'error',
+        messgetype: 'alert'
+      });
+      throw 'error';
+    },
+    handleSubmit: function(mode) {
+      var _this = this;
+      var postVar = {};
+      if((mode == 0 && this.forms.status) || (mode == 1 && this.forms.l2tpEnable)){
+        if(mode == 0){          
+            var _s = cs.ip(_this.forms.ipStart);
+            if (_s != 99) {
+              if(0 == _s){
+                this.errorTips(lang_t('l2tp_server.msg1'));
+              }else{
+                this.errorTips(lang_t('l2tp_server.msg2'));
+              }
+            }
+            
+          var _a=cs.ip_same(_this.forms.serverAddr,_this.forms.ipStart);
+          if(_a == 1){
+            this.errorTips(lang_t('l2tp_server.msg16'));
+          }
+
+            var _s = cs.ip(_this.forms.ipEnd);
+            if (_s != 99) {
+              if(0 == _s){
+                this.errorTips(lang_t('l2tp_server.msg3'));
+              }else{
+                this.errorTips(lang_t('l2tp_server.msg4'));             
+              }
+            }else{
+              var _start = cs.ip2int(_this.forms.ipStart);
+              var _end = cs.ip2int(_this.forms.ipEnd);
+              if(_start > _end){
+                this.errorTips(lang_t('l2tp_server.msg12'));
+              }
+            }
+          var _d=cs.ip_same(_this.forms.serverAddr,_this.forms.ipEnd);
+          if(_d == 1){
+            this.errorTips(lang_t('l2tp_server.msg17'));
+            }
+            var _s = cs.ip(_this.forms.priDns);
+            if (_s != 0) {
+              if(99 != _s){
+                this.errorTips(lang_t('l2tp_server.msg7'));
+              } 
+            }else{
+              this.errorTips(lang_t('l2tp_server.msg11'));             
+            }
+            var _s = cs.ip(_this.forms.secDns);
+            if (_s != 0) {
+              if(99 != _s){
+                this.errorTips(lang_t('l2tp_server.msg8'));
+              }
+            }            
+            var _s = cs.num_range(_this.forms.servermtu,1400,1500);
+            if (0 == _s) {
+              this.errorTips("MTU "+lang_t('l2tp_server.msg14'));
+            }else if (1 == _s) {
+              this.errorTips("MTU "+lang_t('l2tp_server.msg15'));
+            }else if (2 == _s) {
+              this.errorTips(lang_t('l2tp_server.msg_servermtu',[1400,1500]));
+            }
+            //mru
+            var _s = cs.num_range(_this.forms.servermru,1400,1500);
+            if (0 == _s) {
+              this.errorTips("MRU "+lang_t('l2tp_server.msg14'));
+            }else if (1 == _s) {
+              this.errorTips("MRU "+lang_t('l2tp_server.msg15'));
+            }else if (2 == _s) {
+              this.errorTips(lang_t('l2tp_server.msg_servermru',[1400,1500]));
+            }
+
+            var _s = cs.string(_this.forms.tunnelSecret);
+            if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }
+            var _s = cs.string(_this.forms.localHostname);
+            if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }              
+            var _s = cs.string(_this.forms.remoteHostname);
+            if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }
+
+            postVar.enable = "1";
+            postVar.serverip = _this.forms.serverAddr;
+            postVar.sip = _this.forms.ipStart;
+            postVar.eip = _this.forms.ipEnd;
+            postVar.priDns = _this.forms.priDns;
+            postVar.secDns = _this.forms.secDns;
+            postVar.mtu = _this.forms.servermtu;
+            postVar.mru = _this.forms.servermru;
+            postVar.tunnelSecret = _this.forms.tunnelSecret;
+            postVar.localHostname = _this.forms.localHostname;
+            postVar.remoteHostname = _this.forms.remoteHostname;
+            postVar.ipMasq = _this.forms.ipMasq ? '1' : '0';
+            postVar.lanMasq = _this.forms.lanMasq ? '1' : '0';
+            postVar.allowsSpecifyIp = _this.forms.allowsSpecifyIp ? "1" : "0";
+            uiPost.setL2tpServerCfg(postVar,function(data){
+               Cstools.msg({
+                  content: _this.lang_t('central.set_success'),
+                  type: 'success',
+                  messgetype: 'no',
+                  time:1
+                });
+               setTimeout(function () {
+                   cs.href(_this.l2tpMode);
+                },1000);
+            });
+        }else{
+            var _s = cs.string(_this.forms.l2tpUser);
+            if(0 == _s){
+              this.errorTips(lang_t('wan.msg12'));
+            }else if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }
+            var _s = cs.string(_this.forms.l2tpPass);
+            if(0 == _s){
+              this.errorTips(lang_t('wan.msg14'));
+            }else if (1 == _s) {
+              this.errorTips(lang_t('wan.msg15'));
+            }
+
+            if (_this.forms.localIp ) {
+              if (cs.ip(_this.forms.localIp) != 99) {
+                this.errorTips(lang_t('wan.local_ip') + lang_t('ipv6.msg2'));
+              }
+            }
+            var _s = cs.string(_this.forms.tunnelSecret);
+            if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }
+            var _s = cs.string(_this.forms.localHostname);
+            if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }              
+            var _s = cs.string(_this.forms.remoteHostname);
+            if (1 == _s) {
+              this.errorTips(lang_t('wan.msg13'));
+            }
+
+            if(!_this.forms.l2tpServerIp){
+              this.errorTips(lang_t('wan.server_ip')+lang_t('wan.msg1'));
+            } else if (!cs.isUrl(_this.forms.l2tpServerIp)) {
+              this.errorTips(lang_t('wan.server_ip')+lang_t('alert.msg42'));
+            }
+            if (this.mapping && this.mapping != '0.0.0.0') {
+              if (cs.ip(this.mapping) != 99) {
+                this.errorTips(lang_t('account.mapping') + lang_t('ipv6.msg2'));
+              }
+            }
+            if (_this.forms.bindExport == "NOT") {
+              postVar.bindExport = "";
+            } else if (_this.forms.bindExport == "CUSTOM") {
+              if (!_this.customExport) {
+                this.errorTips(lang_t('ip_flow.msg5', [lang_t('account.bind_export')]));
+              }
+              postVar.bindExport = '#' + _this.customExport;
+            } else {
+              postVar.bindExport = _this.forms.bindExport;
+            }
+            var arr = this.$refs.mysubnet.verify();
+            if (!arr) return;
+
+            postVar.vpnType = "1";
+            postVar.enablec = "1";
+            postVar.subnet = arr;
+            postVar.defr = _this.dfRouter;
+            postVar.serverip = _this.forms.l2tpServerIp;
+            postVar.user = _this.forms.l2tpUser;
+            postVar.pass = _this.forms.l2tpPass;
+            postVar.localIp = _this.forms.localIp;
+            postVar.tunnelSecret = _this.forms.tunnelSecret;
+            postVar.localHostname = _this.forms.localHostname;
+            postVar.remoteHostname = _this.forms.remoteHostname;
+            postVar.ipMasq = _this.forms.clientipMask ? '1' : '0';
+            postVar.lanMasq = _this.forms.clientlanMasq ? '1' : '0';
+            postVar.mapping = _this.mapping;
+            uiPost.setL2tpClientCfg(postVar,function(data) {
+              if (data.wtime != undefined && data.wtime != 0){
+                Cstools.count(data.wtime,'js',function(){
+                   cs.href(_this.l2tpMode);
+                });
+              }else {
+                 cs.href(_this.l2tpMode);
+              } 
+            });
+        }
+      }else{
+          if(mode == 0){
+              postVar.Enabled = "0";
+              uiPost.setL2tpServerCfg(postVar,function(data){
+                 Cstools.msg({
+                  content: _this.lang_t('central.set_success'),
+                  type: 'success',
+                  messgetype: 'no',
+                  time:1
+                });
+                setTimeout(function () {
+                  cs.href(_this.l2tpMode);
+                },1000); 
+              });
+          }else{
+              postVar.vpnType = "1";
+              postVar.l2tpEnable = "0";
+              uiPost.setL2tpClientCfg(postVar,function(data) {
+                if (data.wtime != undefined && data.wtime != 0){
+                  Cstools.count(data.wtime,'js',function(){
+                     cs.href(_this.l2tpMode);
+                  });
+                }else {
+                   cs.href(_this.l2tpMode);
+                }  
+              });
+          }
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

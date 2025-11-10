@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+   .progress{
+      background-color: #EA7105;
+      border-radius: 10px;
+      height:20px;
+      line-height: 20px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('reboot_schedule.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td style="width: 20%">{{ lang_t('wifi.mode') }}</td>
+                <td>
+                  <select v-model="forms.scheMode" data-style="btn-default">
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                    <option value="1">{{ lang_t('reboot_schedule.spec_time') }}</option>
+                    <option value="2">{{ lang_t('reboot_schedule.countdown') }}</option>
+                  </select>
+                </td>
+              </tr>              
+              <tr v-show="forms.scheMode == '1'">
+                <td>{{ lang_t('reboot_schedule.week') }}</td>
+                <td>
+                  <select v-model="forms.week">
+                    <option value="255">{{ lang_t('reboot_schedule.all') }}</option>
+                    <option value="128">{{ lang_t('reboot_schedule.sun') }}</option>
+                    <option value="2">{{ lang_t('reboot_schedule.mon') }}</option>
+                    <option value="4">{{ lang_t('reboot_schedule.tue') }}</option>
+                    <option value="8">{{ lang_t('reboot_schedule.wed') }}</option>
+                    <option value="16">{{ lang_t('reboot_schedule.thu') }}</option>
+                    <option value="32">{{ lang_t('reboot_schedule.fri') }}</option>
+                    <option value="64">{{ lang_t('reboot_schedule.sat') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="forms.scheMode == '1'">
+                <td>{{ lang_t('reboot_schedule.time') }}</td>
+                <td>
+                  <span>
+                    <select v-model="forms.hour" style="float: left;width: 20%">
+                      <option v-for="(i,v) in 24" :key="i" :value="v">{{ stringConver(v) }}</option>
+                    </select>
+                    <span style="float:left;width:10px; margin-top:6px;">：</span>
+                    <select v-model="forms.minute" style="float: left;width: 20%">
+                      <option v-for="(i,v) in 60" :key="i" :value="v">{{ stringConver(v) }}</option>
+                    </select>
+                  </span>
+                  <span style="float:left;width:50px; margin-top:6px;">({{ lang_t('reboot_schedule.hour') }}:{{ lang_t('reboot_schedule.min') }})</span>
+                </td>
+              </tr>    
+              <tr v-show="forms.scheMode == '2'">
+                <td>{{ lang_t('reboot_schedule.countdown') }}</td>
+                <td>
+                  <input type="text"  maxlength="3" v-model="forms.recHour">
+                  <span>(1~240{{ lang_t('reboot_schedule.hour') }})</span>
+                </td>
+              </tr>
+              <tr v-show="forms.scheMode == '2'">
+                <td>{{ lang_t('index.up_time') }}</td>
+                <td>
+                  {{ sysTime[0] }}{{ lang_t('reboot_schedule.day') }},{{ sysTime[1] }}{{ lang_t('reboot_schedule.hour') }},{{ sysTime[2] }}{{ lang_t('reboot_schedule.min') }},{{ sysTime[3] }}{{ lang_t('reboot_schedule.sec') }}
+                </td>
+              </tr>
+              <tr v-show="forms.scheMode == '2'">
+                <td>{{lang_t('reboot_schedule.reboot_count')}}</td>
+                <td>
+                  {{ recTime[0] }}{{ lang_t('reboot_schedule.day') }},{{ recTime[1] }}{{ lang_t('reboot_schedule.hour') }},{{ recTime[2] }}{{ lang_t('reboot_schedule.min') }},{{ recTime[3] }}{{ lang_t('reboot_schedule.sec') }}
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="submit_save">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+	    lang_t:lang_t,
+      progress:0,
+      forms:{
+        scheMode:'0',
+        week:'',
+        hour:'',
+        minute:'',
+        recHour:''
+      },
+      NTPValid:'',
+      recTime:[],
+      sysTime:[],
+      percent:0
+    }
+  },
+  computed: {
+    
+  },
+  created:function() {
+    var _this = this;
+    var postVar = {};
+    uiPost.getRebootScheCfg (postVar,function(data){
+      _this.forms.scheMode = data.mode;
+      if(data.week != "0"){
+        _this.forms.week = data.week;
+      }else{
+        _this.forms.week = "255";
+      }
+      _this.forms.hour = data.hour;
+      _this.forms.minute = data.minute;
+      _this.forms.recHour = data.recHour;
+      _this.sysTime = data.sysTime.split(";");
+      _this.recTime = data.recTime.split(";");
+      _this.NTPValid = data.NTPValid;
+    });
+  },
+  methods:{
+    stringConver:function(num){
+      if(num < 10) return '0'+num;
+      else 
+        return num;
+    },
+    submit_save:function(data){
+      var _this = this;
+      var postVar = {};
+      postVar.mode = _this.forms.scheMode;
+      postVar.hour = String(_this.forms.hour);
+      postVar.minute = String(_this.forms.minute);
+      postVar.week = _this.forms.week;
+      postVar.recHour = _this.forms.recHour;
+      if (_this.forms.scheMode == "1" && _this.NTPValid == 0) {
+        errorAlert(lang_t('reboot_schedule.msg9')); 
+        return false;
+      }
+      if (postVar.mode != "2") {
+        uiPost.setRebootScheCfg(postVar, apply_callback);
+        return ;
+      }
+
+      var ret = cs.num_range(_this.forms.recHour,1,240);
+      if (0 == ret) {
+        errorAlert(lang_t('reboot_schedule.countdown') + lang_t("alert.msg5"));
+        return false;
+      } else if(1 == ret || 2 == ret) {
+        errorAlert(lang_t('reboot_schedule.countdown') + lang_t("alert.msg15", [1, 240]));
+        return false;
+      }
+    
+      var v = ((parseInt(_this.sysTime[0])*24+parseInt(_this.sysTime[1]))*60+parseInt(_this.sysTime[2]))*60+parseInt(_this.sysTime[3]);
+      var v1 = parseInt(_this.forms.recHour)*3600;
+      if (v1  <= v) {
+        Cstools.msg({
+          content: lang_t('reboot_schedule.msg8'),
+          type: 'warn',
+          messgetype: 'confirm',
+          ok:function() {
+            uiPost.setRebootScheCfg(postVar, function(data) {
+              apply_callback(data, 60, function() {
+                location.href = '/login.html';
+              })
+            });
+            return false;
+          }
+        });    
+      }else{
+        uiPost.setRebootScheCfg(postVar, apply_callback);
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

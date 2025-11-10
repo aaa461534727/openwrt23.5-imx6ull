@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('snmp.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('snmp.version')}}</td>
+                <td>
+                  <select v-model="formValidate.version" data-style="btn-default">
+                    <option value="0">SNMPv2c</option>
+                    <option value="1">SNMPv3</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('snmp.server_port')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.serverPort" maxlength="5">
+                  <span>(1-65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.version == '0'">
+                <td>{{lang_t('snmp.community')}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.community" maxlength="32">
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.version == '0'">
+                <td>{{lang_t('snmp.trap_ip')}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.trapIp" maxlength="15">
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.version == '0'">
+                <td>{{lang_t('snmp.trap_port')}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.trapPort" maxlength="5">
+                  <span>(1-65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{lang_t('index.interface')}}</td>
+                <td>
+                  <select v-model="formValidate.interface" data-style="btn-default">
+                    <option value="default">default</option>
+                    <option value="br0">lan</option>
+                    <option value="eth2.2">wan</option>
+                    <option value="modem">modem</option>               
+                  </select>
+                </td>
+              </tr>
+              <!-- <tr v-show="enabled">
+                            <td>{{lang_t('snmp.localhost_flag')}}</td>
+                            <td>
+                              <select v-model="formValidate.localhost" data-style="btn-default">
+                                <option value="0">{{lang_t('common.off')}}</option>
+                                <option value="1">{{lang_t('common.on')}}</option>           
+                              </select>
+                            </td>
+                          </tr> -->            
+              <tr v-show="enabled">
+                <td colspan="2">
+                  <span v-if="enabled">
+                    <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                  </span>
+                  <!-- <span v-if="enabled && formValidate.version == '1'">
+                     &nbsp;&nbsp;
+                     <button class="btn btn-primary all-but" data-toggle="modal" data-target="#set_rule">{{lang_t('common.add_rule')}}</button>
+                   </span> --> 
+                </td>
+              </tr>
+            </table>
+          
+            <table class="table table-striped table-bordered table-hover" v-show="enabled && formValidate.version == '1'">
+              <thead>
+                <tr><td colspan="8"> {{ lang_t('snmp.snmp_table') }}</td></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>{{ lang_t('index.mode') }}</th>
+                  <th>{{ lang_t('index.username') }}</th>
+                  <th>{{ lang_t('index.password') }}</th>
+                  <th>{{ lang_t('snmp.hash') }}</th>
+                  <th>{{ lang_t('index.encryption') }}</th>
+                  <th>{{ lang_t('snmp.key') }}</th>
+                  <th>{{ lang_t('common.operation') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(val,index) in snmpData" :key="index" @click="editItem(index,val)">
+                  <td>{{ index+1 }}</td>
+                  <td>
+                    <select v-model="editItemInfo.mode"  v-if="editIdx == index" data-style="btn-default" @change="watchData($event.target.value)">
+                      <option value="0">Auth Priv</option>
+                      <option value="1">Auth NoPriv</option>
+                      <option value="2">NoAuth NoPriv</option>
+                    </select>
+                    <span v-else>{{stringConver(val.mode)}}</span>
+                  </td>
+                  <td>
+                    <input type="text" v-model="editItemInfo.username" v-if="editIdx == index" maxlength="15">
+                    <span v-else style="word-break: break-all;">{{val.username}}</span>
+                  </td>
+                  <td>
+                    <div v-if="editIdx == index">
+                      <input type="text" v-model="editItemInfo.password" maxlength="32" ref="pass_s">
+                      <span ref="pass_h">--</span>
+                    </div>
+                    <span v-else style="word-break: break-all;">{{ val.mode!='2' ? val.password : '--' }}</span>
+                  </td>
+                  <td>
+                    <div v-if="editIdx == index">
+                      <select v-model="editItemInfo.hash" data-style="btn-default" ref="hash_s">
+                        <option value="MD5">MD5</option>
+                        <option value="SHA">SHA</option>
+                      </select>
+                      <span ref="hash_h">--</span>
+                    </div>
+                    <span v-else>{{ val.mode!='2' ? val.hash : '--' }}</span>
+                  </td>
+                  <td>
+                    <div v-if="editIdx == index">
+                      <select v-model="editItemInfo.encryption" ref="encryp_s" data-style="btn-default">
+                        <option value="AES">AES</option>
+                        <option value="DES">DES</option>
+                      </select>
+                      <span ref="encryp_h">--</span>
+                    </div>
+                    <span v-else>{{ val.mode=='0' ? val.encryption : '--'  }}</span>
+                  </td>
+                  <td>
+                    <div v-if="editIdx == index">
+                      <input type="text" v-model="editItemInfo.key" ref="key_s" maxlength="32">
+                      <span ref="key_h">--</span>
+                    </div>
+                    <span v-else style="word-break: break-all;">{{ val.mode=='0' ? val.key : '--' }}</span>
+                  </td>
+                  <td class="operation">
+                    <div style="word-break: keep-all;">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td>
+                    <select v-model="formData.mode" data-style="btn-default">
+                      <option value="0">Auth Priv</option>
+                      <option value="1">Auth NoPriv</option>
+                      <option value="2">NoAuth NoPriv</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="text" v-model="formData.username"  maxlength="15">
+                  </td>
+                  <td >
+                    <input type="text" v-model="formData.password" v-if="formData.mode != '2'" maxlength="32">
+                     <span v-else>--</span>
+                  </td>
+                  <td>
+                    <select v-model="formData.hash" data-style="btn-default" v-if="formData.mode != '2'">
+                      <option value="MD5">MD5</option>
+                      <option value="SHA">SHA</option>
+                    </select>
+                    <span v-else>--</span>
+                  </td>
+                  <td>
+                    <select v-model="formData.encryption" data-style="btn-default" v-if="formData.mode == '0'">
+                      <option value="AES">AES</option>
+                      <option value="DES">DES</option>
+                    </select>
+                    <span v-else>--</span>
+                  </td>
+                  <td>
+                    <input type="text" v-model="formData.key" maxlength="32" v-if="formData.mode == '0'">
+                    <span v-else>--</span>
+                  </td>
+                  <td class="operation">
+                    <a @click="addRule">{{ lang_t('common.add') }}</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enabled && formValidate.version == '1' ">
+              <tr>
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click.prevent="submit_save">{{lang_t('common.save')}}</button>&nbsp;&nbsp;
+                  <button class="btn btn-primary all-but" @click.prevent="submit_refresh">{{lang_t('common.cancel')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+      enabled:'',
+  	  formValidate:{
+  	    version:'0',
+  	    serverPort:"",
+  	    community:"",
+  	    trapIp:"",
+  	    trapPort:"",
+  	    interface:'br0',
+        localhost:'0'
+      },
+      formData:{
+  	    mode:'0',
+  	    username:'',
+  	    password:'',
+  	    hash:'MD5',
+  	    encryption:'AES',
+  	    key:''
+  	  },
+      snmpData:[],
+      setIdx:"0",
+  	  allSelect:false,
+      editIdx: '-1',
+      editItemInfo: {}
+  	}
+  },
+  watch:{
+    
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getSnmpCfg(function(data){
+      _this.enabled = data.enabled == "1";      
+      _this.formValidate.version = data.version;
+      _this.formValidate.serverPort = data.serverPort;
+      _this.formValidate.community = data.community;
+      _this.formValidate.trapIp = data.trapIp;
+      _this.formValidate.trapPort = data.trapPort;
+      _this.formValidate.interface = data.interface;  
+      //_this.formValidate.localhost = data.localhost;   
+      //v3 
+      _this.formData.idx = '1';
+      if(data.rule){
+        _this.snmpData = data.rule;
+      }
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+  	toggle_status:function(){
+  	  var _this = this;
+  	  $('#switch_status').bootstrapSwitch('state',_this.enabled);      
+  	}
+  },
+  created:function(){
+  	
+  },
+  methods:{
+    submit_refresh:function(){
+      location.href = location.href;
+    },
+    stringConver:function(num){
+      var _this = this;
+      switch(num){
+        case '1':
+          return "Auth NoPriv";
+          break;
+        case '2':
+          return "NoAuth NoPriv";
+          break;
+        default:
+          return "Auth Priv";
+          break;
+      }
+      return num;
+    },
+    watchData: function(mode, isEdit) {
+      var hs = ['pass', 'hash', 'encryp', 'key'];
+      var hide = [];
+      switch (String(mode)) {
+        case '1':
+          hide = ['encryp', 'key'];
+          !isEdit && $(this.$refs.hash_s).val('MD5')
+          break;
+        case '2':
+          hide = hs;
+          break;
+        default:
+          if (!isEdit) {
+            $(this.$refs.hash_s).val('MD5')
+            $(this.$refs.encryp_s).val('AES')
+          }
+      }
+      for (var i = 0; i < 4; i++) {
+        if (!!~hide.indexOf(hs[i])) {
+          $(this.$refs[hs[i]+ "_h"]).show();
+          $(this.$refs[hs[i]+ "_s"]).hide();
+        } else {
+          $(this.$refs[hs[i]+ "_s"]).show();
+          $(this.$refs[hs[i]+ "_h"]).hide();
+        }
+      }
+    },
+    submit_save:function(){ 
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      var arr = [];
+      arr = arr.concat( this.snmpData );
+      postVar.subnet = arr;
+      postVar.addEffect = "1";
+      uiPost.setSnmpCfg(postVar, apply_callback);
+    },
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.addEffect = "0";//null
+        postVar.enabled = "0";
+        uiPost.setSnmpCfg(postVar, apply_callback);
+      }      
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.snmpData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.snmpData.splice(idx, 1);
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+      this.$nextTick(function() {
+        this.watchData(obj.mode, true);
+      })
+    },
+    veriyfun:function(val, flag){
+      var _this = this, f = errorAlert;
+      for(var i=0; i<_this.snmpData.length; i++){
+        if(flag != undefined && flag == i) continue;
+        if(val.username == _this.snmpData[i].username){
+          f(_this.lang_t('snmp.msg1'));
+          return false;
+        }
+      }
+      var _s = cs.string1(val.username);
+      if(0 == _s){
+        f(_this.lang_t('index.username') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        f(_this.lang_t('index.username') + _this.lang_t('alert.msg23'));
+        return false;
+      }
+
+      if('2' != val.mode){//Auth Priv
+        _s = cs.string1(val.password);
+        if(val.password.length <8 || val.password.length > 32){
+                f(_this.lang_t('index.password') + _this.lang_t('alert.msg48',[8,32]));
+          return false;
+        }else if(99 != _s){
+          f(_this.lang_t('index.password') + _this.lang_t('alert.msg23'));
+          return false;
+        }
+        
+        if('1' != val.mode){//Auth NoPriv              
+          _s = cs.string1(val.key);
+              if(val.key.length <8 || val.key.length > 32){
+                f(_this.lang_t('snmp.key') + _this.lang_t('alert.msg48',[8,32]));
+                return false;
+              }else if(99 != _s){
+                f(_this.lang_t('snmp.key') + _this.lang_t('alert.msg23'));
+                return false;
+              }
+        }
+      }
+
+      return true;
+    },
+    addRule: function(name) {
+      var _this = this;
+      var f = errorAlert;
+      if(_this.snmpData.length >=10){
+        f(this.lang_t('alert.msg1',[10]));
+        return false;
+      }
+      var temp = {
+        mode: this.formData.mode,
+        username: this.formData.username,
+        password: this.formData.password,
+        hash: this.formData.hash,
+        encryption: this.formData.encryption,
+        key: this.formData.key
+      };
+
+      if(!this.veriyfun(temp)) return;
+      this.snmpData.push(temp);
+      this.formData.mode = "0";
+      this.formData.password = "";
+      this.formData.username = "";
+      this.formData.hash = "MD5";
+      this.formData.encryption = "AES";
+      this.formData.key = "";
+
+    },
+	  handleSubmit:function(){
+  	  var _this = this;
+  	  var postVar = {};  	  
+  	  var _s;
+
+      if(99 != cs.num_range(_this.formValidate.serverPort,1,65535)){
+        errorAlert(_this.lang_t('snmp.server_port') + _this.lang_t('alert.msg15',[1,65535]));
+    		return false;
+  	  }
+
+      if("0" == _this.formValidate.version){
+    	  _s = cs.string(_this.formValidate.community);
+    	  if(0 == _s){
+          errorAlert(_this.lang_t('snmp.community') + _this.lang_t('alert.msg5'));
+      		return false;
+    	  }else if(99 != _s){
+      		errorAlert(_this.lang_t('snmp.community') + _this.lang_t('alert.msg6'));
+      		return false;
+    	  }
+
+    	  _s = cs.ip(_this.formValidate.trapIp);
+    	  if(0 == _s){
+      		errorAlert(_this.lang_t('snmp.trap_ip') + _this.lang_t('alert.msg5'));
+      		return false;
+    	  }else if(1 == _s){
+      		errorAlert(_this.lang_t('snmp.trap_ip') + _this.lang_t('alert.msg14'));
+      		return false;
+    	  }
+
+    	  if(99 != cs.num_range(_this.formValidate.trapPort,1,65535)){
+      		errorAlert(_this.lang_t('snmp.trap_port') + _this.lang_t('alert.msg15',[1,65535]));
+      		return false;
+    	  }
+      }
+  	  
+      //postVar.addEffect = "0";
+      postVar.enabled = "1";
+  	  postVar.serverPort = _this.formValidate.serverPort;
+  	  postVar.interface = _this.formValidate.interface;
+  	  //postVar.localhost = _this.formValidate.localhost;
+  	  postVar.version = _this.formValidate.version;
+      if("0" == postVar.version){
+  	    postVar.community = _this.formValidate.community;
+  	    postVar.trapIp = _this.formValidate.trapIp;
+  	    postVar.trapPort = _this.formValidate.trapPort;
+      }
+  	  uiPost.setSnmpCfg(postVar, apply_callback);
+  	}
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

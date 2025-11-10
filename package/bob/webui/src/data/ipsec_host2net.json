@@ -1,0 +1,17 @@
+{
+  	"ipsecH2nEnable":"1",
+  	"ipsecH2nLeftid":"test",
+    "ipsecH2nLeft":"192.168.0.11",
+  	"ipsecH2nLeftsubnet":"192.168.55.6/24",
+  	"ipsecH2nKeyexchange":"ikev1",
+  	"ipsecH2nPsk":"12345678",
+  	"ipsecH2nIkeCipher":"aes128-sha1-modp2048",
+  	"ipsecH2nIkelifetime":"3600",
+  	"ipsecH2nEspCipher":"aes128-sha1",
+  	"ipsecH2nDpdaction":"1",
+  	"ipsecH2nDpddelay":"10",
+  	"ipsecH2nDpdtimeout":"300",
+  	"ipsecH2nLifetime":"3600",
+  	"ipsecH2nCompress":"0",
+	"ipsecH2nRekey":"0"
+}

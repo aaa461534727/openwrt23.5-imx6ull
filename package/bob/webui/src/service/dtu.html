@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style type="text/css">
+    input[type="text"],
+    input[type="password"]{
+      display: inline-block;
+    }
+    b{font-weight: 600;margin-right: 5px;}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2">
+                  <strong>
+                    <p><b>{{lang_t('dtu.mode')}}:</b>{{lang_t('dtu.mode_help')}}</p>
+                    <p><b>{{lang_t('dtu.data_tit')}}:</b>{{lang_t('dtu.data_help')}}</p>
+                    <p><b>{{lang_t('dtu.regist_tit')}}:</b>{{lang_t('dtu.regist_help')}}</p>
+                    <p><b>{{lang_t('dtu.heart_tit')}}:</b>{{lang_t('dtu.heart_help')}}</p>
+                    <p><b>{{lang_t('dtu.attention')}}:</b>{{lang_t('dtu.port_msg')}}</p>
+                  </strong>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.dtuDualband">
+                <td>{{lang_t('dtu.commun_mode')}}</td>
+                <td>
+                  <input type="radio" value="rs232" v-model="type" id="radio_0"><label for="radio_0">&nbsp;&nbsp;232&nbsp;</label> &nbsp;&nbsp;&nbsp;&nbsp;
+                  <input type="radio" value="rs485" v-model="type" id="radio_1"><label for="radio_1">&nbsp;&nbsp;485</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </td>
+              </tr>
+			        <tr v-if="!globalConfig.dtuDualband">
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-if="enabled||globalConfig.dtuDualband">
+                <td colspan="12">
+                  <table class="table table-striped">
+                    <tr><td colspan="2" class="lable-title">{{lang_t('dtu.basic')}}</td></tr>
+                    <tr v-if="globalConfig.dtuDualband">
+                      <td>{{lang_t('common.state')}}</td>
+                      <td>
+                        <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                      </td>
+                    </tr>
+                    <tr v-show="enabled">
+                      <td style="width: 25%;">{{lang_t('dtu.mode')}}</td>
+                      <td>
+                        <select v-model="funMode" @change="funModeChange">
+                          <option value="1">{{ lang_t('tty_server.client') }}</option>
+                          <option value="2">{{ lang_t('tty_server.server') }}</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="enabled && protocol!='ALIYUNMQTT'">
+                      <td>{{lang_t('dtu.local_port')}}</td>
+                      <td>
+                        <input type="text" v-model="funPort" maxlength="5"/>
+                        <span>1-65535</span>
+                      </td>
+                    </tr>
+                    <tr v-show="enabled">
+                      <td>{{lang_t('tty_server.protocol')}}</td>
+                      <td>
+                        <select v-model="protocol">
+                          <option value="tcp">TCP</option>
+                          <option value="udp">UDP</option>
+                          <option value="ALIYUNMQTT" v-if="funMode=='1' && globalConfig.dtuAliyunMqttSupport" >ALIYUN(MQTT)</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-if="globalConfig.modbusSupport && enabled && protocol!='ALIYUNMQTT'">
+                      <td>{{ lang_t('dtu.data_modbus') }}</td>
+                      <td>
+                        <br>
+                        <input type="checkbox" v-model="isModbusRtu" checked="checked"/>
+                      </td>
+                      <td v-show="0">
+                        <select v-model="isModbus">
+                          <option  value="0">{{ lang_t('dtu.data_trans') }}</option>
+                          <option  value="1">{{ lang_t('dtu.data_modbus') }}</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="!globalConfig.dtuDualband&&enabled">
+                      <td>{{lang_t('dtu.commun_mode')}}</td>
+                      <td>
+                        <select v-model="type">
+                          <option v-for="(item, index) in rs_serial" :key="index" :value="item.port">{{ item.name }}</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="funMode=='1'&&enabled && protocol!='ALIYUNMQTT' && protocol!='udp'">
+                      <td>{{lang_t('dtu.channel')}}</td>
+                      <td>
+                        <select v-model="aisleType">
+                          <option value="3">{{lang_t('dtu.type3')}}</option>
+                          <option value="2">{{lang_t('dtu.type2')}}</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="protocol=='udp'&&enabled&& protocol!='ALIYUNMQTT'">
+                      <td>{{lang_t('dtu.udp_reci_maxlen')}}</td>
+                      <td>
+                        <input type="text" v-model="udpMaxLen" maxlength="5" />
+                        <span>1-65535</span>
+                      </td>
+                    </tr>
+                    <tr v-show="enabled">
+                      <td>{{lang_t('dtu.reci_timeout')}}</td>
+                      <td>
+                        <input type="text" v-model="msgTimeout" maxlength="5"/>
+                        <span>{{lang_t('dtu.value_ms',['1-65535'])}}</span><br>
+                        <span>{{lang_t('dtu.reci_timeout_desc')}}</span>
+                      </td>
+                    </tr>
+                    <tr v-show="enabled">
+                      <td>{{lang_t('dtu.ttl')}}</td>
+                      <td>
+                        <input type="text" v-model="msgIdle" maxlength="5"/>
+                        <span>{{lang_t('dtu.value_ms',['1-65535'])}}</span><br>
+                        <span>{{lang_t('dtu.ttl_desc')}}</span>
+                      </td>
+                    </tr>
+                    <tr v-show="enabled && protocol!='ALIYUNMQTT'">
+                      <td>{{lang_t('wifi.security_mode')}}</td>
+                      <td>
+                        <select v-model="encrypt">
+                          <option value="none">NONE</option>
+                          <option value="aes">AES</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="encrypt=='aes'&&enabled&& protocol!='ALIYUNMQTT'">
+                      <td>{{lang_t('dtu.key')}}</td>
+                      <td>
+                        <input type="text" v-model="encryptKey" maxlength="64" />
+                        <span>{{lang_t('dtu.max_value_len',[64])}}</span>
+                      </td>
+                    </tr>
+
+                    <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('aliyun.serverHost') }}</td>
+                      <td>
+                        <input type="text" v-model="serverHost" maxlength="128">
+                      </td>
+                    </tr>
+                    
+                    <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('aliyun.productKey') }}</td>
+                      <td>
+                        <input type="text" v-model="productKey" maxlength="128">
+                      </td>
+                    </tr>
+
+                    <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('aliyun.deviceName') }}</td>
+                      <td>
+                        <input type="text" v-model="deviceName" maxlength="128">
+                      </td>
+                    </tr>
+
+                     <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('aliyun.deviceSecret') }}</td>
+                      <td>
+                        <input type="text" v-model="deviceSecret" maxlength="128">
+                      </td>
+                    </tr>    
+                     <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('aliyun.subTopic') }}</td>
+                      <td>
+                        <input type="text" v-model="subTopic" maxlength="128">
+                      </td>
+                    </tr>  
+                      <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('aliyun.pubTopic') }}</td>
+                      <td>
+                        <input type="text" v-model="pubTopic" maxlength="128">
+                      </td>
+                    </tr>                     
+
+                   <tr v-show="funMode=='1'&&enabled && protocol=='ALIYUNMQTT'">
+                      <td>{{ lang_t('index.status') }}</td>
+                      <td>
+                       <span  v-if="connStatus == 0"><span style="color:#fff;background-color:#e19641;">{{ lang_t('aliyun.no_conn') }}</span></span>
+                        <span  v-if="connStatus == 1"><span style="color:#fff;background-color:#e14141;">{{ lang_t('aliyun.conn_fail') }}</span></span>
+                        <span  v-if="connStatus == 2"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('aliyun.conn_success') }}</span></span>
+                      </td>
+                    </tr>
+
+
+
+                  </table>
+                </td>
+              </tr>
+              <tr v-if="enabled&&funMode=='1'&& protocol!='ALIYUNMQTT'">
+                <td colspan="12">
+                  <table class="table table-striped">
+                    <tr><td colspan="2" class="lable-title">{{lang_t('dtu.data_tit')}}</td></tr>
+                    <tr>
+                      <td style="width: 25%;">{{lang_t('tty_server.serverip')}}</td>
+                      <td>
+                        <input type="text" v-model="addr[0]" maxlength="64" >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('snmp.server_port')}}</td>
+                      <td>
+                        <input type="text" v-model="port[0]" maxlength="5" >
+                        <span>1-65535</span>
+                      </td>
+                    </tr>
+                    <tr v-show="protocol!='udp'" >
+                        <td>{{lang_t('tty_server.serverip')}}2</td>
+                        <td>
+                          <input type="text" v-model="addr[1]" maxlength="64" >
+                        </td>
+                      </tr>
+                      <tr v-show="protocol!='udp'">
+                        <td>{{lang_t('snmp.server_port')}}2</td>
+                        <td>
+                          <input type="text" v-model="port[1]" maxlength="5" >
+                          <span>1-65535</span>
+                        </td>
+                      </tr>
+                      <tr v-show="aisleType=='3'">
+                        <td>{{lang_t('tty_server.serverip')}}3</td>
+                        <td>
+                          <input type="text" v-model="addr[2]" maxlength="64" >
+                        </td>
+                      </tr>
+                      <tr v-show="aisleType=='3'">
+                        <td>{{lang_t('snmp.server_port')}}3</td>
+                        <td>
+                          <input type="text" v-model="port[2]" maxlength="5" >
+                          <span>1-65535</span>
+                        </td>
+                      </tr>
+                      <tr v-show="aisleType=='3'">
+                        <td>{{lang_t('tty_server.serverip')}}4</td>
+                        <td>
+                          <input type="text" v-model="addr[3]" maxlength="64" >
+                        </td>
+                      </tr>
+                      <tr v-show="aisleType=='3'">
+                        <td>{{lang_t('snmp.server_port')}}4</td>
+                        <td>
+                          <input type="text" v-model="port[3]" maxlength="5" >
+                          <span>1-65535</span>
+                        </td>
+                      </tr>
+                    <tr>
+                      <td>{{lang_t('dtu.try_interval')}}</td>
+                      <td>
+                        <input type="text" v-model="reTime" maxlength="5" >
+                        <span>{{lang_t('dtu.value_s',['1-65535'])}}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('dtu.try_count')}}</td>
+                      <td>
+                        <input type="text" v-model="reCount" maxlength="5">
+                        <span>1-65535</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr v-show="enabled&&funMode=='1'&& protocol!='ALIYUNMQTT'">
+                <td colspan="12">
+                  <table class="table table-striped">
+                    <tr><td colspan="2" class="lable-title">{{lang_t('dtu.regist_tit')}}</td></tr>
+                    <tr>
+                      <td style="width: 25%;">{{lang_t('dtu.regist')}}</td>
+                      <td>
+                        <input type="text" v-model="registMsg" maxlength="64" :disabled="encrypt=='aes'" >
+                        <span>{{lang_t('dtu.max_value_len',[64])}}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr v-show="enabled&&funMode=='1'&& protocol!='ALIYUNMQTT'">
+                <td colspan="12">
+                  <table class="table table-striped">
+                    <tr><td colspan="2" class="lable-title">{{lang_t('dtu.heart_tit')}}</td></tr>
+                    <tr>
+                      <td style="width: 25%;">{{lang_t('dtu.heart_msg')}}</td>
+                      <td>
+                        <input type="text" v-model="beatMsg" maxlength="64" >
+                        <span>{{lang_t('dtu.max_value_len',[64])}}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('dtu.heart_interval')}}</td>
+                      <td>
+                        <input type="text" v-model="beatTime" maxlength="5" >
+                        <span>{{lang_t('dtu.value_s',['1-65535'])}}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="12">
+                  <table class="table table-striped">
+                    <tr><td colspan="2" class="lable-title">{{lang_t('dtu.tty')}}</td></tr>
+                    <tr>
+                      <td style="width: 25%;">{{lang_t('tty_server.baud')}}</td>
+                      <td>
+                        <select v-model="rateBit">
+                          <option value="300">300</option>
+                          <option value="600">600</option>
+                          <option value="1200">1200</option>
+                          <option value="2400">2400</option>
+                          <option value="4800">4800</option>
+                          <option value="9600">9600</option>
+                          <option value="19200">19200</option>
+                          <option value="38400">38400</option>
+                          <option value="57600">57600</option>
+                          <option value="115200">115200</option>
+                          <option value="230400">230400</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('tty_server.parity')}}</td>
+                      <td>
+                        <select v-model="parity">
+                          <option value="none">NONE</option>
+                          <option value="even">Even</option>
+                          <option value="odd">Odd</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('tty_server.data_bit')}}</td>
+                      <td>
+                        <select v-model="dataBit">
+                          <option value="5">5</option>
+                          <option value="6">6</option>
+                          <option value="7">7</option>
+                          <option value="8">8</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('tty_server.stop_bit')}}</td>
+                      <td>
+                        <select v-model="stopBit">
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{lang_t('dtu.flow_control')}}</td>
+                      <td>
+                        <select v-model="flowControl">
+                          <option value="none">NONE</option>
+                          <option value="hardware">hardware</option>
+                          <option value="sorfware">sorfware</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+		  enabled:false,
+      isModbusRtu:false,
+      isModbus:'0',
+      funMode: '1',
+      funPort: '',
+      protocol: 'tcp',
+      msgTimeout: '',
+      udpMaxLen: '',
+      msgIdle: '',
+      aisleType: '0',
+      encrypt: 'none',
+      encryptKey: '',
+      addr: [],
+      port: [],
+      reTime: '',
+      reCount: '',
+      registMsg: '',
+      beatMsg: '',
+      beatTime: '',
+      rateBit: '300',
+      parity: 'none',
+      dataBit: '5',
+      stopBit: '1',
+      flowControl: '',
+      useStyle: '',
+      type:'rs232',
+      serverHost:'',
+      productKey : '',
+      deviceName:'',
+      deviceSecret:'',
+      subTopic:'',
+      pubTopic:'',
+      connStatus:'0',
+      rs_serial: []
+    }
+  },
+  watch: {
+      "type":function () {
+        if(globalConfig.dtuDualband){
+          this.getDtuinfo();
+        }
+      },
+    encrypt: function(v){
+      if (v == 'aes') {
+        this.registMsg = "";
+      }
+    }
+  },
+  mounted:function(){
+    var _this = this;
+	  addSwitch('#switch_status', function(data){
+
+      if(_this.enabled == false && data){//启用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+      if(_this.enabled && data == false){//禁用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    });
+  },
+  computed:{
+	  toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    this.getDtuinfo();
+  },
+
+  methods:{
+    getDtuinfo:function(){
+      var _this = this;
+      var postVar = {};
+      if(this.type=="rs485"){
+        uiPost.getDtu485Cfg(function(data) {
+          _this.enabled = data.enable == "1";
+          _this.isModbus = data.isModbus;
+          _this.isModbusRtu = data.isModbusRtu =="1";
+          _this.funMode = data.mode == "client" ? "1" : "2";
+          _this.funPort = data.localPort;
+          _this.protocol = data.protocol;
+          _this.type = data.type;
+          _this.udpMaxLen = data.serialPacketMaxLength;
+          _this.aisleType = data.channelType == "treble" ? "3" : "2";
+          _this.msgTimeout = data.netReceiveTimeout;
+          _this.msgIdle = data.serialReceiveTimeout;
+          _this.encrypt = data.encryption;
+          _this.encryptKey = data.key;
+          _this.addr[0] = data.serverIp1;
+          _this.port[0] = data.serverPort1;
+          _this.addr[1] = data.serverIp2;
+          _this.port[1] = data.serverPort2;
+          _this.addr[2] = data.serverIp3;
+          _this.port[2] = data.serverPort3;
+		  _this.addr[3] = data.serverIp4;
+          _this.port[3] = data.serverPort4;
+          _this.reTime = data.reTryInterval;
+          _this.reCount = data.reTryCount;
+          _this.registMsg = data.registMsg;
+          _this.beatTime = data.heartBeatInterval;
+          _this.beatMsg = data.heartBeatData;
+          _this.rateBit = data.rate;
+          _this.parity = data.parity;
+          _this.dataBit = data.dataBit;
+          _this.stopBit = data.stopBit;
+          _this.flowControl = data.flowControl;
+        });
+      }else{
+        uiPost.getDtuCfg(function(data) {
+          _this.enabled = data.enable == "1";
+          _this.isModbus = data.isModbus;
+           _this.isModbusRtu = data.isModbusRtu =="1";
+          _this.funMode = data.mode == "client" ? "1" : "2";
+          _this.funPort = data.localPort;
+          _this.protocol = data.protocol;
+          _this.udpMaxLen = data.serialPacketMaxLength;
+          _this.aisleType = data.channelType == "treble" ? "3" : "2";
+          _this.msgTimeout = data.netReceiveTimeout;
+          _this.msgIdle = data.serialReceiveTimeout;
+          _this.encrypt = data.encryption;
+          _this.encryptKey = data.key;
+          _this.addr[0] = data.serverIp1;
+          _this.port[0] = data.serverPort1;
+          _this.addr[1] = data.serverIp2;
+          _this.port[1] = data.serverPort2;
+          _this.addr[2] = data.serverIp3;
+          _this.port[2] = data.serverPort3;
+		      _this.addr[3] = data.serverIp4;
+          _this.port[3] = data.serverPort4;
+          _this.reTime = data.reTryInterval;
+          _this.reCount = data.reTryCount;
+          _this.registMsg = data.registMsg;
+          _this.beatTime = data.heartBeatInterval;
+          _this.beatMsg = data.heartBeatData;
+          _this.rateBit = data.rate;
+          _this.parity = data.parity;
+          _this.dataBit = data.dataBit;
+          _this.stopBit = data.stopBit;
+          _this.flowControl = data.flowControl;
+
+          _this.rs_serial = data.rs_serial;
+
+          if(globalConfig.dtuAliyunMqttSupport){
+            _this.serverHost = data.aHost;
+            _this.productKey = data.aProductKey;
+            _this.deviceName = data.aDeviceName;
+            _this.deviceSecret = data.aDeviceSecret;
+            _this.subTopic = data.aSub;
+            _this.pubTopic = data.aPub;
+            _this.connStatus = data.aconnStatus;
+          }
+
+          _this.type = data.type;
+        });
+      }
+    },
+    submit_status:function(){
+       if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enable = "0";
+        postVar.addEffect = "0";//on/off
+        if(_this.type=="rs232"||!globalConfig.dtuDualband)
+        uiPost.setDtuCfg(postVar, apply_callback);
+        else
+        uiPost.setDtu485Cfg(postVar, apply_callback);
+      }      
+    },    
+    handleSubmit:function(){
+      var _this = this, postVar = {};
+	     
+      if(this.funMode == '1'){
+        if (this.funPort != '' && this.funPort != undefined) {
+            if(99 != cs.num_range(this.funPort, 1, 65535)){
+              this.errorAlert(lang_t('dtu.local_port') + lang_t('alert.msg15', [1, 65535]));
+              return false;
+            }
+        }
+      }else{
+        if(99 != cs.num_range(this.funPort, 1, 65535)){
+          this.errorAlert(lang_t('dtu.local_port') + lang_t('alert.msg15', [1, 65535]));
+          return false;
+        }
+      }
+
+      if(99 != cs.num_range(this.msgTimeout, 1, 65535)){
+        this.errorAlert(lang_t('dtu.reci_timeout') + lang_t('alert.msg15', [1, 65535]));
+        return false;
+      }
+
+       if(99 != cs.num_range(this.msgIdle, 1, 65535)){
+         this.errorAlert(lang_t('dtu.ttl') + lang_t('alert.msg15', [1, 65535]));
+         return false;
+       }
+
+
+      if (_this.funMode == '1' && _this.protocol == "ALIYUNMQTT" ){
+
+        if(this.serverHost == ""){
+          errorAlert(lang_t('aliyun.serverHost') + lang_t('alert.msg5'));
+          return false;
+        }
+        if(this.productKey == ""){
+          errorAlert(lang_t('aliyun.productKey') + lang_t('alert.msg5'));
+          return false;
+        }
+         if(this.deviceName == ""){
+          errorAlert(lang_t('aliyun.deviceName') + lang_t('alert.msg5'));
+          return false;
+        }
+        if(this.deviceSecret == ""){
+          errorAlert(lang_t('aliyun.deviceSecret') + lang_t('alert.msg5'));
+          return false;
+        }
+        if(this.subTopic == ""){
+          errorAlert(lang_t('aliyun.subTopic') + lang_t('alert.msg5'));
+          return false;
+        }
+        if(this.pubTopic == ""){
+          errorAlert(lang_t('aliyun.pubTopic') + lang_t('alert.msg5'));
+          return false;
+        }
+      }
+
+
+      if (_this.funMode == '1') {
+        for (var a = 0;a < 4;a++) {
+          var idx = a ?a+1:"";
+          postVar["serverIp"+(a+1)] = this.addr[a];
+          postVar["serverPort"+(a+1)] = this.port[a];
+          if ((!this.addr[a] && !this.port[a]) || (this.aisleType=='2' && a == 2)) continue;
+          var _s = cs.ip_domain(this.addr[a]);
+          if(this.addr[a] == ""){
+            _this.errorAlert(lang_t('tty_server.serverip') +idx+ lang_t('alert.msg5'));
+            return false;
+          }else if (_s != 99) {
+            _this.errorAlert(lang_t('tty_server.serverip') +idx+ lang_t('alert.msg19'));
+            return false;
+          }
+
+          if(99 != cs.num_range(this.port[a], 1, 65535)){
+            this.errorAlert(lang_t('snmp.server_port') +idx+ lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+        }
+        if (this.reTime && this.reCount) {
+          if(99 != cs.num_range(this.reTime, 1, 65535)){
+            this.errorAlert(lang_t('dtu.try_interval') + lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+
+          if(99 != cs.num_range(this.reCount, 1, 65535)){
+            this.errorAlert(lang_t('dtu.try_count') + lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+        }
+
+        if (this.beatMsg) {
+          if(99 != cs.num_range(this.beatTime, 1, 65535)){
+            this.errorAlert(lang_t('dtu.heart_interval') + lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+        }
+        postVar.reTryInterval = this.reTime;
+        postVar.reTryCount = this.reCount;
+
+        postVar.registMsg = this.registMsg;
+
+        postVar.heartBeatData = this.beatMsg;
+        postVar.heartBeatInterval = this.beatTime;
+      }
+
+      
+      postVar.mode = this.funMode == "1" ? "client" : "server";
+      postVar.localPort = this.funPort;
+      postVar.protocol = this.protocol;
+      postVar.type = this.type;
+      if(globalConfig.c735irSupport&&!globalConfig.dtuDualband){
+        postVar.type = "rs232";
+      }else{
+        postVar.type = this.type;
+      }
+      if (this.protocol === "udp") {
+        if (99 != cs.num_range(this.udpMaxLen, 1, 65535)) {
+          this.errorAlert(lang_t('dtu.udp_reci_maxlen') + lang_t('alert.msg15', [1, 65535]));
+          return false;
+        }
+        postVar.serialPacketMaxLength = this.udpMaxLen;
+      }
+      postVar.channelType = this.aisleType == "3" ? "treble" : "backup";
+      postVar.netReceiveTimeout = this.msgTimeout;
+      postVar.serialReceiveTimeout = this.msgIdle;
+      postVar.encryption = this.encrypt;
+      if (this.encrypt === "aes") {
+        postVar.key = this.encryptKey;
+      }
+
+      postVar.rate = this.rateBit;
+      postVar.parity = this.parity;
+      postVar.dataBit = this.dataBit;
+      postVar.stopBit = this.stopBit;
+      postVar.flowControl = this.flowControl;
+
+      postVar.enable = "1";
+      postVar.isModbus = this.isModbus;
+      postVar.isModbusRtu = this.isModbusRtu ? "1":"0";
+	    postVar.addEffect = "1";//on/off
+      if (_this.funMode == '1' && _this.protocol == 'ALIYUNMQTT') {
+        postVar.aHost = this.serverHost;
+        postVar.aProductKey = this.productKey;
+        postVar.aDeviceName = this.deviceName;
+        postVar.aDeviceSecret = this.deviceSecret;
+        postVar.aSub = this.subTopic;
+        postVar.aPub = this.pubTopic;
+      }
+
+      if(this.type == "rs232"||!globalConfig.dtuDualband){
+        uiPost.setDtuCfg(postVar, apply_callback)
+      }else{
+        uiPost.setDtu485Cfg(postVar, apply_callback)
+      }
+    }, 
+    funModeChange:function(){
+      var _this = this;
+      if(_this.funMode == '2' && _this.protocol == 'ALIYUNMQTT'){
+        _this.protocol = 'tcp';
+      }
+    },
+    errorAlert:function(data){
+      var _this = this;
+      Cstools.msg({
+        type: 'error',
+        messgetype: 'alert',
+        title: _this.lang_t('common.tips'),
+        content: data
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

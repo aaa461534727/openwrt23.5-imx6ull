@@ -1,0 +1,224 @@
+###########################################
+###                                     ###
+###     C8888 CONFIG                ###
+###                                     ###
+###########################################
+
+
+csid=C8888
+soft_model="C8888"
+soft_version=V9.5.0c
+hard_model=IMX6ULL
+hard_version=V1.0
+flash_type="mmc"
+style_type=0
+uboot_upg=u
+hostname='none'
+led_status=1
+port_num='2'
+cid='carystudio'
+runner='0'
+
+web_title=''
+vendor=''
+copyright=''
+domainaccess='cs.net'
+
+opmode_support='0'
+opmode_custom='gw'
+
+login_username=admin
+login_password=admin
+
+telnetd_enable=1
+telnetd_password='admin'
+
+remote_access=0
+remote_port=1024
+
+lan_proto=static
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+lan_gateway=192.168.1.1
+
+dhcpd_disabled=0
+dhcpd_start=192.168.1.2
+dhcpd_end=192.168.1.250
+dhcpd_leasetime=7200
+
+#lang info
+lang_support='cn,en'
+lang_show_auto='1'
+#auto and support list
+lang_auto_flag=1
+lang_type='cn'
+
+helpurl_cn=''
+helpurl_en=''
+helpurl_ct=''
+helpurl_vi=''
+helpurl_ru=''
+
+# WIRELESS
+fixed_mac=6
+country_list='CN,US,EU,OT'
+
+#2G Setttings
+disabled_2g=0
+ssid_2g=WiFi_
+ssid_tail_2g=
+wlanKey_2b=
+country_2g=CN
+hwmode_2g=9
+channel_2g=0
+#0-auto 1-20 2-40 3-80
+htmode_2g=2
+maxsta_2g=128
+
+#5G Setttings
+disabled_5g=0
+ssid_5g=WiFi_5G_
+ssid_tail_5g=
+wlanKey_5g=
+country_5g=CN
+hwmode_5g=17
+#1-20 2-40 3-80
+htmode_5g=4
+channel_5g=36
+maxsta_5g=128
+
+# WAN拨号方式
+wan_type_list='static,dhcp,pppoe'
+wan_type_default='dhcp'
+#上网策略: wirepriority,3g,4g,5g,ltepriority
+wan_strategy_list='wirepriority,4g,wire'
+# 默认上网策略
+wan_strategy_def='4g'
+# 烧录首次上网策略
+wan_strategy_flash='wirepriority'
+
+# 统计服务器
+statistics_domain='esas.crabox-sys.com'
+statistics_model=""
+
+# 云升级服务器
+cloudupdate_domain='update.cpe-iot.com'
+
+# 默认ntp服务
+timezone=UTC-8
+ntp_server='pool.ntp.org -h cn.pool.ntp.org -h europe.pool.ntp.org'
+
+#默认抓包
+interface='WAN,MODEM'
+packsize='30'
+ifname='lan'
+
+#UPNPD 服务信息
+model_name='Wireless Router'
+model_url='http://cs.net'
+manufacturer_url='http://cs.net/'
+manufacturer_name='CS Inc.'
+manufacturer='CS'
+product_class='CS'
+
+#Modem parameter
+mcm_sms_mode="0"
+modem_netcustom_list="auto,5G,4G"
+modem_mode="auto"
+
+#modem
+ModemSmsSupport='0'
+ModemNetcustomSupport="0"
+
+# 页面显示控制
+WiredWanSupport='1'
+DdnsSupport='0'
+LinkSwtichSupport='0'
+DetectNetSupport='1'
+crpc_support='0'
+WanDetectSupport='1'
+IptvSupport='0'
+IptvMulModeSupport='0'
+WizardIptvSupport='0'
+Ipv6Support='0'
+PptpServerSupport='0'
+L2tpServerSupport='0'
+SsrServerSupport='0'
+PppoeSpecSupport='0'
+PppoeSpecRussia='0'
+PppoelcpEchoSupport='0'
+TtlWaySupport='1'
+StorageSupport='0'
+FtpSupport='0'
+UpnpSupport='0'
+TcpdumpSupport='0'
+DOSSupport='0'
+StaticrouteSupport='1'
+WifiSchSupport='0'
+GuestWifiSchSupport='0'
+WpsSupport='0'
+Ipv6PPPSupport='0'
+FirewallSchSupport='0'
+Ipv6TunnelSupport='0'
+Option60Support='0'
+RipRouterSupport='0'
+IpsecSupport='0'
+IpsecKeyPayloadSupport='0'
+IpsecGmSupport='0'
+IPsecGmv2Support='0'
+FtpPortSupport='0'
+RemoteLogSupport='1'
+SmartFlowSupport='0'
+loginVerifySupport='0'
+GuestWifiMaxStaSupport='0'
+multiGuesrWifiSupport='0'
+SsidQosSupport='0'
+GuestSsidQosSupport='0'
+Tr069Support='0'
+CwmpdSupport='0'
+DtuSupport='0'
+Dtu485Support='0'
+SnmpSupport='0'
+Usb3DisableSupport='0'
+HideLogo='1'
+VersionControlSupport='0'
+ipv6NatSupport='0'
+TimeZoneCSTSupport='1'
+sslVpnSupport='0'
+AlgSupport='0'
+TcpdumpPackSupport='1'
+SmsSupport='0'
+EoipSupport='0'
+FotaSupport='0'
+TunnelSupport='0'
+OpenVpnClientSupport='0'
+VrrpSupport='0'
+RnatSupport='0'
+QosSupport='0'
+RipSupport='0'
+OspfSupport='0'
+BgpSupport='0'
+GpsSupport='0'
+vxlanSupport='0'
+WireguardSupport='0'
+PptpServerSupport='0'
+PptpClientSupport='0'
+L2tpServerSupport='0'
+L2tpClientSupport='0'
+VpnMultiClientSupport='0'
+WanRouteSupport='1'
+Rtl8111hSupport='0'
+CellLockSupport='1'
+slbDongleSupport='1'
+opmodeSupport='0'
+modemSupport='0'
+ailingMqttSupport='0'
+#qos tradQos 页面优先级,1 不显示
+tradQos=0
+
+#wireless option support
+wifiEncryptSupport='0'
+wifiWepSupport='0'
+wifiWpa3Support='0'
+wifiRadiusSupport='0'
+

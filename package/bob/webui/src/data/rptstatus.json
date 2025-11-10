@@ -1,0 +1,9 @@
+{
+    "wifiIdx_rpt": "0",
+    "txPower": "100",
+    "macDisabled": "1",
+    "cloneMac": "ff:ff:ff:ff:ff:ff",
+    "wifiMode": "1",
+    "countryCode": "1",
+    "rptConnStatus": "success"
+}

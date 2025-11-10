@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('tty_server.help') }}</strong></td>
+              </tr>
+			        <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+			        <tr v-show="enabled">
+                <td>{{lang_t('tty_server.type')}}</td>
+                <td>
+                  <select v-model="formValidate.type" @change="typeChange">
+                    <option value="0">232</option>
+                    <option value="1">485</option>
+                  </select>
+                </td>
+              </tr>  
+              <tr v-if="enabled">
+                <td>{{lang_t('tty_server.mode')}}</td>
+                <td>
+                  <select v-model="formValidate.mode">
+                    <option value="0">{{ lang_t('tty_server.close') }}</option>
+                    <option value="1">{{ lang_t('tty_server.client') }}</option>
+                    <option value="2">{{ lang_t('tty_server.server') }}</option>
+                  </select>
+                </td>
+              </tr>             
+              <tr v-if="enabled && (formValidate.mode != '0'&& formValidate.mode == '1')">
+                <td>{{lang_t('tty_server.serverip')}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.serverIp"/>
+                </td>
+              </tr>
+              <tr v-if="enabled && formValidate.mode != '0'">
+                <td>{{lang_t('tty_server.protocol')}}</td>
+                <td>
+                  <select v-model="formValidate.protocol">
+                    <option value="0">TCP</option>
+                    <option value="1">UDP</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.mode != '0'&&(formValidate.protocol == '0' || formValidate.protocol == '2'))">
+                <td>{{lang_t('tty_server.port',['TCP'])}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.tcpPort" :maxlength="5" />
+                  <span class="option">(1024~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.mode != '0'&&(formValidate.protocol == '1' || formValidate.protocol == '2'))">
+                <td>{{lang_t('tty_server.port',['UDP'])}}</td>
+                <td>
+                  <input type="number" v-model="formValidate.udpPort" :maxlength="5" />
+                  <span class="option">(1024~65535)</span>
+                </td>
+              </tr>
+              <tr v-if="enabled && formValidate.mode != '0'">
+                <td></td>
+                <td>
+                  <label style="cursor: pointer;" @click="comShow"><i :class="['fa',ttyComShow ? 'fa-chevron-up' : 'fa-chevron-down']" aria-hidden="true"></i>{{lang_t('tty_server.extendmsg')}}</label>
+                </td>
+              </tr>
+              <tr v-if="enabled && ttyComShow">
+                <td>{{lang_t('tty_server.baud')}}</td>
+                <td>
+                  <select v-model="formValidate.baudRate">
+                    <option v-for="baudOption in createbaud" :value="baudOption.value" :key="baudOption.value">{{baudOption.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="enabled && ttyComShow">
+                <td>{{lang_t('tty_server.parity')}}</td>
+                <td>
+                  <select v-model="formValidate.parity">
+                    <option value="NONE">None</option>
+                    <option value="ODD">Odd</option>
+                    <option value="EVEN">Even</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="enabled && ttyComShow">
+                <td>{{lang_t('tty_server.data_bit')}}</td>
+                <td>
+                  <select v-model="formValidate.dataBits">
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="enabled && ttyComShow">
+                <td>{{lang_t('tty_server.stop_bit')}}</td>
+                <td>
+                  <select v-model="formValidate.stopBits">
+                    <option value="1">1</option>
+                    <option value="1.5">1.5</option>
+                    <option value="2">2</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="enabled && ttyComShow">
+                <td>{{lang_t('tty_server.flow')}}</td>
+                <td>
+                  <select v-model="formValidate.flow">
+                    <option value="NONE">None</option>
+                    <option value="RTS/CTS">RTS/CTS</option>
+                    <option value="XON/XOFF">XON/XOFF</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+		  enabled:false,
+      formValidate: {
+        mode:'0',
+        serverIp:'',
+		    type:'0',
+        protocol:'2',
+        tcpPort:'',
+        udpPort:'',
+        baudRate:'9600',
+        parity:'NONE',
+        dataBits:'8',
+        stopBits:'1',
+        flow:'NONE'
+      },
+      ttyComShow:false,
+      arrow:'chevron-down'
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getTtyServiceCfg(function(data){
+	  _this.enabled = data.ttyEnable == "1" ? true : false;
+      _this.formValidate.mode = data.ttyMode;
+      _this.formValidate.serverIp = data.ttyServerIp;
+		  _this.formValidate.type = data.ttyType;
+      _this.formValidate.protocol = data.ttyProto;
+      _this.formValidate.tcpPort = data.ttyTcpPort;
+      _this.formValidate.udpPort = data.ttyUdpPort;
+      _this.formValidate.baudRate = data.ttyBaudRate;
+      _this.formValidate.parity = data.ttyParity;
+      _this.formValidate.dataBits = data.ttyDataBit;
+      _this.formValidate.stopBits = data.ttyStopBit;
+      _this.formValidate.flow = data.ttyFlowControl;
+    });
+	  addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+	  createbaud:function(){
+      var option = [];
+      var arr1 = [
+        {option:'300',value:'300'},
+        {option:'600',value:'600'},
+        {option:'1200',value:'1200'},            
+        {option:'2400',value:'2400'},
+        {option:'4800',value:'4800'},
+        {option:'9600',value:'9600'}
+      ];
+      var arr2 = [
+        {option:'14400',value:'14400'},
+        {option:'19200',value:'19200'},
+        {option:'38400',value:'38400'},
+        {option:'56000',value:'56000'},
+        {option:'57600',value:'57600'},
+        {option:'115200',value:'115200'},
+        {option:'128000',value:'128000'},
+        {option:'256000',value:'256000'},
+        {option:'230400',value:'230400'}
+      ]
+      if(this.formValidate.type == '0'){
+        option = arr1.concat(arr2);
+      }else{
+        option = arr1;
+      }
+      return option;
+    },
+	  toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.ttyEnable = "0";
+        postVar.addEffect = "0";//on/off
+        uiPost.setTtyServiceCfg(postVar, apply_callback);
+      }      
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+	  
+      if(_this.formValidate.mode != '0'){
+        if(_this.formValidate.mode == '1'){
+          _s = cs.ip(_this.formValidate.serverIp);
+          if(_s == 0){
+            errorAlert(_this.lang_t('tty_server.serverip') + _this.lang_t('alert.msg5'));
+            return false;
+          }else if (_s == 1) {
+            errorAlert(_this.lang_t('tty_server.serverip') + _this.lang_t('alert.msg14'));
+            return false;
+          }else if(_s == 2){
+            errorAlert(_this.lang_t('tty_server.serverip') + _this.lang_t('alert.msg32'));
+            return false;
+          }else if(_s == 3){
+            errorAlert(_this.lang_t('tty_server.serverip') + _this.lang_t('alert.msg33'));
+            return false;
+          }else if(_s == 4){
+            errorAlert(_this.lang_t('tty_server.serverip') + _this.lang_t('alert.msg34'));
+            return false;
+          }
+        }
+
+        if(_this.formValidate.protocol == '0' || _this.formValidate.protocol == '2'){
+          if(99 != cs.num_range(_this.formValidate.tcpPort,1024,65535)){
+            errorAlert(_this.lang_t('tty_server.port',['TCP']) + _this.lang_t('alert.msg15',[1024,65535]));
+            return false;
+          }
+        }
+
+        if(_this.formValidate.protocol == '1' || _this.formValidate.protocol == '2'){
+          if(99 != cs.num_range(_this.formValidate.udpPort,1024,65535)){
+            errorAlert(_this.lang_t('tty_server.port',['UDP']) + _this.lang_t('alert.msg15',[1024,65535]));
+            return false;
+          }
+        }
+      }
+
+      postVar.ttyEnable = "1";
+      postVar.ttyMode = _this.formValidate.mode;
+      postVar.ttyServerIp = _this.formValidate.serverIp;
+      postVar.ttyType = _this.formValidate.type;
+	    postVar.ttyProto = _this.formValidate.protocol;
+      postVar.ttyTcpPort = _this.formValidate.tcpPort;
+      postVar.ttyUdpPort = _this.formValidate.udpPort;
+      postVar.ttyBaudRate = _this.formValidate.baudRate;
+      postVar.ttyParity = _this.formValidate.parity;
+      postVar.ttyDataBit = _this.formValidate.dataBits;
+      postVar.ttyStopBit = _this.formValidate.stopBits;
+      postVar.ttyFlowControl = _this.formValidate.flow;
+	    postVar.addEffect = "1";//on/off
+      uiPost.setTtyServiceCfg(postVar, apply_callback)
+    },
+	  typeChange:function(){
+      var option = this.createbaud, mark = false;
+      this.tempRate && (this.formValidate.baudRate = this.tempRate);
+      for(var i = 0; i < option.length; i++){
+        if(option[i].option == this.formValidate.baudRate){
+          mark = true;
+          break;
+        }
+      }      
+      if(!mark){
+        this.tempRate = this.formValidate.baudRate;
+        this.formValidate.baudRate = option[0].option;
+      }else{
+        this.tempRate = null;
+      }
+    },
+    comShow:function(){
+      if(this.ttyComShow == false){
+        this.arrow = "chevron-up";
+        this.ttyComShow = true;
+      }else{
+        this.arrow = "chevron-down";
+        this.ttyComShow = false;
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

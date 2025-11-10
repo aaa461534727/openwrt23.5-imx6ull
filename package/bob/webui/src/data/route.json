@@ -1,0 +1,36 @@
+{
+  "interface":  "LAN1,LAN2,LAN3,LAN4,WAN,custom",
+  "wanIp":"0.0.0.0",
+  "lanIp":"192.168.0.253",
+  "ipRouteLog":"data:[2020] 01.01",
+  "rule":[
+      {
+        "idx":"1",
+        "ip":   "192.168.16.0",
+        "gw":  "10.20.40.200",
+        "mask":   "255.255.255.0",
+        "metric":   "0",
+        "iface":   "LAN",
+        "desc":   "vpn1",
+        "delRuleName":"delRule0"
+      },{
+        "idx":"2",
+        "ip":   "192.168.16.10",
+        "gw":  "10.20.40.200",
+        "mask":   "255.255.255.0",
+        "metric":   "1",
+        "iface":   "WAN",
+        "desc":   "vpn2",
+        "delRuleName":"delRule1"
+      },{
+        "idx":  "3",
+        "ip":  "192.168.55.3",
+        "gw":  "192.168.16.1",
+        "mask":  "255.255.255.0",
+        "metric": "1",
+        "iface":  "WAN",
+        "desc":  "",
+        "delRuleName":"delRule2"
+      }
+    ]
+}

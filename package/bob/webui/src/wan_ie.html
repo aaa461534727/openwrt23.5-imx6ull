@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <style>
+    .home{margin: auto; padding: 20px;}
+    .left{width: 50%; text-align:left;}
+	  .right{width: 50%; text-align:right; padding-right:30px;}
+    .help{margin-top: 30px;margin-bottom: 50px;text-align: center;}
+    .load{display: none;margin-top: 10%;text-align: center}
+    .btn{width:200px;}
+    .header{width: 100%;height: 50px;background: #3C3C3B;position: fixed;top:0;left: 0;_right:0;_position: absolute;_bottom: auto;_top:expression(eval('0'));}
+    .header-lang{float: right;padding-top: 15px;padding-right: 35px;}
+  </style>
+</head>
+<script type="text/javascript" src="/plugin/json2.js"></script>
+<script type="text/javascript" src="/static/js/kr.js"></script>
+<script type="text/javascript" src="/static/js/config_ie.js"></script>
+<body id="myui" style="display: none;">
+  <div class="header">
+    <div class="header-lang">
+      <div id="lang_select"></div>
+    </div>
+</div>
+<br>
+<br>
+<div class="home">
+  <div id="homePage" align="center">
+    <div class="help">
+      <strong>{{w('internet.help')}}</strong>
+    </div>
+	
+	  <table width="600" border="0" cellpadding="3" cellspacing="1">
+      <tr>
+	      <td class="right">{{w('internet.status')}}</td>
+        <td class="left"><span id="linkState"></span></td>
+  	  </tr>
+      <tr>
+        <td class="right">{{w('index.metric')}}</td>
+        <td class="left">
+          <select id="strategy" onChange="linkChange()">
+            <option value="0">{{w('link_priority.wired_priority')}}</option>
+            <option value="1">4G/5G</option>
+            <option value="2">{{w('link_priority.wired')}}</option>
+          </select>
+        </td>
+      </tr>
+    </table>
+
+    <!-- 有线设置 -->
+    <div id="wiredShow" style="display: none">
+      <table width="600" border="0" cellpadding="3" cellspacing="1">
+    	  <tr>
+        	<td class="right">{{w('internet.type')}}</td>
+        	<td class="left">
+      		  <select id="modeType" onChange="modeChange()">
+        			<option value="0">{{w('internet.staticip')}}</option>
+        			<option value="1">DHCP</option>
+        			<option value="3">PPPoE</option>
+      		  </select>
+        	</td>
+    	  </tr>
+    	</table>
+
+    	<br>
+      <!--静态IP设置-->
+      <div id="wanMode1" style="display: none">
+    	  <table width="600" border="0" cellpadding="3" cellspacing="1">
+          <tr>
+          	<td class="right">{{w('internet.ipaddr')}}</td>
+          	<td class="left"><input type="text" id="staticIp"/></td>
+          </tr>
+    	    <tr>
+          	<td class="right">{{w('internet.netmask')}}</td>
+          	<td class="left"><input type="text" id="staticMask"/></td>
+          </tr>
+      	  <tr>
+      		  <td class="right">{{w('internet.gateway')}}</td>
+      		  <td class="left"><input type="text" id="staticGw"/></td>
+          </tr>
+      	  <tr>
+      		  <td class="right">{{w('internet.preferred_dns')}}</td>
+      		  <td class="left"><input type="text" id="priDns"/> </td>
+      	  </tr>
+          <tr>
+      		  <td class="right">{{w('internet.alternative_dns')}}</td>
+      		  <td class="left"><input type="text" id="secDns"/></td>
+      	  </tr>
+          <tr>
+      		  <td class="right">MTU</td>
+      		  <td class="left"><input type="number" min="576" max="1500" oninput="if(value.length>4) value=value.slice(0,4)" id="staticMtu" /></td>
+      	  </tr>
+      	</table>
+      </div>
+      <!--DHCP 设置-->
+      <div id="wanMode2" style="display: none">
+        <table width="600" border="0" cellpadding="3" cellspacing="1">
+      	  <tr>
+      		  <td class="right">MTU</td>
+      		  <td class="left"><input type="number" min="576" max="1500" oninput="if(value.length>4) value=value.slice(0,4)" id="dhcpMtu" /></td>
+      	  </tr>
+      	</table>
+      </div>
+      <!--PPPoE 设置-->
+      <div id="wanMode3" style="display: none">
+        <table width="600" border="0" cellpadding="3" cellspacing="1">
+      	  <tr>
+      		  <td class="right">{{w('internet.account')}}</td>
+      		  <td class="left"><input type="text" id="pppoeUser"/></td>
+          </tr>
+      	  <tr>
+      		  <td class="right">{{w('internet.password')}}</td>
+      		  <td class="left"><input type="password" id="pppoePass" /></td>
+      	  </tr>
+          <tr>
+      		  <td class="right">MTU</td>
+      		  <td class="left"><input type="number" min="576" max="1492" oninput="if(value.length>4) value=value.slice(0,4)" id="pppoeMtu" /></td>
+      	  </tr>
+        </table>
+    	</div>
+    </div>
+    <br>
+    <table width="100%" cellpadding="3" cellspacing="1">
+  	  <tr><td align="center"><button onClick="handleSubmit()" class="btn">{{w('internet.save')}}</button></td></tr>
+  	</table>
+  </div>
+  <div id="show_sec" class="load">
+    <img src="static/images/load.gif">
+    <br>
+    <div>
+      <span>{{w('internet.please_wait')}}</span>
+      [{{w('internet.about_time')}}<span id="sec"></span>{{w('internet.sec')}}]
+    </div>
+  </div>
+</div>
+<script>
+  var linkState = false;
+  (function(){
+    kr.html("lang_select", lang_select);
+    var postVar = {"action":"getWanCfg","idx":"1","topicurl":"getWanCfg"};
+    kr.request({
+      type: "POST",
+      url: "/cgi-bin/cstecgi.cgi",
+      data: postVar,
+      async: false,
+      success:function(data){
+        if(data.linkState == '1' || data.wanConnStatus == 'connected') linkState = true;
+        linkType();
+        kr.set("strategy", data.strategy);
+        kr.set("modeType", data.wanMode);
+        /*静态IP信息*/
+        kr.set("staticIp", data.staticIp);
+        kr.set("staticMask", data.staticMask);
+        kr.set("staticGw", data.staticGw);
+        kr.set("priDns", data.priDns);
+        kr.set("secDns", data.secDns);
+        kr.set("staticMtu", data.staticMtu);
+        /*DHCP信息*/
+        kr.set("dhcpMtu", data.dhcpMtu);
+        /*PPPoE信息*/
+        kr.set("pppoeUser", data.pppoeUser);
+        kr.set("pppoePass", data.pppoePass);
+        kr.set("pppoeMtu", data.pppoeMtu);
+        /*显示模块*/
+        linkChange();
+        modeChange();
+      }
+    });
+    new kr$1({});
+})(window);
+
+  function modeChange(){
+    var mode = kr.get('modeType');
+    if (mode == '0'){
+      kr.show('wanMode1');
+      kr.hide('wanMode2');
+      kr.hide('wanMode3');
+    }else if (mode == '3'){
+      kr.show('wanMode3');
+      kr.hide('wanMode2');
+      kr.hide('wanMode1');
+    }else {
+      kr.show('wanMode2');
+      kr.hide('wanMode1');
+      kr.hide('wanMode3');
+    }
+  }
+
+  function linkChange(){
+    var link_type = kr.get('strategy');
+    if (link_type != '1'){
+      kr.show('wiredShow');
+    }else {
+      kr.hide('wiredShow');
+    }
+  }
+
+  function handleSubmit(){
+    wtime = 30;
+    var mode =  kr.get("modeType");
+    var link =  kr.get("strategy");
+    var postVar = {};
+    if (link != '1'){ 
+      if (mode == '0'){
+        var staticIp = kr.get("staticIp");
+        var staticMask = kr.get("staticMask");
+        var staticGw = kr.get("staticGw");
+        var priDns = kr.get("priDns");
+        var secDns = kr.get("secDns");
+        var staticMtu = kr.get("staticMtu");
+        if (!staticIp){
+          alert(lang_t('internet.ipaddr') + lang_t('alert.msg5'));return false;
+        }else{
+          if (!checkIp(staticIp)){
+            alert(lang_t('internet.ipaddr') + lang_t('alert.msg14'));return false;
+          }
+        }
+        if (!staticMask){
+          alert(lang_t('internet.netmask') + lang_t('alert.msg5'));return false;
+        }else{
+          if (!checkMask(staticMask)){
+            alert(lang_t('internet.netmask') + lang_t('alert.msg14'));return false;
+          }
+        }
+        if (!staticGw){
+          alert(lang_t('internet.gateway') + lang_t('alert.msg5'));return false;
+        }else{
+          if (!checkIp(staticGw)){
+            alert(lang_t('internet.gateway') + lang_t('alert.msg14'));return false;
+          }
+        }
+        if (!staticMtu){
+          alert("MTU" + lang_t('alert.msg5'));return false;
+        }else{
+          if (576 > staticMtu || 1500 < staticMtu){
+            alert("MTU" + lang_t('alert.msg39'));return false;
+          }
+        }
+        postVar = {"dnsMode":"1","priDns":priDns,"secDns":secDns,"staticIp":staticIp,"staticMask":staticMask,"staticGw":staticGw,"staticMtu":staticMtu}
+      }else if (mode == '1'){            //DHCP
+        var dhcpMtu = kr.get('dhcpMtu');
+        if (!dhcpMtu){
+          alert("MTU" + lang_t('alert.msg5'));return false;
+        }else{
+          if (576 > dhcpMtu || 1500 < dhcpMtu){
+            alert("MTU" + lang_t('alert.msg39'));return false;
+          }
+        }
+        postVar = {"dnsMode":"0","dhcpMtu":dhcpMtu};
+      }else{   //modeType:3           PPPoE
+        var user = kr.get('pppoeUser');
+        var pass = kr.get('pppoePass');
+        var pppoeMtu = kr.get('pppoeMtu');
+        if (!pppoeMtu){
+          alert("MTU" + lang_t('alert.msg5'));return false;
+        }else{
+          if (576 > pppoeMtu || 1492 < pppoeMtu){
+            alert("MTU" + lang_t('alert.msg40'));return false;
+          }
+        }
+        postVar = {"dnsMode":"0","pppoeUser":user,"pppoePass":pass,"pppoeMtu":pppoeMtu}
+      }
+    }
+    kr.hide('homePage');
+    kr.show('show_sec');
+    do_count_down();
+    postVar.wanMode = mode;
+    postVar.strategy = link;
+    postVar.topicurl = "setWanIeCfg";
+    postVar.ieFlag = "ie8";
+    kr.request({
+      type: 'post',
+      data: postVar,
+      success:function(data){
+        if(data.success === true)
+          linkState = true;
+        else
+          linkState = false;
+        linkType();
+      }
+    });
+  }
+  function linkType(type){
+    if(linkState){
+      kr.html('linkState', lang_t('index.connected'));
+      kr.elm('linkState').style.color = '#A2CD52';
+    }else{
+      kr.html('linkState', lang_t('index.disconnected'));
+      kr.elm('linkState').style.color = '#f00';
+    }
+  }
+  function checkIp(ip){
+    var obj = ip;
+    var exp = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+    var reg = obj.match(exp);
+    if (reg == null){
+      return false;
+    }else {
+      return true;
+    }
+  }
+  function checkMask(mask){
+    var obj = mask;
+    var exp = /^(254|252|248|240|224|192|128|0)\.0\.0\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.255\.255\.(254|252|248|240|224|192|128|0)$/;
+    var reg = obj.match(exp);
+    if (reg == null) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+  
+  var wtime = 30;
+  function do_count_down(){
+    kr.html('sec', wtime);
+    if (wtime == 0) {
+      alert(lang_t('common.success'));
+      kr.show('homePage');
+      kr.hide('show_sec');
+      location.href = location.href;
+    }
+    if (wtime > 0) {
+      wtime--;
+      setTimeout('do_count_down()', 1000);
+    }
+  }
+</script>
+</body>
+</html>

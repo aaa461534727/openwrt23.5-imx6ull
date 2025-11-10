@@ -50,6 +50,9 @@ check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 printdb:
 	@true
 
+set_profile:
+	sh $(TOPDIR)/Release/product/cs_product.sh
+
 prepare: $(target/stamp-compile)
 
 _clean: FORCE
@@ -124,7 +127,7 @@ diffconfig: FORCE
 buildinfo: FORCE
 	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
 
-prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
+prepare: set_profile .config $(tools/stamp-compile) $(toolchain/stamp-compile)
 	$(_SINGLE)$(SUBMAKE) -r buildinfo
 
 world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE

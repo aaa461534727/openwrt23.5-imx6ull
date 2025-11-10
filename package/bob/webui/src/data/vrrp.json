@@ -1,0 +1,9 @@
+{
+	"enabled":	"1",
+	"vrInterface":	"br0",
+	"virtualIp":	"192.168.3.1",
+	"virtualId":	"2",
+	"priority":	"100",
+	"noticeTimers":	"1",
+	"status":	"master"
+}

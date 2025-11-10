@@ -1,0 +1,22 @@
+{
+  "redistributeConnect": "0",
+  "redistributeStatic": "1",
+  "redistributeKernel": "0",
+  "rule": [
+      {
+          "idx": 1,
+          "type": "network",
+          "address": "192.168.30.0/24"
+      },
+      {
+          "idx": 2,
+          "type": "network",
+          "address": "192.168.1.0/24"
+      },
+      {
+          "idx": 3,
+          "type": "neighbour",
+          "address": "192.168.2.1"
+      }
+  ]
+}

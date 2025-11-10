@@ -1,0 +1,33 @@
+{
+	"enabled":	"1",
+	"version":	"0",
+	"serverPort":	"161",
+	"community":	"public",
+	"trapIp":	"192.168.1.2",
+	"trapPort":	"162",
+	"interface":	"br0",
+	"localhost":	"0",
+	"rule": [
+		{
+			"idx":	"1",
+			"mode":	"0",
+			"username":	"test",	
+			"password":	"test1234",
+			"hash":	"SHA",
+			"encryption":	"AES",	
+			"key":	"123456"
+		}, 
+		{
+			"idx":	"2",
+			"mode":	"1",
+			"username":	"csd",
+			"password":	"csd2020",
+			"hash":	"MD5"
+		},
+		{
+			"idx":	"3",
+			"mode":	"2",
+			"username":	"tcsd"
+		}
+	]
+}

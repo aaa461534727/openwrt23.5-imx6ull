@@ -1,0 +1,23 @@
+{
+  "name": "uglify-ui",
+  "version": "1.0.0",
+  "description": "totoui",
+  "main": "",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "build": "jsdoc -c conf.json static/js && node minify -c minify.json",
+    "doc": "jsdoc -c conf.json static/js",
+    "run": "node minify -c minify.json"
+  },
+  "author": "cs",
+  "license": "ISC",
+  "devDependencies": {
+    "ink-docstrap": "^1.3.0",
+    "jsdoc": "^3.6.4"
+  },
+  "dependencies": {
+    "html-minifier": "^4.0.0"
+  }
+}

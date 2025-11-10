@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('slb_ap.help') }}</strong></td>
+              </tr>
+
+              <tr v-show="enable">
+                <td>{{lang_t('slb_ap.ssid')}}</td>
+                <td>
+                  <input type="text" v-model="ssid" :maxlength="64" />
+                </td>
+              </tr>
+
+              <tr v-show="enable">
+                <td>{{lang_t('slb_ap.mac')}}</td>
+                <td>
+                  <input type="text" v-model="mac" :maxlength="64" /><span>({{lang_t('slb_ap.eg')}})</span>
+                </td>
+              </tr>
+
+              <tr v-show="enable">
+                <td>{{lang_t('slb_ap.channel')}}</td>
+                <td>
+                  <select v-model="channel">
+                    <option v-for="channelOption in channelOptions" :value="channelOption.value" :key="channelOption.value">{{channelOption.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enable">
+                <td>{{lang_t('slb_ap.bw')}}</td>
+                <td>
+                  <select v-model="bw">
+                    <option v-for="bwOption in bwOptions" :value="bwOption.value" :key="bwOption.value">{{bwOption.option}}</option>
+                  </select>
+                </td>  
+              </tr>
+              <tr v-show="enable">
+                <td>{{lang_t('slb_ap.pwd')}}</td>
+                <td>
+                  <input type="text" v-model="pwd" :maxlength="16" />
+                </td>
+              </tr>
+
+              <tr>
+                <td style="width:30%">{{ lang_t('slb_ap.repeat_state') }}</td>
+                <td>
+                  <!-- <span style="font-weight:bold">{{ rptSsid}}</span> -->
+                  <span v-if="rptConnected == false" style="color: black">{{ lang_t('slb_ap.connect_fail') }}</span>
+                  <span v-if="rptConnected == true" style="color: green">{{ lang_t('slb_ap.connect') }}</span>
+                </td>
+              </tr>
+
+              <tr v-show="enable">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('slb_ap.start')}}</button>&nbsp;&nbsp;
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleStop">{{lang_t('slb_ap.stop')}}</button>
+                </td>
+              </tr>
+              
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return{
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      enable: true,
+      rptConnected: false,
+      ap_enable:'',
+      ssid:'',
+      mac:'',
+      channel:'',
+      bw:'',
+      pwd:'',
+      ip:'',
+      symbol:':',
+      cell_id:'',
+      cp_type:'',
+      sysmsg_period:'',
+      s_cfg_idx:'',
+      cc_start_pos:''
+    }
+  },
+  computed: {
+    toggle_status: function() {
+      $('#switch_status').bootstrapSwitch('state', this.enable);
+    },
+    bwOptions: function(type) {
+      return [
+        {option: '20M', value: '20'},
+        {option: '40M', value: '40'},
+        {option: '80M', value: '80'}
+      ];
+    },
+    channelOptions: function(type) {
+      return [
+        {option: '41', value: '41'},
+        {option: '125', value: '125'},
+        {option: '209', value: '209'},
+        {option: '291', value: '291'},
+        {option: '375', value: '375'},
+        {option: '459', value: '459'},
+        {option: '541', value: '541'},
+        {option: '625', value: '625'},
+        {option: '709', value: '709'},
+        {option: '791', value: '791'},
+        {option: '1375', value: '1375'},
+        {option: '1459', value: '1459'},
+        {option: '1541', value: '1541'},
+        {option: '1625', value: '1625'},
+        {option: '1709', value: '1709'},
+        {option: '1791', value: '1791'},
+        {option: '1875', value: '1875'},
+        {option: '1959', value: '1959'},
+        {option: '2041', value: '2041'},
+        {option: '2125', value: '2125'},
+        {option: '2209', value: '2209'},
+        {option: '2291', value: '2291'},
+        {option: '2479', value: '2479'},
+        {option: '2563', value: '2563'},
+        {option: '2645', value: '2645'},
+        {option: '2729', value: '2729'},
+        {option: '2813', value: '2813'}           
+      ];
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getSLBAPCfg(function(data){
+      // _this.enable = data.enable == "1" ? true : false;
+      _this.rptConnected = data.rptConnected == "1" ? true : false;
+      _this.mac = data.mac;
+      _this.channel = data.channel;
+      _this.bw = data.bw;
+      _this.pwd = data.pwd;
+      _this.ssid = data.ssid;
+      _this.ip = data.ip;
+      _this.symbol = data.symbol;
+      _this.cell_id = data.cell_id;
+      _this.cp_type = data.cp_type;
+      _this.sysmsg_period = data.sysmsg_period;
+      _this.s_cfg_idx = data.s_cfg_idx;
+      _this.cc_start_pos = data.cc_start_pos;
+    })
+  },
+  methods:{    
+    submit_status:function(){
+      var _this = this;
+      if(!_this.enable){
+        var postVar = {};
+        postVar.enable = "1";
+        uiPost.setSLBAPCfg(postVar);
+      }
+    },
+    isValidMAC: function(mac) {
+      var macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+      return macRegex.test(mac);
+    },
+    handleSubmit:function(){
+      var _this = this, f = _this.errorAlert;
+      var time = 30;
+      var postVar = {};
+      if(_this.enable){
+        if(!_this.ssid){
+          f(_this.lang_t('slb_ap.ssid_error'));
+          return false;
+        }        
+        if(!_this.mac || !_this.isValidMAC(_this.mac)){
+          f(_this.lang_t('slb_ap.mac_error'));
+          return false;
+        }
+        postVar.ssid = _this.ssid;
+        postVar.mac = _this.mac;
+        postVar.channel = _this.channel;
+        postVar.bw = _this.bw;
+        postVar.pwd = _this.pwd;
+        postVar.ip = _this.ip;
+        postVar.symbol = _this.symbol;
+        postVar.cell_id = _this.cell_id;
+        postVar.cp_type = _this.cp_type;
+        postVar.sysmsg_period = _this.sysmsg_period;
+        postVar.s_cfg_idx = _this.s_cfg_idx;
+        postVar.cc_start_pos = _this.cc_start_pos;
+        postVar.enable = "1";
+        Cstools.count(time,'js',function(){
+            location.href=location.href;
+          });
+        uiPost.setSLBAPCfg(postVar,function(data) {
+        });
+      }
+    },
+    handleStop: function() {
+      var _this = this;
+      var time = 20;
+      var postVar = {};
+      postVar.enable = "1";
+      postVar.ap_enable = "0";
+      Cstools.count(time,'js',function(){
+          location.href=location.href;
+      });
+      uiPost.setSLBAPstop(postVar, function(data) 
+      {
+        });
+    },
+  	errorAlert:function(data){
+      Cstools.msg({
+        type:'error',
+        messgetype:'alert',
+        content:data
+      });
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(_this.enable != data){
+        _this.enable = data;
+        _this.submit_status();
+      }
+    })
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

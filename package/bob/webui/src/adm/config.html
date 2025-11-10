@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+        <section class="col-xs-12">
+          <div class="content-box tab-content table-responsive __mb">
+      		<form class="form-horizontal" method="post">
+            <table class="table table-striped hidden-xs hidden-sm" >
+              <tr>
+                <td>{{lang_t('config.save_config_file')}}</td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td>
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('config.save_file')}}</button>
+                </td>
+              </tr>
+            </table>
+            </form>
+          </div>
+          <div class="content-box tab-content table-responsive __mb">
+            <form method="post" enctype="multipart/form-data">
+            <table class="table table-striped hidden-xs hidden-sm" >
+              <tr>
+                <td colspan="2">{{lang_t('config.update_config_file')}}</td>
+              </tr>
+              <tr v-if="isSafari">
+                <td colspan="2">
+                  <input type="file" name="file" id="f_upload" @change="filechange">
+                </td>
+              </tr>
+              <tr v-else>
+                <td style="width: 260px;"> 
+                  <input type="text" id="filename"  v-model="filename" disabled>
+                </td>
+                <td>
+                  <label class="input-group-btn">
+                    <span class="btn btn-default">
+                      <i class="glyphicon glyphicon-plus"></i> {{lang_t('config.select_file')}}<input type="file" name="file" id="f_upload" style="display: none;" @change="filechange">
+                    </span>
+                  </label>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but"  @click.prevent="submit_update">{{lang_t('config.restore')}}</button>
+                </td>
+              </tr>
+            </table>
+          </form>
+          </div>
+          <div class="content-box tab-content table-responsive __mb">
+            <table class="table table-striped">
+              <tr>
+                <td>{{lang_t('config.restore_msg')}}</td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td>
+                  <button class="btn btn-primary all-but" @click.prevent="submit_restore">{{lang_t('config.reset')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </section>
+        <div style="display: none;">
+          <form ref="save" class="form-horizontal" method="post" :action="saveAction">
+          </form>
+        </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+      saveAction:'/cgi-bin/ExportSettings.sh',
+      filename:'',
+      importAction:'/cgi-bin/cstecgi.cgi?action=upload&setting/setUploadSetting',
+      isSafari:false
+    }
+  },
+  created:function(){
+    var _this = this;
+    _this.isSafari = isSafari();
+    uiPost.SystemSettings(function(data){
+      if(data.exportAction != '') {
+        _this.saveAction = data.exportAction;
+      }
+      if(data.importAction){
+        _this.importAction = data.importAction;
+      }
+    }) 
+  },
+  methods:{
+    handleSubmit:function(event){
+      this.$refs.save.submit();
+    },
+    submit_restore:function(){
+      var _this = this;
+      var time;
+      Cstools.msg({
+        content: _this.lang_t('config.msg7'),
+        type: 'warn',
+        messgetype: 'confirm',
+        ok:function(){
+          uiPost.LoadDefSettings(function(data){
+            apply_callback(data, function() {
+              location.href = 'http://' + data.lan_ip + '/login.html';
+            });
+          });
+          return false;
+        }
+      });    
+    },
+    submit_update:function(){      
+      var _this = this;
+      var postVar = {};   
+      if($("#filename").val() == ""){
+        errorAlert(lang_t('config.msg1'));
+        return false;
+      }
+      var file = document.getElementById("f_upload").files[0];
+      var filesize = file.size;
+      if((filesize/(1024*1024))>1){
+        errorAlert(lang_t('config.msg3'));
+        return false;
+      }
+      upload.fileUpload({
+        data:file,
+		url: this.importAction+"&"+get_token_from_url().split("=")[1],
+        success:function(result){
+         if(result.settingERR == "1"){
+            var lanip = location.host;
+            var time;
+           if(result.wtime != undefined && result.wtime != ""){
+             time = result.wtime;
+           }else{
+             time = 60;
+           }
+            Cstools.count (time,'js',function(){
+				      parent.location.href='http://' + lanip + '/login.html';				
+            }); 
+          }else if(result.settingERR){
+            errorAlert(lang_t('config["' + result.settingERR + '"]'));
+			      return false;
+          }else{
+            errorAlert(lang_t('config.MSG_config_fail'));
+            return false;
+          }
+        },
+        error:function(result){
+          if(result.settingERR){
+            errorAlert(lang_t('config["' + result.settingERR + '"]'));
+            return false;
+          }else{
+            errorAlert(lang_t('config.MSG_config_fail'));
+            return false;
+          }
+        }
+      })
+    },
+    filechange:function(){
+      var file = document.getElementById("f_upload");
+      var name = file.files[0].name;
+      if(name.indexOf('.dat') < 0){
+        errorAlert(lang_t('config.msg2',['dat']));
+        file.value = '';
+        return false;
+      }
+      this.filename = name;
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

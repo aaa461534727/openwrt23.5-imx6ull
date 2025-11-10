@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2">
+                  <strong>{{ lang_t('wifi.help') }}</strong>
+                  <span v-show="operationMode != '0'"><br>{{ lang_t('opmode.aplist_help') }}</span>
+                </td>
+              </tr>
+              <tr v-show="wifiDualband == '1'">
+                <td>
+                  <input type="radio" value="0" v-model="wifiIdx" id="radio_0"><label for="radio_0">{{lang_t('wifi.title2g')}}</label> &nbsp;&nbsp;&nbsp;&nbsp;
+                  <input type="radio" value="1" v-model="wifiIdx" id="radio_1"><label for="radio_1">{{lang_t('wifi.title5g')}}</label>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td style="width: 30%;">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="">
+                <td>{{lang_t('wifi.mode')}}</td>
+                <td>
+                  <select v-model="operationMode">
+                    <option v-for="(item,idx) in opmodeSupport" :value="item.value">{{ item.desc }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '3'">
+                <td>{{ lang_t('wifi.ip') }}</td>
+                <td>
+                  <input type="text" v-model="ipAddress" disabled="true" />
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '3'">
+                <td>{{ lang_t('wifi.mask') }}</td>
+                <td>
+                  <input type="text" v-model="mask" disabled="true" />
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '3'">
+                <td>{{ lang_t('wifi.gateway') }}</td>
+                <td>
+                  <input type="text" v-model="gateway" disabled="true" />
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '3'">
+                <td>{{ lang_t('wifi.dns') }}</td>
+                <td>
+                  <input type="text" v-model="dns" disabled="true" />
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode != '0'">
+                <td>{{ lang_t('wifi.relay_status') }}</td>
+                <td>
+                 <span style="color:#fff;background-color:#3399ff;" v-if="status=='connected'">{{ lang_t('common.connect_success') }}</span>
+                 <span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('common.connect_fail') }}</span>
+               </td>
+              </tr>
+              <tr v-show="enabled && operationMode != '0'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="scan" id="scan_ing" :data-loading-text="lang_t('common.scan')">{{ lang_t('common.scan') }}</button>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.ssid') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.ssid" :maxlength="32" :disabled="globalConfig.csid =='C735TR'"/>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.band') }}</td>
+                <td>
+                  <select v-model="formValidate.band" @change="bandChange">
+                    <option v-for="bandwd in bandOption" :value="bandwd.value" :key="bandwd.value">{{bandwd.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.broadcast') }}</td>
+                <td>
+                  <select class="form-control" v-model="formValidate.hssid">
+                    <option value="0">{{lang_t('common.on')}}</option>
+                    <option value="1">{{lang_t('common.off')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="this.countryBt == 1 && enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.country') }}</td>
+                <td>
+                  <select v-model="formValidate.countryCode" @change="codeChange" >
+                    <option v-for="countrycode in countryOption " :value="countrycode.value" :key="countrycode.value">{{countrycode.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.bandwidth') }}</td>
+                <td>
+                  <select v-model="formValidate.bw" @change="bwChange">
+                    <option v-for="bwOption in createbw" :value="bwOption.value" :key="bwOption.value">{{bwOption.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.channel') }}</td>
+                <td>
+                  <select v-model="formValidate.channel" :disabled="channel_edit">
+                    <option v-for="channelOption in channelOptions" :value="channelOption.value" :key="channelOption.value">{{channelOption.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="(false && operationMode == '0') || (enabled && globalConfig.aiotSupport)">
+                <td>{{lang_t('wifi.ap_isolated')}}</td>
+                <td>
+                  <select v-model="formValidate.noForwarding">
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td>{{ lang_t('wifi.security_mode') }}</td>
+                <td>
+                  <select v-model="formValidate.authMode">
+                    <option value="0">{{ lang_t('wifi.nosecurity') }}</option>
+                    <option v-if="!globalConfig.aiotSupport" value="1">{{ lang_t('wifi.security') }}</option>
+                    <option v-if="globalConfig.aiotSupport" value="7">WPA</option>
+                    <option v-if="globalConfig.aiotSupport" value="8">WPA2</option>
+                    <option v-if="globalConfig.aiotSupport" value="2">WPA-PSK</option>
+                    <option v-if="globalConfig.aiotSupport" value="3">WPA2-PSK</option>
+                    <option v-if="globalConfig.aiotSupport" value="4">WPA/WPA2-PSK</option>
+                    <option v-if="globalConfig.aiotSupport" value="5">WEP-{{ lang_t('opmode.open_system') }}</option>
+                    <option v-if="globalConfig.aiotSupport" value="6">WEP-{{ lang_t('opmode.shared_key') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.authMode == '7' || formValidate.authMode == '8')">
+                <td>{{ lang_t('wifi.radiusIp') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.radiusIP"/>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.authMode == '7' || formValidate.authMode == '8')">
+                <td>{{ lang_t('wifi.radiusPort') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.radiusPort"/>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.authMode == '7' || formValidate.authMode == '8')">
+                <td>{{ lang_t('wifi.radiusKey') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.radiusKey"/>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.authMode == '5' || formValidate.authMode == '6')">
+                <td>{{ lang_t('wifi.encryption_type') }}</td>
+                <td>
+                  <select v-model="formValidate.encryptionType">
+                    <option value="0">WEP64</option>
+                    <option value="1">WEP128</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.authMode == '5' || formValidate.authMode == '6')">
+                <td>{{ lang_t('wifi.pass_type') }}</td>
+                <td>
+                  <select v-model="formValidate.keyType">
+                    <option value="0">HEX</option>
+                    <option value="1">ASCII</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="(enabled && operationMode == '0' && formValidate.authMode == '1') || (enabled && globalConfig.aiotSupport && formValidate.authMode != '0' && formValidate.authMode != '7' && formValidate.authMode != '8')">
+                <td>{{ lang_t('wifi.pass') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.key" :maxlength="passMaxLen" />
+				  <span v-if="globalConfig.wifiWpa2Wpa3Support && formValidate.authMode == '1'"><input type="checkbox" v-model="formValidate.wpa3"> {{ lang_t('wifi.wpa3') }}</span>
+				  <p v-show="formValidate.wpa3">{{ lang_t('wifi.wpa3_info') }}</p>
+                </td>
+              </tr>
+              <tr v-show="enabled && operationMode == '0'">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="modal fade" id="scan_ap_list" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog" :style="{width: globalConfig.isPhoneDevice ? 'auto' : '800px'}">
+              <div class="modal-content" >
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                  <h4>{{ lang_t('opmode.extend_ap') }}</h4>
+                  <p>{{ lang_t('opmode.aplist_help') }}</p>
+                </div>
+                <div class="modal-body" style="overflow-x: auto;">
+                  <table class="table table-striped">
+                    <thead>
+                      <th>{{ lang_t('wifi.channel') }}</th>
+                      <th>{{ lang_t('wifi.ssid') }}</th>
+                      <th>{{ lang_t('wifi.bssid') }}</th>
+                      <th>{{ lang_t('wifi.security_mode') }}</th>
+                      <th>{{ lang_t('wifi.signal') }}<i class="fa fa-sort" aria-hidden="true" style="cursor: pointer;" @click="sinalSort"></i></th>
+                      <th>{{ lang_t('wifi.mode') }}</th>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(data,v) in aplist" data-dismiss="modal" @click="selectTable(data)" style="cursor: pointer;">
+                        <td>{{ data.channel }}</td>
+                        <td style="white-space:pre;">{{ data.ssid }}</td>
+                        <td>{{ data.bssid }}</td>
+                        <td>{{ data.encrypt }}</td>
+                        <td>{{ data.signal }}</td>
+                        <td>{{ data.band }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="modal-footer">
+                  <table>
+                    <tr>
+                      <td colspan="12">
+                        <button class="btn btn-default all-but" data-dismiss="modal">{{ lang_t('common.close') }}</button>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal fade" id="set_rule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                  <h4 id="myModalLabel">{{ lang_t('opmode.extend_ap') }}</h4>
+                  <p>{{ lang_t('opmode.aplist_help1') }}</p>
+                </div>
+                <div class="modal-body">
+                  <table class="table">
+                    <tr>
+                      <td>{{ lang_t('wifi.ssid') }}</td>
+                      <td>
+                        <input type="text" v-model="forms.ssid" disabled />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('wifi.bssid') }}</td>
+                      <td>
+                        <input type="text" v-model="forms.bssid" disabled />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('wifi.security_mode') }}</td>
+                      <td>
+                        <select disabled v-model="forms.encrypt">
+                          <option value="NONE">{{ lang_t('wifi.nosecurity') }}</option>
+                          <option value="OPEN">WEP-{{ lang_t('opmode.open_system') }}</option>
+                          <option value="SHARED">WEP-{{ lang_t('opmode.shared_key') }}</option>
+                          <option value="WPAPSK">WPA-PSK</option>
+                          <option value="WPA2PSK">WPA2-PSK</option>
+                          <option value="WPAPSKWPA2PSK">WPA/WPA2-PSK</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="forms.encrypt != 'NONE'">
+                      <td>{{ lang_t('wifi.encryption_type') }}</td>
+                      <td>
+                        <select disabled v-model="forms.cipher" :placeholder="lang_t('common.select')">
+                          <option value="WEP64">WEP64</option>
+                          <option value="WEP128">WEP128</option>
+                          <option value="TKIP">TKIP</option>
+                          <option value="AES">AES</option>
+                          <option value="TKIPAES">TKIP/AES</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr v-show="forms.encrypt && forms.encrypt != 'NONE'">
+                      <td>{{ lang_t('wifi.pass') }}</td>
+                      <td>
+                        <input type="text" v-model="forms.key" :maxlength="63"/>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                <div class="modal-footer">
+                  <table>
+                    <tr>
+                      <td colspan="2">
+                        <button class="btn btn-default all-but" data-dismiss="modal" @click="backListFun">{{ lang_t('common.back') }}</button> &nbsp;&nbsp;
+                        <button class="btn btn-primary all-but" @click="relaySubmit">{{ lang_t('common.connect') }}</button>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+	    tableLoading:false,
+      currentSelect:0,
+      currentSortDir:'desc',
+	    operationMode:'0',
+	    status:'',
+      ipAddress:'',
+      mask:'',
+      gateway:'',
+      dns:'',
+      formValidate:{
+        ssid:'',
+        hssid:false,
+		wpa3:false,
+        band:'',
+        channel:0,
+        key:'',
+        bw:'',
+		    noForwarding:'0',
+        authMode:'0',
+        encrypType:'',
+        countryCode:'',
+        apIsolated: '',
+        encryptionType: '',
+        keyType: ''
+	    },
+	    forms:{
+        channel:'',
+        ssid:'',
+        bssid:'',
+        cipher:'',
+        key:''
+      },
+	    aplist:[],
+      channel_edit:false,
+      wifiIdx:'0',
+      wifiDualband:'',
+      flag1:0,
+      flag2:0,
+      enabled:"",
+      countryCodeList:[],
+      countryOption:[],
+      radiusIP: "",
+      radiusPort: "",
+      radiusKey: ""
+    }
+  },
+  watch:{
+      "wifiIdx":function () {
+         localStorage.setItem('wifiIdx', this.wifiIdx);
+        this.getWifiInfo();
+      }
+      
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if(_this.enabled == false && data){//启用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+      if(_this.enabled && data == false){//禁用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    })
+  },
+  computed:{
+    passMaxLen: function() {
+      if(this.globalConfig.aiotSupport){
+          var len = 63;
+          var kt = this.formValidate.keyType, et = this.formValidate.authMode;
+          if (kt == 0 && (this.formValidate.authMode == 2 ||this.formValidate.authMode == 3 || this.formValidate.authMode == 4)) {
+            len = 63;
+          } else {
+            if (et == '5') {
+              len = kt == '0' ? 10 : 5;
+            } else if(et == '6'){
+              len = kt == '0' ? 26 : 13;
+            }
+          }
+        return len;
+      }else{
+        return 63;
+      }
+    },
+    opmodeSupport:function () {
+      var obj = {
+//        "AP":{"value":"0","desc":"AP"},
+        "rpt":{"value":"2","desc":lang_t('wifi.repeater')},
+        "wisp":{"value":"3","desc":lang_t('wifi.station')}
+      };
+      var opmode = (globalConfig.opmodeString || "").split(';');
+      var mode = [
+        {"value":"0","desc":"AP"}
+      ];
+      for(var i in opmode){
+        if('object' == typeof obj[opmode[i]]){
+          mode.push(obj[opmode[i]]);
+        }
+      }
+      return mode;
+    },
+    createbw:function(){
+      var new_option = [];
+      var band = this.formValidate.band;
+      if(band < 6){
+  		  new_option=[
+  		    {option:'20MHz',value:'1'}
+  		  ]
+      }else if((band >= 6 && band < 12) || (band == 75)){
+    		new_option=[
+    		  //{option:lang_t('wifi.auto'),value:'0'},
+    		  {option:'20MHz',value:'1'},
+    		  {option:'40MHz',value:'2'}
+    		]
+      }else if(band >= 12 && band !=75 && this.wifiIdx=='0'){
+    		new_option=[
+    		  //{option:lang_t('wifi.auto'),value:'0'},
+    		  {option:'20MHz',value:'1'},
+    		  {option:'40MHz',value:'2'}
+    		]
+      }else if(band >= 12 && band !=75 && this.wifiIdx=='1'){
+        new_option=[
+          //{option:lang_t('wifi.auto'),value:'0'},
+          {option:'20MHz',value:'1'},
+          {option:'40MHz',value:'2'},
+          {option:'80MHz',value:'3'},
+          {option:'160MHz',value:'4'}
+        ]
+      }
+      return new_option;
+    },
+    channelOptions:function(type){
+      var options = [];
+      var country = this.formValidate.countryCode;
+      var arr11 = [
+        {option:lang_t('wifi.auto'),value:'0'}
+      ];
+      if(this.wifiDualband=='1'&&this.wifiIdx=='1'){//5G
+        var arr1 = [
+          {option:'36',value:'36'},
+          {option:'40',value:'40'},
+          {option:'44',value:'44'},
+          {option:'48',value:'48'}
+        ];
+        var arr2 = [
+          {option:'52',value:'52'},
+          {option:'56',value:'56'},
+          {option:'60',value:'60'},
+          {option:'64',value:'64'}
+        ];
+        var arr3 = [
+          {option:'149',value:'149'},
+          {option:'153',value:'153'},
+          {option:'157',value:'157'},
+          {option:'161',value:'161'}
+        ];
+        var arr4 = [
+          {option:'100',value:'100'},
+          {option:'104',value:'104'},
+          {option:'108',value:'108'},
+          {option:'112',value:'112'},
+          {option:'116',value:'116'}
+        ];
+        var arr5 = [
+          {option:'120',value:'120'},
+          {option:'124',value:'124'},
+          {option:'128',value:'128'}
+        ];
+        var arr51 = [
+          {option:'132',value:'132'},
+          {option:'136',value:'136'},
+          {option:'140',value:'140'}
+        ];
+        var arr6 = [
+          {option:'36',value:'36'},
+          {option:'40',value:'40'},
+          {option:'44',value:'44'},
+          {option:'48',value:'48'}
+        ];
+        var arr165 = [
+          {option:'165',value:'165'}
+        ];
+        if((this.formValidate.band=='2' || this.formValidate.band=='8'||this.formValidate.band=='14'||this.formValidate.band=='17')&&this.formValidate.bw=='1'){
+          switch(country){
+            case 'CN':
+              options = arr11.concat(arr1,arr3,arr165);
+              break;
+            case 'EU':
+              options = arr11.concat(arr1,arr2);
+              break;
+            case 'MY':
+              options = arr11.concat(arr6,arr3,arr165);
+              break;
+            case 'JP':
+              options = arr11.concat(arr6);
+              break;
+            case 'IA':
+              options = arr11.concat(arr3,arr165);
+              break;
+            case 'OT':
+              options = arr11.concat(arr6,arr2,arr4,arr5,arr51,arr3,arr165);
+              break;
+            case 'US':
+              options = arr11.concat(arr1,arr3,arr165);
+              break;
+            default:
+              options = arr11.concat(arr6,arr2,arr4,arr5,arr51,arr3,arr165);
+              break;
+          }
+        }else{
+          switch(country){
+            case 'CN':
+              options = arr11.concat(arr1,arr3);
+              break;
+            case 'EU':
+              options = arr11.concat(arr1,arr2);
+              break;
+            case 'MY':
+              options = arr11.concat(arr6,arr3);
+              break;
+            case 'JP':
+              options = arr11.concat(arr6);
+              break;
+            case 'IA':
+              options = arr11.concat(arr3);
+              break;
+            case 'OT':
+               options = arr11.concat(arr6,arr2,arr4,arr5,arr51,arr3);
+              break;
+            case 'US':
+              options = arr11.concat(arr1,arr3);
+              break;
+            default:
+              options = arr11.concat(arr6,arr2,arr4,arr5,arr51,arr3);
+              break;
+          }
+        }
+      }else{ //2G
+        var arr21 = [
+          {option:'1',value:'1'},
+      		{option:'2',value:'2'},
+      		{option:'3',value:'3'},
+      		{option:'4',value:'4'},
+      		{option:'5',value:'5'},
+      		{option:'6',value:'6'},
+      		{option:'7',value:'7'},
+      		{option:'8',value:'8'},
+      		{option:'9',value:'9'},
+      		{option:'10',value:'10'},
+      		{option:'11',value:'11'}
+        ];
+        var arr22 = [
+          {option:'12',value:'12'},
+          {option:'13',value:'13'}
+        ];
+        var arr23 = [
+          {option:'14',value:'14'}
+        ];
+
+    	  switch(country){
+      	  case 'US':
+      	  	options = arr11.concat(arr21);
+      	  	break;
+      	  case 'JP':
+      	  	options = arr11.concat(arr21,arr22,arr23);
+      	  	break;
+      	  case 'CN':
+      	  case 'EU':
+      	  case 'MY':
+      	  case 'OT':
+      	  case 'IA':
+      	  default:
+    	  	  options = arr11.concat(arr21,arr22);
+    	  	  break;
+        }
+      }
+      return options;
+    },
+    bandOption:function(){
+      var _this = this;
+      var new_option = [];
+      if(_this.wifiIdx == '1'){
+        new_option = [
+          {
+            option: '802.11A',
+            value: '2'
+          },{
+            option: '802.11A/N',
+            value: '8'
+          },{
+            option: '802.11A/N/AC',
+            value: '14'
+          }
+        ]
+
+		new_option_ax = [
+          {
+            option: '802.11A/N/AC/AX',
+            value: '17'
+          }
+        ]
+
+		if (globalConfig.wifi11axSupport) {
+			new_option = new_option.concat(new_option_ax);
+		}
+      }else{
+        new_option = [
+          {
+            option: '2.4 GHz (B)',
+            value: '1'
+          },{
+            option: '2.4 GHz (G)',
+            value: '4'
+          },{
+            option: '2.4 GHz (N)',
+            value: '6'
+          },{
+            option: '2.4 GHz (B+G+N)',
+            value: '9'
+          }
+        ]
+
+		new_option_ax = [
+          {
+            option: '2.4 GHz (B+G+N+AX)',
+            value: '16'
+          }
+        ]
+
+		if (globalConfig.wifi11axSupport) {
+			new_option = new_option.concat(new_option_ax);
+		}
+      }
+      return new_option;
+    },
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function() {
+    if(globalConfig.wifiSupport5gOnly){
+        this.wifiIdx = "1";
+    }
+    const savedWifiIdx = localStorage.getItem('wifiIdx');
+    if (savedWifiIdx !== null) {
+      this.wifiIdx = parseInt(savedWifiIdx, 10);
+    }
+    this.getWifiInfo();
+  },
+  methods:{
+    getWifiInfo:function () {
+        var _this = this;
+        var postVar = {};
+        postVar.wifiIdx = _this.wifiIdx;//0:2.4G; 1:5G
+        uiPost.getWiFiBasicConfig(postVar,function(data){
+          _this.operationMode = data.operationMode;
+          _this.wifiDualband = data.wifiDualband;
+          _this.enabled = data.wifiOff == "0" ? true : false;
+          _this.formValidate.bw = data.bw;
+          _this.formValidate.countryCode= data.countryCode ? data.countryCode : 'CN';
+          _this.formValidate.hssid = data.hssid;
+          _this.formValidate.ssid = data.ssid;
+          _this.formValidate.channel = data.channel;
+          _this.formValidate.key = data.key;
+          if(_this.globalConfig.aiotSupport){
+            _this.formValidate.authMode = data.authMode;
+            _this.formValidate.encryptionType = data.encryptionType;
+            _this.formValidate.keyType = data.keyType;
+            _this.formValidate.radiusIP = data.radiusIP;
+            _this.formValidate.radiusPort = data.radiusPort;
+            _this.formValidate.radiusKey = data.radiusKey;
+          }else {
+            _this.formValidate.authMode = data.key != "" ? "1" : "0";
+          }
+          _this.formValidate.band = data.band;
+					_this.formValidate.wpa3 = data.wpaMode == "2";
+          _this.formValidate.noForwarding = data.noForwarding;
+          _this.countryBt = data.countryBt;
+          _this.countryCodeList = data.countryCodeList.split(",");
+          _this.countryLangChange();
+          _this.status = data.status;
+          if(_this.operationMode == '3'){
+            _this.ipAddress = data.ipAddress;
+            _this.mask = data.mask;
+            _this.gateway = data.gateway;
+            _this.dns = data.dns;
+          }
+        });
+    },
+    countryLangChange:function(){
+      var _this = this;
+      var tempArr = [];
+      _this.countryOption = [];
+      for(var i in _this.countryCodeList){
+        tempArr[i] = {};
+        if(_this.countryCodeList[i] == 'CN'){
+          tempArr[i]['option'] = lang_t('wifi.china');
+          tempArr[i]['value'] = 'CN';
+        }else if(_this.countryCodeList[i] == 'US'){
+          tempArr[i]['option'] = lang_t('wifi.usa');
+          tempArr[i]['value'] = 'US';
+        }else if(_this.countryCodeList[i] == 'EU'){
+          tempArr[i]['option'] = lang_t('wifi.europer');
+          tempArr[i]['value'] = 'EU';
+        }else if(_this.countryCodeList[i] == 'OT'){
+          tempArr[i]['option'] = lang_t('wifi.other');
+          tempArr[i]['value'] = 'OT';
+        }else if(_this.countryCodeList[i] == 'IA'){
+          tempArr[i]['option'] = lang_t('wifi.indonesia');
+          tempArr[i]['value'] = 'IA';
+        }
+        _this.countryOption.push(tempArr[i]);
+      }
+    },
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.wifiOff = _this.enabled ? "0" : "1";
+      postVar.wifiIdx = _this.wifiIdx;
+      postVar.addEffect = "1";
+      uiPost.setWiFiBasicConfig(postVar,function(data) {
+        if (data.wtime != undefined && data.wtime != 0){
+          Cstools.count(data.wtime,'js',function(){
+            cs.localUrl(_this.wifiIdx, 'href');
+          });
+        }else{
+          cs.localUrl(_this.wifiIdx, 'href');
+        }
+      })
+    },
+	  scan:function() {
+      $("#scan_ing").button('loading');
+      var postVar = {};
+      this.getAPlist(postVar);
+    },
+    getAPlist:function(postVar){
+      var _this = this;
+      _this.tableLoading = true;
+      uiPost.getWiFiApcliScan(postVar,function(data){
+        _this.tableLoading = false;
+        _this.aplist = data;
+        _this.sinalSort('refre');
+        $('#scan_ap_list').modal('show');
+        $("#scan_ing").button('reset');
+      })
+    },
+    sinalSort:function(type){
+      var _this = this;
+      if(type != 'refre'){
+        _this.currentSortDir = this.currentSortDir == 'asc' ? 'desc' : 'asc';
+      }
+      var info= _this.aplist.sort(function(a,b){
+        var s = 'signal';
+        return _this.rank(a[s],b[s],_this.currentSortDir,'num');
+      });
+      _this.aplist = info;
+    },
+	  rank:function(a,b,type,str){
+      var n=m=k=l=0;
+      if(str == "ip"){
+        n = Number(a.split('.')[2]);
+        m = Number(b.split('.')[2]);
+        k = Number(a.split('.')[3]);
+        l = Number(b.split('.')[3]);
+      }else if(str == "num"){
+        n = Number(a);
+        m = Number(b);
+      }else{
+        n = a;
+        m = b;
+      }
+      if(type == 'asc'){
+        if(n > m){
+          return 1;
+        }else if(n == m && str == "ip"){
+          return k > l ? 1 : -1;
+        }else if(n < m){
+          return -1;
+        }
+      }else{
+        if(n > m){
+          return -1;
+        }else if(n == m && str == "ip"){
+          return k > l ? -1 : 1;
+        }else if(n < m){
+          return 1;
+        }
+      }
+    },
+    selectTable:function(val){
+      this.selectData = val;
+      this.forms = val;
+      $('#set_rule').modal('show');
+      cs.bodyAction('scan_ap_list','set_rule');
+    },
+    backListFun:function(){
+      $('#scan_ap_list').modal('show');
+      cs.bodyAction('set_rule','scan_ap_list');
+    },
+	  relaySubmit:function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+
+      if(_this.forms.encrypt && _this.forms.encrypt != 'NONE'){
+        _s = cs.key(_this.forms.key);
+        if(0 == _s){
+          errorAlert(lang_t('wifi.pass') + lang_t('alert.msg5'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('wifi.pass') + lang_t('alert.msg29'));
+          return false;
+        }
+        if(_this.forms.key.length < 8 || _this.forms.key.length > 63){
+          errorAlert(lang_t('wifi.pass') + lang_t('alert.msg16'));
+          return false;
+        }
+        postVar.apcliKey = _this.forms.key;
+      }
+
+      postVar.apcliChannel = _this.forms.channel;
+      postVar.apcliSsid = _this.forms.ssid;
+      postVar.apcliBssid = _this.forms.bssid;
+      postVar.apcliAuthMode = _this.forms.encrypt;
+      postVar.apcliEncrypType = _this.forms.cipher;
+	    postVar.operationMode = String(_this.operationMode);
+      postVar.wifiOff = "0";
+      postVar.wifiIdx = _this.wifiIdx;
+      postVar.addEffect = "0";
+	    uiPost.setWiFiRepeaterConfig(postVar, apply_callback);
+    },
+    handleSubmit: function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+
+      _s = cs.ssid(_this.formValidate.ssid);
+      if(0 == _s){
+        errorAlert(lang_t('wifi.ssid') + lang_t('alert.msg5'));
+        return false;
+      }else if(1 == _s){
+        errorAlert(lang_t('wifi.ssid') + lang_t('alert.msg26'));
+        return false;
+      }else if(2 == _s){
+        errorAlert(lang_t('wifi.ssid') + lang_t('alert.msg28'));
+        return false;
+      }else if(4 == _s){
+        errorAlert(lang_t('wifi.ssid') + lang_t('wifi.msg6'));
+        return false;
+      }
+
+      if(_this.formValidate.authMode == "1" || (_this.globalConfig.aiotSupport && _this.formValidate.authMode != "0")){
+        _s = cs.key(_this.formValidate.key);
+        if(_this.formValidate.authMode == "5" || _this.formValidate.authMode == "6" ) {
+          if (_this.passMaxLen != 63) {
+            if (_this.formValidate.keyType == '1' && (_this.formValidate.key.length != _this.passMaxLen || 99 != _s)) {
+              errorAlert(lang_t('wifi.pass_ascii', [_this.passMaxLen]));
+              return false;
+            } else if(_this.keyType == '0' && (_this.formValidate.key.length != _this.passMaxLen || !/^[\da-fA-F]+$/.test(_this.formValidate.key))) {
+              errorAlert(lang_t('wifi.pass_16', [_this.passMaxLen]));
+              return false;
+            }
+          }
+          if (_this.formValidate.keyType == '0') {
+            if (!/^[\da-fA-F]+$/.test(_this.formValidate.key) || _this.formValidate.key.length != _this.passMaxLen) {
+              errorAlert(lang_t('wifi.pass_16', [_this.passMaxLen]));
+              return false;
+            }
+          }
+            postVar.encryptionType = _this.formValidate.encryptionType;
+            postVar.keyType = _this.formValidate.keyType;
+            postVar.key = _this.formValidate.key;
+            postVar.wpaMode = _this.formValidate.wpa3 ? "2" : "1";
+        }else if(_this.formValidate.authMode == "7" || _this.formValidate.authMode == "8") {
+            postVar.radiusIP = _this.formValidate.radiusIP;
+            postVar.radiusPort = _this.formValidate.radiusPort;
+            postVar.radiusKey = _this.formValidate.radiusKey;
+            postVar.wpaMode = _this.formValidate.wpa3 ? "2" : "1";
+        }else{
+          if(0 == _s){
+            errorAlert(lang_t('wifi.pass') + lang_t('alert.msg5'));
+            return false;
+          }else if(99 != _s){
+            errorAlert(lang_t('wifi.pass') + lang_t('alert.msg29'));
+            return false;
+          }
+          if(_this.formValidate.key.length < 8 || _this.formValidate.key.length > 63){
+            errorAlert(lang_t('wifi.pass') + lang_t('alert.msg16'));
+            return false;
+          }
+          postVar.key = _this.formValidate.key;
+          postVar.wpaMode = _this.formValidate.wpa3 ? "2" : "1";
+          //postVar.encrypType = "WPAPSKWPA2PSK";
+        }
+      }else{
+        postVar.key = "";
+        //postVar.encrypType = "";
+      }
+      postVar.authMode = _this.formValidate.authMode;
+      postVar.hssid = _this.formValidate.hssid;
+      postVar.ssid = _this.formValidate.ssid;
+      postVar.band = _this.formValidate.band;
+      postVar.channel = _this.formValidate.channel;
+      postVar.bw = _this.formValidate.bw;
+      postVar.noForwarding = _this.formValidate.noForwarding;
+      postVar.countryCode = _this.formValidate.countryCode;
+	    postVar.operationMode = String(_this.operationMode);
+      postVar.wifiOff = "0";
+	    postVar.wifiIdx = _this.wifiIdx;
+      postVar.addEffect = "0";
+      uiPost.setWiFiBasicConfig(postVar,function(data) {
+        if (data.wtime != undefined && data.wtime != 0){
+          Cstools.count(data.wtime,'js',function(){
+            cs.localUrl(_this.wifiIdx, 'href');
+          });
+        }else{
+          cs.localUrl(_this.wifiIdx, 'href');
+        }
+      })
+    },
+    codeChange:function(){
+      if(this.flag1 != 0){
+        this.formValidate.channel = "0";
+      }
+      this.flag1 = 1;
+    },
+    bandChange:function(){
+      var band = this.formValidate.band;
+      if(band < 6){
+        this.formValidate.bw = "1";
+      }else{
+        this.formValidate.bw = "1";//0 bw=0(auto) is hide
+      }
+    },
+    bwChange:function(){
+      if(this.flag2 != 0){
+        this.formValidate.channel = "0";
+      }
+      this.flag2 = 1;
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

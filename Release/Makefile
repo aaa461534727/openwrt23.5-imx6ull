@@ -71,7 +71,7 @@ ifneq ($(wildcard ../tmp),)
 pre_clean:
 	@echo prepare clean...
 	cd $(RELEASE_DIR)/..; \
-		# make clean;rm -rf tmp
+#	 make clean;rm -rf tmp
 else
 pre_clean:
 	@echo no tmp dir, do nothing

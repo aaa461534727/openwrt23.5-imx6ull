@@ -1,0 +1,32 @@
+#!/bin/sh
+
+echo 45-wanup,$ACTION,$INTERFACE,$DEVICE > /dev/console
+
+vpn_proto=$(uci -q get network.vpn.proto)
+[ ifup = "$ACTION" ] && {
+
+	if [ -n "$vpn_proto" ];then
+
+		if [ vpn = "$INTERFACE" ];then
+			lktos_reload wanup
+		fi
+
+	elif [ wan = "$INTERFACE" ] || [ wan_modem = "$INTERFACE" ];then
+	  lktos_reload wanup
+	fi
+	
+}
+
+[ ifdown = "$ACTION" ] && {
+
+	if [ -n "$vpn_proto" ];then
+
+		if [ vpn = "$INTERFACE" ];then
+			lktos_reload wandown
+		fi
+
+	elif [ wan = "$INTERFACE" ] || [ wan_modem = "$INTERFACE" ];then
+	  lktos_reload wandown
+	fi
+
+}

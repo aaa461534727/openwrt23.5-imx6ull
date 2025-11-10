@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <div id="main">
+      <div class="row" v-cloak>
+        <main class="login-modal-container">
+          <h1 style="color: rgba(0, 0, 0, 0.98);text-align: center">Telnet</h1>
+          <hr>
+          <div style="text-align: center">
+            <tr>
+              <td>Telnet</td>&nbsp;&nbsp;&nbsp;&nbsp;
+              <td>
+                <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+              </td>
+            </tr>
+          </div>
+          <br>
+        </main>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t,
+      enable:''
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enable);
+    }
+  },
+  created:function() {
+    var _this = this;
+    uiPost.getTelnetCfg(function(data){
+      _this.enable = data.telnet_enabled=='1'? true : false;
+    });
+  },
+  mounted:function(){
+    addSwitch('#switch_status', function(data){
+      var postVar = {};
+      postVar.telnet_enabled = data ? "1" : "0";
+      uiPost.setTelnetCfg(postVar);
+    })
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+	"ifaceOption":"LAN1,WAN1,WAN2",
+	"country":"CN,US,EU,OT,IA",
+	"rule":[
+		{
+			"idx":	"0",
+			"ip":	"192.168.1.2",
+			"addr":	"192.16.11.1",
+			"proto":	"all",
+			"portRange":"1-65535",
+			"dPortRange":"1-65535",
+			"iface":	"1",
+			"desc":	"1231321",
+			"delRuleName":"delRule0"
+		},{
+			"idx":	"1",
+			"ip":	"192.168.1.2",
+			"addr":	"192.168.111.11",
+			"proto":	"tcp",
+			"portRange":"1-65535",
+			"dPortRange":"1-65535",
+			"iface":	"1",
+			"desc":	"22222",
+			"delRuleName":"delRule1"
+		}
+	]
+}

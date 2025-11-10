@@ -1,0 +1,31 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="proma" content="no-cache"/>
+<meta http-equiv="cache-control" content="no cache" />
+<meta http-equiv="expires" content="0" />
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script type="text/javascript" src="/plugin/json2.js"></script>
+<!--[if gte IE 8]>
+<script type="text/javascript" src="/plugin/jquery-1.9.1.min.js"></script>
+<![endif]-->
+</head>
+<body>
+<script>
+function getUserBrowser(){
+	var u = navigator.userAgent;
+	if (u.indexOf('Mobile') > -1) return "mobile";
+	else if (u.indexOf('Android') > -1 || u.indexOf('Linux') > -1) return "mobile";
+	else if (u.indexOf('iPhone') > -1 || u.indexOf('iPod') > -1 || u.indexOf('iPad') > -1) return "mobile";	
+	else return "pc";
+}
+var ret=getUserBrowser();
+if (ret=="mobile"){
+	//window.location.href="/mobile/login.html";
+	window.location.href="/login.html";
+}else{
+	window.location.href="/login.html";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+[
+  {
+    "idx": 1,
+    "password": "123456789",
+    "devId": "asdasdasdqwddas",
+    "delRuleName": "delRule0"
+  },
+  {
+    "idx": 2,
+    "password": "77789456",
+    "devId": "",
+    "delRuleName": "delRule1"
+  }
+]

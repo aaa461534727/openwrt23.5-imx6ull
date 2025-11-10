@@ -1,0 +1,14 @@
+{
+   	"ltecheckEnable":"1",
+	   "checkInterval":"86400",
+	   "redialTimes":"10",
+   	"restartTimes":"10",
+	"rebootTimes":"5",
+   	"ip1":"",
+   	"ip2":"",
+   	"ip3":"",
+      "registratNum":"1",
+      "checkType":"0",
+   	"datacheckEnable":"1",
+   	"dataSize":"13"
+}

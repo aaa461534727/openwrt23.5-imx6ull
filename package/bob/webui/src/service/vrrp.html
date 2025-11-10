@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box tab-content table-responsive __mb">
+          <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{ lang_t('vrrp.help') }}</strong></td>
+            </tr>
+            <tr>
+              <td>{{lang_t('common.state')}}</td>
+              <td>
+                <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('index.interface')}}</td>
+              <td>
+                <select v-model="formValidate.vrInterface" data-style="btn-default">
+                  <option value="default" v-show="false">default</option>
+                  <option value="br0">br0</option>
+        				  <option value="eth2.2" v-show="false">eth2.2</option>
+        				  <option value="modem" v-show="false">modem</option>
+                </select>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('vrrp.virtual_ip')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.virtualIp" maxlength="15">
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('vrrp.virtual_id')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.virtualId" maxlength="5">
+                <span>(1-255)</span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('index.priority')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.priority" maxlength="5">
+                <span>(1-255)</span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('vrrp.notice_timers')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.noticeTimers" maxlength="5">
+                <span>(1-65535)</span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('index.status')}}</td>
+              <td>
+                  <span style="color:#fff;background-color:#3399ff;">{{ status }}</span>
+                <!--<span style="color:#fff;background-color:#3399ff;" v-if="status == 'master'">{{ lang_t('vrrp.master') }}</span>-->
+                <!--<span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('vrrp.none') }}</span>-->
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+              </td>
+            </tr>
+         </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+  	  enabled:'',
+  	  status:'none',
+  	  formValidate:{
+  	    vrInterface:'br0',
+  	    priority:"",
+  	    noticeTimers:"",
+  	    virtualIp:"",
+  	    virtualId:""
+  	  }
+  	}
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getVrrpCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.vrInterface = data.vrInterface;
+      _this.formValidate.virtualIp = data.virtualIp;
+      _this.formValidate.virtualId = data.virtualId;
+      _this.formValidate.priority = data.priority;
+      _this.formValidate.noticeTimers = data.noticeTimers;
+      _this.status = data.status;
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+  	toggle_status:function(){
+  	  var _this = this;
+  	  $('#switch_status').bootstrapSwitch('state',_this.enabled);
+  	}
+  },
+  created:function(){
+  	
+  },
+  methods:{
+    submit_status:function(){
+      if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";        
+        uiPost.setVrrpCfg(postVar, apply_callback);
+      }      
+    },
+  	handleSubmit:function(){
+  	  var _this = this;
+  	  var postVar = {};  	  
+  	  var _s;
+
+      _s = cs.ip(_this.formValidate.virtualIp);
+      if(0 == _s){
+        errorAlert(_this.lang_t('vrrp.virtual_ip') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('vrrp.virtual_ip') + _this.lang_t('alert.msg14'));
+        return false;
+      }
+  		
+  	  if(99 != cs.num_range(_this.formValidate.virtualId,1,255)){
+  	  	errorAlert(_this.lang_t('vrrp.virtual_id') + _this.lang_t('alert.msg15',[1,255]));
+  		  return false;
+  	  }
+  	  
+  	  if(99 != cs.num_range(_this.formValidate.priority,1,255)){
+  	  	errorAlert(_this.lang_t('index.priority') + _this.lang_t('alert.msg15',[1,255]));
+  		  return false;
+  	  }
+
+  	  if(99 != cs.num_range(_this.formValidate.noticeTimers,1,65535)){
+        errorAlert(_this.lang_t('vrrp.notice_timers') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+  	  
+      postVar.enabled = "1";
+  	  postVar.vrInterface = _this.formValidate.vrInterface;
+  	  postVar.virtualIp = _this.formValidate.virtualIp;
+  	  postVar.virtualId = _this.formValidate.virtualId;
+  	  postVar.priority = _this.formValidate.priority;
+      postVar.noticeTimers = _this.formValidate.noticeTimers;
+  	  uiPost.setVrrpCfg(postVar, apply_callback);
+  	}
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

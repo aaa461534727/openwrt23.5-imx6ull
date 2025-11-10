@@ -1,0 +1,15 @@
+{
+    "rule": [
+        {
+            "idx": 1,
+            "eoipId": "33",
+            "eoipName": "lin",
+            "dstAddress": "192.168.30.21"
+        }, {
+            "idx": 2,
+            "eoipId": "22",
+            "eoipName": "lll",
+            "dstAddress": "192.168.30.21"
+        }
+    ]
+}

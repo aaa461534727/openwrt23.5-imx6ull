@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <div class="content-box tab-content table-responsive __mb">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{lang_t('gps.help')}}</strong></td>
+              </tr>
+			        <tr v-show="module == '0'">
+                <td colspan="2"><strong>{{lang_t('gps.module_info')}}</strong></td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td style="width: 30%;">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="0">
+                <td style="width: 25%;">{{lang_t('gps.report')}}</td>
+                <td>
+                <select v-model="gpsReport">
+                  <option value="0">{{ lang_t('internet.auto') }}</option>
+                  <option value="1">{{ lang_t('internet.manual') }}</option>
+                </select>
+                </td>
+              </tr>
+              <tr v-show="enabled&&module == '1'">
+                <td style="width: 25%;">{{lang_t('gps.type')}}</td>
+                <td>
+                  <select v-model="gps_type">
+                    <option value="0">NMEA</option>
+                    <option value="1">WGS-84</option>
+                    <option value="2">GCJ-02</option>
+                    <option value="3">BD-09</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled&&module == '1'">
+                <td>{{lang_t('gps.longitude')}}</td>
+                <td>
+                  <input type="text" v-model="longitude" :disabled="gpsReport == '0'">
+                </td>
+              </tr>
+			  <tr v-show="enabled&&module == '1'">
+                <td>{{lang_t('gps.latitude')}}</td>
+                <td>
+                  <input type="text" v-model="latitude" :disabled="gpsReport == '0'">
+                </td>
+              </tr>
+			  <tr v-show="enabled&&module == '1'">
+                <td>{{lang_t('gps.time')}} (s)</td>
+                <td>
+                  <input type="text" v-model="time" maxlength="5">
+                </td>
+              </tr>
+              <tr v-show="enabled&&module == '1'">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary" @click="applyFun">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script src="/static/js/qrcode.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+	  lang: $.lang,
+      lang_t:lang_t,
+	  module:'0',
+	  longitude:'',
+	  latitude:'',
+    gps_type:'0',
+    gpsReport:'0',
+    enabled:false,
+      time:''
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);   
+    }
+  },
+  created:function() {
+    var _this = this;
+    uiPost.getGpsReportCfg(function(data){
+      _this.enabled = data.enable == "1";
+      _this.module = data.module;
+      _this.longitude = data.longitude;
+      _this.latitude = data.latitude;
+      _this.gpsReport = data.gpsReport;
+      _this.time = data.gpsReportTime;
+      _this.gps_type = data.gps_type;
+    })
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enable = "0";
+        uiPost.setGpsReportCfg(postVar, apply_callback);
+      }      
+    },
+    applyFun:function(){
+      var _this = this;
+      var postVar ={};
+  
+      if(99 != cs.num_range(this.time, 300, 86400)){
+        errorAlert(lang_t('gps.time') + lang_t('alert.msg15', [300, 86400]));
+        return false;
+      }
+    
+      postVar.gpsReportTime = this.time;
+      postVar.enable = "1";
+      postVar.gps_type = _this.gps_type;
+      postVar.gpsReport = _this.gpsReport;
+      if(_this.gpsReport){
+        if (this.longitude != ''){
+          if(cs.num_ponit(this.longitude) != 99){
+            errorAlert(_this.lang_t('gps.longitude') + _this.lang_t('vpn_detection.msg5'));
+            return false;
+          }
+        }
+
+        if (this.latitude != ''){
+          if(cs.num_ponit(this.latitude) != 99){
+            errorAlert(_this.lang_t('gps.latitude') + _this.lang_t('vpn_detection.msg5'));
+            return false;
+          }
+        }
+        postVar.longitude = _this.longitude;
+        postVar.latitude = _this.latitude;
+      }
+      uiPost.setGpsReportCfg(postVar,apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+  

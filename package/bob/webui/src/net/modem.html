@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('internet.help') }}</strong></td>
+              </tr>
+              <!-- <tr v-show="globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode"> -->
+              <tr v-show="0">
+                <td>
+                  <input type="radio" value="0" v-model="modemIdx" id="radio_0"><label for="radio_0">Modem 1</label> &nbsp;&nbsp;&nbsp;&nbsp;
+                  <input type="radio" value="1" v-model="modemIdx" id="radio_1"><label for="radio_1">Modem 2</label>
+                </td>
+              </tr>
+              <tr v-show="false">
+                <td width="30%">{{ lang_t('modem.ip') }}</td>
+                <td><input type="text" :value="ip4g" disabled></td>
+              </tr>
+              <tr>
+                <td width="30%">{{ lang_t('modem.module_type') }}</td>
+                <td><input type="text" v-model="formValidate.modemModel" maxlength="32" disabled></td>
+              </tr>
+              <tr v-if="globalConfig.rtl8111hSupport">
+                <td>{{ lang_t('modem.net_type_rtl') }}</td>
+                <td>
+                  <select v-model="formValidate.rtl8111hEnable" :key="lang_t('modem.usb')">
+                    <option value="0">{{ lang_t('modem.usb') }}</option>
+                    <option value="1" v-if="globalConfig.modelType=='5g'">{{ lang_t('modem.phy') }}</option>
+                  </select>
+                </td>
+              </tr>
+
+              <tr v-if="false">
+                <td>{{ lang_t('modem.4gmode') }}</td>
+                <td>
+                  <select v-model="formValidate.mode4g" :key="lang_t('modem.auto')">
+                    <option value="0">{{ lang_t('modem.auto') }}</option>
+                    <option value="1">{{ lang_t('modem.manual') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="formValidate.mode4g=='1' && !g4Show">
+                <td>{{ lang_t('modem.validation') }}</td>
+                <td>
+                  <select v-model="formValidate.validation">
+                    <option value="0">NONE</option>
+                    <option value="1">PAP</option>
+                    <option value="2">CHAP</option>
+                    <option value="3">CHAPv2</option>
+                  </select>
+                </td>
+              </tr>
+
+              <tr v-if="globalConfig.bandLockSupport && formValidate.modemModel == 'ZXIC GD212'">
+                <td>{{ lang_t('modem.band_lock') }}</td>
+                <td>
+                  <select v-model="bandLock">
+                    <option value="61">Band 61(1.4G)</option>
+                    <option value="62">Band 62(1.8G)</option>
+                    <option value="0">{{ lang_t('modem.auto') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.netcustomSupport && globalConfig.modelType=='4g'">
+                <td>{{ lang_t('modem.net_type') }}</td>
+                <td>
+                  <select v-model="formValidate.netType" data-style="btn-default">
+                    <option value="auto" v-if="netcustom.indexOf('auto')!='-1'">{{ lang_t('modem.auto') }}</option>
+                    <!-- <option value="5G" v-if="netcustom.indexOf('5G')!='-1'">5G</option> -->
+                    <option value="4G" v-if="netcustom.indexOf('4G')!='-1'">4G</option>
+                    <option value="3G" v-if="netcustom.indexOf('3G')!='-1'">3G</option>
+                    <option value="2G" v-if="netcustom.indexOf('2G')!='-1'">2G</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.modelType=='5g' && formValidate.modemModel != 'AI-LT35H'">
+                <td>{{ lang_t('modem.net_type') }}<div class="tips" :title="lang_t('modem.netType5g_msg')" >!</div></td>
+                <td>
+                  <select v-model="formValidate.netType5g" data-style="btn-default" @change="bandLockTypeChange">
+                    <option value="AUTO" >{{ lang_t('modem.auto') }}</option>
+                    <option value="LTE">{{ lang_t('modem.only_lte') }}</option>
+                    <option value="NR5G" v-if="formValidate.onlySA=='1'">{{ lang_t('modem.only_nr5g') }}</option>
+                    <option value="NR5G-SA" v-if="formValidate.onlySA!='1'">{{ lang_t('modem.only_nr5g_sa') }}</option>
+                    <option value="NR5G-NSA" v-if="formValidate.onlySA!='1'">{{ lang_t('modem.only_nr5g_nsa') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.nssaiSupport && globalConfig.modelType=='5g' && (formValidate.netType5g=='NR5G-NSA' || formValidate.netType5g=='NR5G-SA')">
+                <td>{{ lang_t('modem.net_nssai') }}<div class="tips" :title="lang_t('modem.net_nssai_msg')" >!</div></td>
+                <td>
+                  <select v-model="netNssaiSwitch" data-style="btn-default">
+                    <option value="0" >{{ lang_t('common.off') }}</option>
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.nssaiSupport && globalConfig.modelType=='5g' && (formValidate.netType5g=='NR5G-NSA' || formValidate.netType5g=='NR5G-SA') && netNssaiSwitch=='1'">
+                <td>{{ lang_t('modem.net_nssai_len') }}<div class="tips" :title="lang_t('modem.net_nssai_len_msg')" >!</div></td>
+                <td>
+                  <input type="text" v-model="netNssaiLen" maxlength="64" >
+                </td>
+              </tr>
+              <tr v-show="globalConfig.nssaiSupport && globalConfig.modelType=='5g' && (formValidate.netType5g=='NR5G-NSA' || formValidate.netType5g=='NR5G-SA') && netNssaiSwitch=='1'">
+                <td>{{ lang_t('modem.net_nssai_parameter') }}<div class="tips" :title="lang_t('modem.net_nssai_parameter_msg')" >!</div></td>
+                <td>
+                  <input type="text" v-model="netNssaiLenParameter" maxlength="64" >
+                </td>
+              </tr>
+              <tr v-show=" (formValidate.modemModel == 'RG200U-CN')">
+                <td>{{ lang_t('modem.dial_cid') }}</td>
+                <td>
+                  <select v-model="dialCid">
+                    <option value="1" >{{ lang_t('modem.cid1') }}</option>
+                    <option value="2">{{ lang_t('modem.cid2') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.lan5gSupport">
+                <td>5G LAN</td>
+                <td>
+                  <select v-model="enable_5gLan">
+                    <option value="1" >{{ lang_t('ipsec.on') }}</option>
+                    <option value="0">{{ lang_t('ipsec.off') }}</option>
+                  </select>
+                </td>
+              </tr>
+
+              <tr v-show="globalConfig.bandLockSupport && (formValidate.modemModel == 'Quectel RM500U-CN'  || formValidate.modemModel == 'RG200U-CN' ) && formValidate.netType5g != 'AUTO' &&  formValidate.netType5g != 'NR5G-NSA'" >
+
+                 <td>{{ lang_t('modem.band_lock') }}<div class="tips" :title="lang_t('modem.lte_mh5000_lock_warm')" >!</div></td>
+                <td>
+                  <select v-model="bandLock5gSwitch" data-style="btn-default">
+                    <option value="0" >{{ lang_t('common.off') }}</option>
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                  </select>
+                    <br>
+                      <span v-show="bandLock5gSwitch == 1" >
+                      <input type="text" v-model="bandLock5g" maxlength="64" >
+                      </span>
+                      <span v-show="bandLock5gSwitch == 1" >( {{ lang_t('modem.band_lock_msg') }} )</span>
+                </td>
+
+              <tr v-if="formValidate.mode4g=='1' && g4Show">
+                <td>{{ lang_t('modem.dial_mode') }}</td>
+                <td>
+                  <select v-model="dialWay">
+                    <option value="0">{{ lang_t('modem.auto') }}</option>
+                    <option value="1">dhcp</option>
+                    <option value="2">ppp</option>
+                  </select>
+                </td>
+              </tr>
+              <!--tr v-if="globalConfig.modemPpsSupport">
+		<td>{{ lang_t('modem.pps') }}</td>
+                <td>
+                  <select v-model="pps_enable">
+                    <option value="1" >{{ lang_t('ipsec.on') }}</option>
+                    <option value="0">{{ lang_t('ipsec.off') }}</option>
+                  </select>
+                </td>
+              </tr-->
+              <tr v-if="globalConfig.modemRoamSupport">
+		          <td>{{ lang_t('modem.roam_enable') }}</td>
+                <td>
+                  <select v-model="roam_enable">
+                    <option value="1" >{{ lang_t('ipsec.on') }}</option>
+                    <option value="0">{{ lang_t('ipsec.off') }}</option>
+                  </select>
+                </td>
+              </tr>
+
+              <tr v-if="formValidate.mode4g=='1' && dialWay =='2'">
+                <td>{{ lang_t('modem.dial_num') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.dialNum" maxlength="32" :placeholder="lang_t('modem.required')">
+                </td>
+              </tr>
+
+              <!-- <tr v-if="globalConfig.cellLockSupport ">
+                <td>{{ lang_t('modem.lte_msg') }}
+                  <div v-if="formValidate.modemModel == 'ZXIC GD212' " class="tips" :title="lang_t('modem.lte_msg_warm')" >!</div>
+                  <div v-if="formValidate.modemModel != 'ZXIC GD212' " class="tips" :title="lang_t('modem.lte_mh5000_msg_warm')" >!</div>
+                </td>
+                <td >
+                  <div type="button" class="btn btn-primary all-but" @click.prevent="getCell">{{lang_t('modem.lte_msg_get')}}</div>
+                  <sapn>{{currentCell}}</span>
+                </td>
+              </tr>
+              <tr v-show="showCellInfo && globalConfig.C738jrSupport">
+                <td></td>
+                <td>
+                  <sapn>PCI: {{cellPci}}</span>&nbsp&nbsp
+                  <sapn>{{lang_t('modem.cellId1')}}: {{cellId1}}</span>&nbsp&nbsp
+                  <sapn>{{lang_t('modem.arfcn')}}: {{cellARF}}</span>
+                </td>
+              </tr> -->
+
+              <!-- <tr v-if="globalConfig.cellLockSupport">
+                <td>{{ lang_t('modem.at_cmd') }}
+                  <div  class="tips" :title="lang_t('modem.lte_cell_warm')" >!</div>
+                </td>
+                <td>
+                  <input type="text" v-model="formValidate.lockCellAt">
+                </td>
+              </tr> -->
+
+              <tr v-if="false">
+                <td>{{ lang_t('modem.route_back') }}
+                </td>
+                <td>
+                  <select v-model="formValidate.routeMode">
+                      <option value="0">{{lang_t('common.off')}}</option>
+                      <option value="1">{{lang_t('common.on')}}</option>
+                    </select>
+                </td>
+              </tr>
+
+              <tbody v-show="globalConfig.cellLockSupport">
+                <tr>
+                  <td>{{ lang_t('modem.lte_lock_ponit') }}
+                    <div class="tips" :title="lang_t('modem.lte_mh5000_lock_warm')" >!</div>
+                  </td>
+                  <td>
+                    <select v-model="formValidate.lockCellEnable">
+                      <option value="0">{{lang_t('common.off')}}</option>
+                      <option value="1">{{lang_t('modem.lock_lte')}}</option>
+                      <option value="2">{{lang_t('modem.lock_5g')}}</option>
+                    </select>
+                  </td>
+                </tr>
+
+                <tr v-if="globalConfig.cellLockSupport && (formValidate.lockCellEnable == '1'  || formValidate.lockCellEnable == 2)">
+                  <td>{{ lang_t('modem.lte_msg') }}
+                  <td >
+                    <div type="button" class="btn btn-primary all-but" @click.prevent="setCell">{{lang_t('modem.lte_msg_set')}}</div>
+                    <sapn>{{currentCell}}</span>
+                  </td>
+                </tr>
+
+                <tr v-show="formValidate.lockCellEnable == 2 && lockBand.scs == 1">
+                  <td>{{ lang_t('modem.scstype') }}</td>
+                  <td>
+                    <select v-model="formValidate.scsType">
+                      <option value="15">15</option>
+                      <option value="30">30</option>
+                      <option value="60">60</option>
+                      <option value="120">120</option>
+                      <option value="240">240</option>
+                    </select>
+                  </td>
+                </tr>
+
+                <tr v-show="(formValidate.lockCellEnable == '1'  || formValidate.lockCellEnable == 2) &&  lockBand.band == 1">
+                  <td>{{ lang_t('modem.band_lock') }}</td>
+                  <td>
+                    <input type="text" v-model="bandLock5g" maxlength="64" >
+                    <!-- <span>(0~65535)</span> -->
+                  </td>
+                </tr>
+
+                <tr v-if="(formValidate.lockCellEnable == '1' || formValidate.lockCellEnable == '2' )&& lockBand.arfcn == 1">
+                  <td>{{ lang_t('modem.arfcn') }}</td>
+                  <td>
+                    <input  type="text" v-model="formValidate.lteArfcn" />
+                  </td>
+                </tr>
+
+                <tr v-if="(formValidate.lockCellEnable == '2' || formValidate.lockCellEnable == '1') && lockBand.pci == 1">
+                  <td>{{ lang_t('modem.pci') }}</td>
+                  <td>
+                    <input  type="text" v-model="formValidate.ltePci" />
+                  </td>
+                </tr>
+              </tbody>
+               <tr>
+                  <td><b> {{ lang_t('modem.sim_card') }} </b></td>
+                  <td>
+                    <select v-model="sim">
+                      <option v-for="(item, index) in simlist" :key="index" :value="item.value">{{ item.lable }}
+                      </option>
+                    </select>
+                  </td>
+                </tr>
+
+              <tr v-if="formValidate.mode4g=='1'">
+                <td>{{ globalConfig.moduleMultiApnSupport ? lang_t('modem.ps_apn_current') : lang_t('modem.apn_current') }}</td>
+                <td><b> {{currenApn}}</b></td>
+              </tr>
+
+              <tr v-if="globalConfig.moduleMultiApnSupport">
+                <td>{{ lang_t('modem.cs_apn_current') }}</td>
+                <td><b> {{currenCsApn}}</b></td>
+              </tr>
+
+              <tr v-if="formValidate.mode4g=='1'">
+                <td>{{ globalConfig.moduleMultiApnSupport ? lang_t('modem.ps_apn_list') : lang_t('modem.apn_list')}}</td>
+                <td>
+                   <button class="btn btn-primary all-but" @click="apnShow()">{{ lang_t('modem.apn_setting') }}</button>&nbsp;
+                </td>
+              </tr>
+
+             <tr v-if="formValidate.mode4g=='1' && globalConfig.moduleMultiApnSupport">
+                <td>{{lang_t('modem.cs_apn_list')}}</td>
+                <td>
+                   <button class="btn btn-primary all-but" @click="csApnShow()">{{ lang_t('modem.apn_setting') }}</button>&nbsp;
+                </td>
+              </tr>
+
+
+              <tbody v-show="globalConfig.baseStationSupport">
+                <tr>
+                  <td colspan="2"><b class="lable-title">{{ lang_t('modem.base_station') }}</b></td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('modem.arfcn') }}</td>
+                  <td>{{formValidate.arfcn}}</td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('modem.pci') }}</td>
+                  <td>{{ formValidate.pci }}</td>
+                </tr>
+                <tr>
+                  <td><b class="lable-title">{{ lang_t('modem.adjacent_base_station') }}</b></td>
+                  <td colspan="2">
+                    <button class="btn btn-primary all-but" @click="scanCell()">{{ lang_t('modem.base_station_scan') }}</button>&nbsp;
+                    <button class="btn btn-primary all-but" @click="removeCell()">{{ lang_t('modem.base_station_unbinding') }}</button>
+                  </td>
+                </tr>
+              </tbody>
+
+              <tbody v-if="formValidate.modemModel == 'ZXIC GD212'">
+                <tr>
+                  <td colspan="2"><b class="lable-title">{{ lang_t('modem.system_cfg') }}</b>
+                    <div class="tips" :title="lang_t('modem.lte_sysmode_all_warm')" >!</div></td>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('modem.system_choose') }}
+                  </td>
+                  <td>
+                    <select v-model="formValidate.systemChoose">
+                      <option value="0">{{lang_t('internet.auto')}}</option>
+                      <option value="1">{{lang_t('internet.manual')}}</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-if="formValidate.systemChoose == '1'">
+                  <td>{{ lang_t('modem.system_mode') }}<div class="tips" :title="lang_t('modem.lte_sysmode_warm')" >!</div></td>
+                  <td><input type="text" v-model="formValidate.sysMode"></td>
+                </tr>
+                <tr v-if="formValidate.systemChoose == '1'">
+                  <td>{{ lang_t('modem.search_mode') }}<div class="tips" :title="lang_t('modem.lte_searchmode_warm')" >!</div></td>
+                  <td><input type="text" v-model="formValidate.searchMode"></td>
+                </tr>
+                <tr v-if="formValidate.systemChoose == '1'">
+                  <td>{{ lang_t('modem.field_setting') }}<div class="tips" :title="lang_t('modem.lte_file_warm')" >!</div></td>
+                  <td><input type="text" v-model="formValidate.field"></td>
+                </tr>
+              </tbody>
+
+
+              <tr v-if="g4Show && dialWay =='2' && globalConfig.modemAuthSupport">
+                <td></td>
+                <td>
+                  <label style="cursor: pointer;" @click="dirSwitch"><i :class="['fa',direction ? 'fa-chevron-up' : 'fa-chevron-down']" aria-hidden="true"></i>{{lang_t('openvpn.setting')}}</label>
+                </td>
+              </tr>
+              <tr v-if="direction && g4Show && globalConfig.modemAuthSupport">
+                <td colspan="2"><b class="lable-title">{{ lang_t('modem.authentication') }}</b></td>
+              </tr>
+              <tr v-if="direction && g4Show && globalConfig.modemAuthSupport">
+                <td>CHAP</td>
+                <td>
+                  <input type="radio" value="1" v-model="formValidate.chap" :disabled="formValidate.mode4g == '0'">{{lang_t('modem.consult')}} &nbsp;&nbsp;
+                  <input type="radio" value="0" v-model="formValidate.chap" :disabled="formValidate.mode4g == '0'">{{lang_t('common.off')}}
+                </td>
+              </tr>
+              <tr v-if="direction && g4Show && globalConfig.modemAuthSupport">
+                <td>PAP</td>
+                <td>
+                  <input type="radio" value="1" v-model="formValidate.pap" :disabled="formValidate.mode4g == '0'">{{lang_t('modem.consult')}} &nbsp;&nbsp;
+                  <input type="radio" value="0" v-model="formValidate.pap" :disabled="formValidate.mode4g == '0'">{{lang_t('common.off')}}
+                </td>
+              </tr>
+              <tr v-if="direction && g4Show&& globalConfig.modemAuthSupport">
+                <td>MS-CHAP</td>
+                <td>
+                  <input type="radio" value="1" v-model="formValidate.mschap" :disabled="formValidate.mode4g == '0'">{{lang_t('modem.consult')}} &nbsp;&nbsp;
+                  <input type="radio" value="0" v-model="formValidate.mschap" :disabled="formValidate.mode4g == '0'">{{lang_t('common.off')}}
+                </td>
+              </tr>
+              <tr v-if="direction && g4Show && globalConfig.modemAuthSupport">
+                <td>MS2-CHAP</td>
+                <td>
+                  <input type="radio" value="1" v-model="formValidate.ms2chap" :disabled="formValidate.mode4g == '0'">{{lang_t('modem.consult')}} &nbsp;&nbsp;
+                  <input type="radio" value="0" v-model="formValidate.ms2chap" :disabled="formValidate.mode4g == '0'">{{lang_t('common.off')}}
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button @click="handleSubmit()" class="btn btn-primary all-but">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      <div class="modal fade" id="show_cell" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+        <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">{{ lang_t('modem.adjacent_base_station') }}</h4>
+        </div>
+        <div class="modal-body">
+        <table class="table table-striped">
+          <thead>
+          <tr>
+          <th>ID</th>
+          <th>{{lang_t('modem.access_tech')}}</th>
+          <th>{{lang_t('modem.arfcn')}}</th>
+          <th>{{lang_t('modem.pci')}}</th>
+          <th>RSRP</th>
+          <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(val,index) in cellinfoData" v-if="cellinfoDataLength !=0">
+            <td>{{ index+1 }}</td>
+            <td>{{ val.rat }}</td>
+            <td>{{ val.arfcn }}</td>
+            <td>{{ val.pci }}</td>
+            <td>{{ val.rsrp }}</td>
+            <td ><button data-dismiss="modal" class="btn btn-primary" @click="lockCell(index)">{{ lang_t('modem.lock') }}</button></td>
+          </tr>
+          <tr  v-if="cellinfoDataLength ==0">
+            <td colspan="6" style="text-align:center">{{ lang_t('modem.no_cell') }}</td>
+          </tr>
+        </tbody>
+        </table>
+        </div>
+        <div class="modal-footer">
+        <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('index.close') }}</button>
+        </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal fade" id="show_apn" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" :style="{width: globalConfig.isPhoneDevice ? 'auto' : '800px'}">
+          <div class="modal-content">
+        <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">{{ lang_t('modem.apn_list') }}</h4>
+        </div>
+        <div class="modal-body">
+        <table class="table table-striped">
+          <thead>
+          <tr>
+         <!-- th>ID</th> -->
+            <th>APN</th>
+            <th>{{lang_t('modem.user')}}</th>
+            <th>{{lang_t('modem.pass')}}</th>
+            <th>{{lang_t('modem.validation')}}</th>
+            <th v-if="modem_ipv6">{{lang_t('ospf.network_type')}}</th>
+            <th>{{lang_t('common.operation')}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(val,index) in apnData" :key="index" @click="editItem(index,val)">
+          <td>
+            <input type="text" v-model="editItemInfo.apn" v-if="editIdx == index && editItemInfo.default!='1' " maxlength="32">
+            <span v-else style="word-break: break-all;">{{ val.apn }}</span>
+          </td>
+          <td>
+            <input type="text" v-model="editItemInfo.user4g" v-if="editIdx == index && editItemInfo.default!='1' " maxlength="32">
+            <span v-else style="word-break: break-all;">{{ val.user4g }}</span>
+          </td>
+          <td>
+            <input type="text" v-model="editItemInfo.pass4g" v-if="editIdx == index && editItemInfo.default!='1' " maxlength="32">
+            <span v-else style="word-break: break-all;">{{ val.pass4g }}</span>
+          </td>
+          <td>
+            <select v-model="editItemInfo.auth"  v-if="editIdx == index && editItemInfo.default!='1' " data-style="btn-default">
+              <option value="0">NONE</option>
+              <option value="1">PAP</option>
+              <option value="2">CHAP</option>
+              <option value="3">CHAPv2</option>
+            </select>
+            <span v-else style="word-break: break-all;">{{ stringConver(val.auth) }}</span>
+          </td>
+          <td v-if="modem_ipv6">
+            <select v-model="editItemInfo.net_type"  v-if="editIdx == index && editItemInfo.default!='1' " data-style="btn-default" >
+              <option value="0">IPv4</option>
+              <option value="1">IPv6</option>
+              <option value="2">IPv4/IPV6</option>
+            </select>
+            <span v-else style="word-break: break-all;">{{ stringNetType(val.net_type) }}</span>
+          </td>
+          <td class="operation">
+            <a @click.stop="modifyRule(index,val)">{{ (currenApn==val.apn && applyIdx!=index)?lang_t('modem.using'):(applyIdx==index ? lang_t('modem.used'):"")}}</a>
+            <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+            <a v-show="val.default!='1'" @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+           <!--  <a @click.stop="useEdit(index)">{{ lang_t('modem.used') }}</a> -->
+          </td>
+          </tr>
+          <tr>
+            <td>
+              <input type="text" v-model="formValidate.apn" maxlength="32" />
+            </td>
+            <td>
+              <input type="text" v-model="formValidate.user4g" maxlength="32" />
+            </td>
+            <td>
+              <input type="text" v-model="formValidate.pass4g" maxlength="32" />
+            </td>
+            <td>
+              <select v-model="formValidate.auth"  data-style="btn-default">
+                <option value="0">NONE</option>
+                <option value="1">PAP</option>
+                <option value="2">CHAP</option>
+                <option value="3">CHAPv2</option>
+              </select>
+            </td>
+             <td v-if="modem_ipv6">
+              <select v-model="formValidate.net_type"  data-style="btn-default">
+                <option value="0">IPv4</option>
+                <option value="1">IPv6</option>
+                <option value="2">IPv4/IPV6</option>
+              </select>
+            </td>
+            <td class="operation">
+              <a @click="addRule">{{ lang_t('common.add') }}</a>
+            </td>
+          </tr>
+        </tbody>
+        </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary all-but" @click="saveInfo">{{ lang_t('common.save') }}</button>
+          <button data-dismiss="modal" class="btn btn-primary" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+        </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="globalConfig.moduleMultiApnSupport" class="modal fade" id="show_cs_apn" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" :style="{width: globalConfig.isPhoneDevice ? 'auto' : '800px'}">
+          <div class="modal-content">
+        <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">{{ lang_t('modem.apn_list') }}</h4>
+        </div>
+        <div class="modal-body">
+        <table class="table table-striped">
+          <thead>
+          <tr>
+         <!-- th>ID</th> -->
+            <th>APN</th>
+            <th>{{lang_t('modem.user')}}</th>
+            <th>{{lang_t('modem.pass')}}</th>
+            <th>{{lang_t('modem.validation')}}</th>
+            <th>{{lang_t('common.operation')}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(val,index) in csApnData" :key="index" @click="csEditItem(index,val)">
+          <td>
+            <input type="text" v-model="csEditItemInfo.csApn" v-if="csEditIdx == index" maxlength="32">
+            <span v-else style="word-break: break-all;">{{ val.csApn }}</span>
+          </td>
+          <td>
+            <input type="text" v-model="csEditItemInfo.csUser4g" v-if="csEditIdx == index" maxlength="32">
+            <span v-else style="word-break: break-all;">{{ val.csUser4g }}</span>
+          </td>
+          <td>
+            <input type="text" v-model="csEditItemInfo.csPass4g" v-if="csEditIdx == index" maxlength="32">
+            <span v-else style="word-break: break-all;">{{ val.csPass4g }}</span>
+          </td>
+          <td>
+            <select v-model="csEditItemInfo.csAuth"  v-if="csEditIdx == index" data-style="btn-default">
+              <option value="0">NONE</option>
+              <option value="1">PAP</option>
+              <option value="2">CHAP</option>
+              <option value="3">CHAPv2</option>
+            </select>
+            <span v-else style="word-break: break-all;">{{ stringConver(val.csAuth) }}</span>
+          </td>
+          <td class="operation">
+            <a @click.stop="modifyCsApnRule(index,val)">{{ (currenCsApn==val.csApn && csApplyIdx!=index)?lang_t('modem.using'):(csApplyIdx==index ? lang_t('modem.used'):"")}}</a>
+            <a v-show="csEditIdx == index" @click.stop="csCancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+            <a @click.stop="delCsApnRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+           <!--  <a @click.stop="useEdit(index)">{{ lang_t('modem.used') }}</a> -->
+          </td>
+          </tr>
+          <tr>
+            <td>
+              <input type="text" v-model="formValidate.csApn" maxlength="32" />
+            </td>
+            <td>
+              <input type="text" v-model="formValidate.csUser4g" maxlength="32" />
+            </td>
+            <td>
+              <input type="text" v-model="formValidate.csPass4g" maxlength="32" />
+            </td>
+            <td>
+              <select v-model="formValidate.csAuth"  data-style="btn-default">
+                <option value="0">NONE</option>
+                <option value="1">PAP</option>
+                <option value="2">CHAP</option>
+                <option value="3">CHAPv2</option>
+              </select>
+            </td>
+            <td class="operation">
+              <a @click="addCsApnRule">{{ lang_t('common.add') }}</a>
+            </td>
+          </tr>
+        </tbody>
+        </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary all-but" @click="saveInfo">{{ lang_t('common.save') }}</button>
+          <button data-dismiss="modal" class="btn btn-primary" @click="csCancelAll()">{{ lang_t('common.cancel') }}</button>
+        </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      currentCell:"",
+      show_FM150_modem:false,
+      simlist: [],
+      sim: "",
+      formValidate:{
+        ruleName: '',
+        //lockCellAt:"",
+        rtl8111hEnable: '',
+        lockCellEnable: '',
+        ltePci: '',
+        lteArfcn: '',
+        freq: '',
+        cellid: '',
+        cellInfo: '',
+        band: '',
+        modemModel: '',
+        mode4g: '1',
+        apn: '',
+        dialNum: '',
+        user4g: '',
+        pass4g: '',
+        auth: '0',
+        csApn: '',
+        csUser4g: '',
+        csPass4g: '',
+        csAuth: '0',
+        validation: '0',
+        pinCode:'',
+        chap:'',
+        pap:'',
+        mschap:'',
+        ms2chap:'',
+        eap:'',
+        noccp:'',
+        noaccomp:'',
+        routeMode:'0',
+        nopcomp:'',
+        novj:'',
+        novjccomp:'',
+        debug:'',
+        usepeerdns:'',
+        interval:'',
+        failure:'',
+        dialMtu:'',
+        dialMru:'',
+        localIp:'',
+        remoteIp:'',
+        nomppe:'',
+        mppe_required:'',
+        mppe_stateless:'',
+        nodeflate:'',
+        nobsdcomp:'',
+        asyncmap:'',
+        dataSize:"",
+        netType:"",
+        keepaliveSwitch:"1",
+        keepaliveAddr:"",
+        keepalivePort:"",
+        saEnable:"",
+        netType5g:"",
+        netType5gtmp:"",
+        arfcn:"",
+        pci:"",
+        modeSet:"",
+        sysMode:"",
+        scsType:"",
+        searchMode:"",
+        field:"",
+        systemChoose:"",
+        keepaliveInterval:"",
+        pps_type:"",
+        curPci:'',
+        curBand:'',
+        curArfcn:'',
+        curScs:'',
+      },
+      net_type: '0',
+      cellinfoData: [],
+      cellinfoDataLength:'',
+	   netcustom: '',
+     modemIdx:'0',
+      apnData: [],
+      csApnData: [],
+      ipStatus:'',
+      currenApn:'',
+      currenCsApn:'',
+  	  direction:false,
+  	  g4Show:true,
+      bandReset:false,
+      dialWay:'0',
+      bandLock:'0',
+      bandLock5g:'',
+      bandLock5gSwitch:'0',
+      netNssaiSwitch:'0',
+      netNssaiLen:'0',
+      netNssaiLenParameter:'',
+      dialCid:'2',
+      editIdx: '-1',
+      applyIdx: '-1',
+      csEditIdx: '-1',
+      csApplyIdx: '-1',
+      bandLockType:'0',
+      editItemInfo: {},
+      csEditItemInfo: {},
+      apnItemInfo: {},
+      csApnItemInfo: {},
+      modem_ipv6:false,
+      showCellInfo: false,
+      cellPci: "",
+      cellId1: "",
+      cellARF: "",
+      pps_enable: "0",
+      enable_5gLan: "1",
+      roam_enable:"0",
+      lockBand:"",
+    }
+  },
+  watch:{
+      "modemIdx":function () {
+          this.getModemConfig();
+      }
+  },
+  computed: {
+    ip4g:function(){
+      return this.ipStatus == "" ? lang_t('modem.msg1') : this.ipStatus;
+    }
+  },
+  created:function(){
+    this.showCellInfo = false;
+    if(globalConfig.urlNetPage == '2') {
+      this.modemIdx="1";
+    }else{
+      this.modemIdx="0";
+    }
+    if(globalConfig.modemAuthSupport == undefined)
+      globalConfig.modemAuthSupport=true;
+    this.modemIdx = cs.localUrl(this.modemIdx);
+    this.getModemConfig();
+  },
+  methods:{
+    getModemConfig:function(){
+      this.netcustom = (globalConfig.nettypeString || "").split(',');
+      var _this = this;
+      var postVar = {};
+      postVar.modemIdx = _this.modemIdx;
+      uiPost.getModemCfg(postVar,function(data){
+        _this.apnData = data.rule;
+        _this.csApnData = data.csApnRule;
+        _this.modem_ipv6  = data.modem_ipv6 == '1' ? true:false;
+        _this.net_type = data.net_type;
+
+        _this.formValidate.modemModel = data.modemModel;
+        if(data.modemModel.indexOf("FM150")>=0 || data.modemModel.indexOf("FM160")>=0){
+          _this.show_FM150_modem =true;
+        }else{
+          _this.show_FM150_modem =false;
+        }
+        _this.formValidate.routeMode = data.routeMode;
+        //_this.formValidate.apn = data.apn;
+        _this.formValidate.dialNum = data.dialNum;
+        _this.formValidate.rtl8111hEnable= data.rtl8111hEnable;
+        //_this.formValidate.validation = data.validation ? data.validation : '0';
+        //_this.formValidate.user4g = data.user4g;
+        //_this.formValidate.pass4g = data.pass4g;
+  //      _this.formValidate.mode4g = data.mode4g;
+        //_this.formValidate.pinCode = data.pinCode;
+        _this.bandLock = data.bandLock;
+        _this.bandLock5g = data.bandLock5g;
+        _this.bandLock5gSwitch = data.bandLock5gSwitch;
+        _this.netNssaiSwitch = data.netNssaiSwitch;
+        _this.netNssaiLen = data.netNssaiLen;
+        _this.netNssaiLenParameter = data.netNssaiLenParameter;
+        _this.dialCid = data.dialCid;
+        _this.bandLockType = data.bandLockType;
+        _this.formValidate.scsType = data.scsType;
+        _this.bandReset = data.bandReset =='1'?true:false;
+        _this.enable_5gLan = data.enable_5gLan;
+        _this.roam_enable = data.modemRoamEnable;
+	if( _this.globalConfig.modemPpsSupport )
+	{
+        	_this.pps_enable= data.pps_enable;
+        	_this.xiaomaModemPps = data.xiaoma_pps_enable=='1'?true:false;
+          	_this.formValidate.pps_type= data.pps_type;
+	}
+        if(_this.g4Show){
+          _this.dialWay = data.dialWay;
+          _this.formValidate.chap = data.chap;
+          _this.formValidate.pap = data.pap;
+          _this.formValidate.mschap = data.mschap;
+          _this.formValidate.ms2chap = data.ms2chap;
+
+          _this.formValidate.keepaliveSwitch = data.keepaliveSwitch;
+          _this.formValidate.keepaliveAddr = data.keepaliveAddr;
+          _this.formValidate.keepalivePort = data.keepalivePort;
+          _this.formValidate.keepaliveInterval = data.keepaliveInterval;
+          _this.formValidate.saEnable = data.saEnable;
+          _this.formValidate.netType5g = data.netType5g;
+          _this.formValidate.netType5gtmp = data.netType5g;
+          _this.formValidate.onlySA = data.onlySA;
+          _this.formValidate.netType = data.netType;
+          _this.formValidate.arfcn = data.arfcn;
+          _this.formValidate.pci = data.pci;
+          _this.formValidate.lockCellEnable = data.lockCellEnable;
+          //_this.formValidate.lockCellAt = data.lockCellAt;
+          _this.formValidate.ltePci  = data.ltePci;
+          _this.formValidate.lteArfcn  = data.lteArfcn;
+          _this.formValidate.freq  = data.freq;
+          _this.formValidate.cellid  = data.cellid;
+          _this.formValidate.cellInfo  = data.cellInfo;
+          _this.formValidate.band = data.band;
+          _this.currenApn= data.currenApn;
+
+          _this.currenCsApn= data.currenCsApn;
+
+
+          //system
+          _this.formValidate.systemChoose  = data.systemChoose;
+          _this.formValidate.sysMode  = data.sysMode;
+          _this.formValidate.searchMode  = data.searchMode;
+          _this.formValidate.field  = data.field;
+        }
+        _this.lockBand = data.lock_band;
+        _this.sim = data.sim;
+        _this.simlist = data.simlist;
+      });
+    },
+    scanCell: function(){
+      var _this = this;
+      //postVar.modemIdx = _this.modemIdx;
+      uiPost.getCellInfo(function(data){
+        _this.cellinfoData = data;
+        _this.cellinfoDataLength = data.length;
+        $('#show_cell').modal();
+      });
+    },
+    getCell:function(value, num){
+      var _this = this;
+      uiPost.getCurrentCell(function(data) {
+        _this.formValidate.curPci = data.pci, 16;
+        _this.formValidate.curBand = data.bandLte;
+        _this.formValidate.curArfcn = parseInt(data.arfcn, 16);
+        _this.formValidate.curScs = data.scs;
+        if(data.netType.indexOf("NR") != -1) {
+          _this.currentCell = data.netType+
+          ' band:' + _this.formValidate.curBand +
+          ' pci:' + _this.formValidate.curPci + 
+          ' arfcn:' + _this.formValidate.curArfcn +
+          ' scs:' + _this.formValidate.curScs;
+        }else if(data.netType.indexOf("LTE") != -1) {
+          _this.currentCell = data.netType+
+          ' band:' + _this.formValidate.curBand +
+          ' pci:' + _this.formValidate.curPci + 
+          ' arfcn:' + _this.formValidate.curArfcn;
+        }
+      });
+    },
+    setCell:function(){
+      var _this = this;
+      uiPost.getCurrentCell(function(data) {
+          _this.formValidate.ltePci = data.pci;
+          _this.bandLock5g = data.bandLte;
+          _this.formValidate.lteArfcn = parseInt(data.arfcn, 16);
+          _this.formValidate.scsType = data.scs;
+      });
+      _this.formValidate.ltePci = _this.formValidate.curPci;
+      _this.bandLock5g = _this.formValidate.curBand;
+      _this.formValidate.lteArfcn = _this.formValidate.curArfcn;
+      _this.formValidate.scsType = _this.formValidate.curScs;
+      _this.showCellInfo = true;
+    },
+    resetAllBand:function(){
+      var _this = this;
+      if(_this.bandReset)
+        _this.bandLock5g='';
+    },
+    bandLockTypeChange:function(){
+      var _this = this;
+      if(_this.formValidate.netType5g == 'LTE'){
+        _this.bandLockType = "1";
+      }else if(_this.formValidate.netType5g == 'NR5G-NSA'){
+        if(_this.formValidate.modemModel == 'Quectel RM500U-CN' || _this.formValidate.modemModel == 'RG200U-CN' ){
+          _this.bandLockType = "2";
+        }else if(_this.formValidate.modemModel == 'Quectel RM500Q-GL'){
+          _this.bandLockType = "2";
+        }
+        _this.bandLock5gSwitch = "0";
+      }else if(_this.formValidate.netType5g == 'NR5G-SA'){
+        _this.bandLockType = "2";
+      }else{
+        _this.bandLock5gSwitch = "0";
+
+      }
+
+      if(_this.formValidate.netType5g == 'AUTO'){
+        _this.netNssaiSwitch = "0";
+        _this.netNssaiLen = "0";
+      }else if(_this.formValidate.netType5g == 'LTE'){
+         _this.netNssaiSwitch = "0";
+         _this.netNssaiLen = "0";
+      }
+
+    },
+    apnShow: function(){
+      $('#show_apn').modal();
+    },
+    csApnShow: function(){
+      $('#show_cs_apn').modal();
+    },
+    veriyfun:function(val, flag) {
+      var _this = this;
+      if(_this.formValidate.mode4g == "1"){
+        if(1 == cs.string(val.apn)){
+          errorAlert("APN" + lang_t('alert.msg6'));
+          return false;
+        }
+
+        if(1 == cs.string(val.user4g)){
+          errorAlert(lang_t('modem.user') + lang_t('alert.msg6'));
+          return false;
+        }
+
+        if(1 == cs.string(val.pass4g)){
+          errorAlert(lang_t('modem.pass') + lang_t('alert.msg6'));
+          return false;
+        }
+        for(var i=0; i<_this.apnData.length; i++){
+          if(flag != undefined && flag == i) continue;
+          if(val.apn==_this.apnData[i].apn && val.user4g == _this.apnData[i].user4g &&val.pass4g==_this.apnData[i].pass4g && val.auth==_this.apnData[i].auth ){
+            errorAlert(lang_t('alert.msg4'));
+            return false;
+          }
+
+        }
+
+
+      }
+      return true;
+    },
+    csVeriyfun:function(val, flag) {
+      var _this = this;
+      if(_this.formValidate.mode4g == "1"){
+        if(1 == cs.string(val.csApn)){
+          errorAlert("APN" + lang_t('alert.msg6'));
+          return false;
+        }
+
+        if(1 == cs.string(val.csPass4g)){
+          errorAlert(lang_t('modem.pass') + lang_t('alert.msg6'));
+          return false;
+        }
+
+        if(1 == cs.string(val.csUser4g)){
+          errorAlert(lang_t('modem.user') + lang_t('alert.msg6'));
+          return false;
+        }
+      }
+
+
+      return true;
+    },
+    cancelAll:function () {
+      if(globalConfig.moduleMultiApnSupport)
+          $('#show_apn').modal('hide');
+      else
+        location.href = location.href;
+    },
+
+    csCancelAll:function () {
+      $('#show_cs_apn').modal('hide');
+    },
+
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      if(idx != this.editIdx) return;
+      $.extend(this.apnData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+      this.applyIdx = idx;
+    },
+    modifyCsApnRule:function (idx) {
+      if(!this.csVeriyfun(this.csEditItemInfo, idx)) return;
+      if(idx != this.csEditIdx) return;
+      $.extend(this.csApnData[idx], this.csEditItemInfo);
+      this.csEditIdx = '-1';
+      this.csApplyIdx = idx;
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.apnData.splice(idx, 1);
+    },
+    delCsApnRuleFun:function (idx,obj) {
+      this.csEditIdx = "-1";
+      this.csApnData.splice(idx, 1);
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.apnData.length >= 10){
+        Cstools.msg({
+          content: this.lang_t('macf.msg13'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+      }
+
+    if (this.formValidate.apn =='' ){
+        Cstools.msg({
+          content: "APN"+this.lang_t('alert.msg5'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+    }
+
+
+      var temp = {
+        apn: this.formValidate.apn,
+        auth: this.formValidate.auth,
+        pass4g: this.formValidate.pass4g,
+        user4g: this.formValidate.user4g,
+        idx:this.apnData.length+1
+      };
+      if(!this.veriyfun(temp)) return;
+      this.apnData.push(temp);
+      this.formValidate.apn = "";
+      this.formValidate.auth = "0";
+      this.formValidate.pass4g = "";
+      this.formValidate.user4g = "";
+
+    },
+    addCsApnRule:function () {
+      var _this = this;
+      if(_this.csApnData.length >= 10){
+        Cstools.msg({
+          content: this.lang_t('macf.msg13'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+      }
+
+    if (this.formValidate.csApn =='' ){
+        Cstools.msg({
+          content: "APN"+this.lang_t('alert.msg5'),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        return false;
+    }
+
+      var temp = {
+        csApn: this.formValidate.csApn,
+        csAuth: this.formValidate.csAuth,
+        csPass4g: this.formValidate.csPass4g,
+        csUser4g: this.formValidate.csUser4g,
+        idx:this.csApnData.length+1
+      };
+      if(!this.csVeriyfun(temp)) return;
+      this.csApnData.push(temp);
+      this.formValidate.csApn = "";
+      this.formValidate.csAuth = "0";
+      this.formValidate.csPass4g = "";
+      this.formValidate.csUser4g = "";
+
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+      this.applyIdx = index;
+    },
+    cancelEdit:function (obj) {
+      this.ditIdx = "-1";
+      this.editItemInfo = obj;
+    },
+
+    csEditItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.csEditItemInfo = {};
+      $.extend(this.csEditItemInfo, obj);
+      this.csEditIdx = index;
+      this.csApplyIdx = index;
+    },
+    csCancelEdit:function (obj) {
+      this.csEditIdx = "-1";
+      this.csEditItemInfo = obj;
+    },
+
+    stringConver:function(num){
+      var _this = this;
+      switch(num){
+        case '1':
+          return "PAP";
+          break;
+        case '2':
+          return "CHAP";
+          break;
+        case '3':
+          return "CHAPv2";
+          break;
+        default:
+          return "NONE";
+          break;
+      }
+      return num;
+    },
+    stringNetType:function(num){
+      var _this = this;
+      switch(num){
+        case '1':
+          return "IPv6";
+          break;
+        case '2':
+          return "IPv4/IPv6";
+          break;
+        default:
+          return "IPv4";
+          break;
+      }
+      return num;
+    },
+      removeCell: function(){
+        var _this = this;
+        uiPost.unLockCell(apply_callback);
+      },
+      lockCell: function(index){
+        var _this = this;
+        var postVar = {};
+        var infoData = this.cellinfoData;
+        postVar.modemIdx = _this.modemIdx;
+
+        for(var i in infoData){
+
+          if(index == i){
+            postVar.arfcn = infoData[i].arfcn;
+            postVar.pci = infoData[i].pci;
+            postVar.rat = infoData[i].rat;
+
+            if (infoData[i].rat.indexOf("LTE")>=0) {
+                _this.formValidate.lockCellEnable = '1';
+                _this.formValidate.freq = infoData[i].freq;
+                _this.formValidate.cellid = infoData[i].cellid;
+                _this.formValidate.lteArfcn = infoData[i].arfcn;
+            }else if(infoData[i].rat.indexOf("NR")>=0 ){
+                _this.formValidate.lockCellEnable = '2';
+                _this.formValidate.lteArfcn = infoData[i].arfcn;
+                _this.formValidate.freq = infoData[i].freq;
+                _this.formValidate.cellid = infoData[i].cellid;
+                _this.formValidate.ltePci = infoData[i].pci;
+            }
+          }
+        }
+        if(_this.formValidate.modemModel.indexOf("MH5000-82") >=0 ){
+          if ((_this.formValidate.scsType ==''|| _this.formValidate.scsType ==undefined ) && _this.formValidate.lockCellEnable == '2'){
+
+              errorAlert(this.lang_t('modem.scstype')+this.lang_t('alert.msg5'));
+              return false;
+          }
+          if ((_this.bandLock5g =='' || _this.bandLock5g ==undefined) && _this.formValidate.lockCellEnable == '2' ){
+              errorAlert(this.lang_t('modem.band_lock')+this.lang_t('alert.msg5'));
+              return false;
+          }
+
+          if ((_this.bandLock5g =='' || _this.bandLock5g ==undefined) && _this.bandLock5gSwitch == '1' && globalConfig.bandLockSupport && (_this.formValidate.modemModel == 'Quectel RM500U-CN' || _this.formValidate.modemModel == 'RG200U-CN') && _this.formValidate.netType5g != 'AUTO' &&  _this.formValidate.netType5g != 'NR5G-NSA' ){
+              errorAlert(this.lang_t('modem.band_lock')+this.lang_t('alert.msg5'));
+              return false;
+          }
+          postVar.scsType  = _this.formValidate.scsType;
+          postVar.bandLock5g  = _this.bandLock5g;
+          postVar.bandLock5gSwitch  = _this.bandLock5gSwitch;
+          postVar.dialCid  = _this.dialCid;
+
+          if(globalConfig.nssaiSupport){
+
+            if( _this.netNssaiSwitch =='1' && 99 != cs.num_range(_this.netNssaiLen, 0, 255)){
+              errorAlert(lang_t('modem.net_nssai_len') + lang_t('alert.msg15', [0, 255]));
+              return false;
+            }
+
+            postVar.netNssaiSwitch  = _this.netNssaiSwitch;
+            postVar.netNssaiLen  = _this.netNssaiLen;
+            postVar.netNssaiLenParameter  = _this.netNssaiLenParameter;
+          }
+
+
+        }
+        uiPost.lockCell(postVar,apply_callback);
+      },
+      saveInfo:function () {
+        $('#show_apn').modal('hide');
+        $('#show_cs_apn').modal('hide');
+        uiPost.setApnCfg();
+      },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.modemIdx = _this.modemIdx;
+
+//      postVar.mode4g = _this.formValidate.mode4g;
+      if(_this.formValidate.mode4g == "1"){
+
+        if(1 == cs.string(_this.formValidate.dialNum)){
+          errorAlert(lang_t('modem.dial_num') + lang_t('alert.msg6'));
+          return false;
+        }
+
+        //postVar.apn = _this.formValidate.apn;
+        postVar.dialNum = _this.formValidate.dialNum;
+        postVar.rtl8111hEnable= _this.formValidate.rtl8111hEnable;
+        //postVar.validation = _this.formValidate.validation;
+        //postVar.user4g = _this.formValidate.user4g;
+        //postVar.pass4g = _this.formValidate.pass4g;
+        //postVar.pinCode = _this.formValidate.pinCode;
+      }
+      if(globalConfig.saSupport&&_this.formValidate.netType=='5G'){
+        postVar.saEnable = _this.formValidate.saEnable;
+      }
+
+          if ((_this.bandLock5g =='' || _this.bandLock5g ==undefined) && _this.bandLock5gSwitch == '1' && globalConfig.bandLockSupport && (_this.formValidate.modemModel == 'Quectel RM500U-CN' || _this.formValidate.modemModel == 'RG200U-CN') && _this.formValidate.netType5g != 'AUTO' &&  _this.formValidate.netType5g != 'NR5G-NSA' ){
+              errorAlert(this.lang_t('modem.band_lock')+this.lang_t('alert.msg5'));
+              return false;
+          }
+      postVar.netType5g = _this.formValidate.netType5g;
+      postVar.netType = _this.formValidate.netType;
+      postVar.bandLock = _this.bandLock;
+      postVar.bandLock5g = _this.bandLock5g;
+      postVar.bandLock5gSwitch = _this.bandLock5gSwitch;
+      postVar.dialCid = _this.dialCid;
+      postVar.bandLockType = _this.bandLockType;
+      postVar.scsType  = _this.formValidate.scsType
+      postVar.bandReset = _this.bandReset ?"1":"0";
+      postVar.routeMode = _this.routeMode;
+      postVar.enable_5gLan = _this.enable_5gLan;
+      postVar.modemRoamEnable = _this.roam_enable;
+
+      postVar.sim = _this.sim;
+
+      if( _this.globalConfig.modemPpsSupport )
+      {
+      	postVar.pps_enable = _this.pps_enable ;
+      }
+
+      if (_this.g4Show) {
+        postVar.dialWay = _this.dialWay;
+        postVar.chap = _this.formValidate.chap;
+        postVar.pap = _this.formValidate.pap;
+        postVar.mschap = _this.formValidate.mschap;
+        postVar.ms2chap = _this.formValidate.ms2chap;
+
+
+
+        if (_this.direction){
+          if('1' == _this.formValidate.keepaliveSwitch){
+            _s = cs.ip(_this.formValidate.keepaliveAddr);
+            if(0 == _s) {
+              errorAlert(lang_t('modem.keep_alive_addr') + lang_t('alert.msg5'));
+              return false;
+            }else if(99 != _s){
+              errorAlert(lang_t('modem.keep_alive_addr') + lang_t('alert.msg14'));
+              return false;
+            }
+            if(99 != cs.num_range(_this.formValidate.keepalivePort,1,65535)){
+              errorAlert(lang_t('modem.keep_alive_port') + lang_t('alert.msg15',[1,65535]));
+              return false;
+            }
+            if(99 != cs.num_range(_this.formValidate.keepaliveInterval,1,65535)){
+              errorAlert(lang_t('modem.keep_alive_interval') + lang_t('alert.msg15',[1,65535]));
+              return false;
+            }
+          }
+        }
+
+        postVar.keepaliveSwitch = _this.formValidate.keepaliveSwitch;
+        postVar.keepaliveAddr = _this.formValidate.keepaliveAddr;
+        postVar.keepalivePort = _this.formValidate.keepalivePort;
+        postVar.keepaliveInterval = _this.formValidate.keepaliveInterval;
+        postVar.lockCellEnable = _this.formValidate.lockCellEnable;
+        //postVar.lockCellAt = _this.formValidate.lockCellAt;
+        postVar.ltePci = _this.formValidate.ltePci;
+        postVar.lteArfcn = _this.formValidate.lteArfcn;
+        postVar.freq = _this.formValidate.freq;
+        postVar.cellid = _this.formValidate.cellid;
+        postVar.cellInfo = _this.formValidate.cellInfo;
+        postVar.band = _this.formValidate.band;
+        postVar.routeMode =_this.formValidate.routeMode;
+
+        if (_this.formValidate.modemModel == 'ZXIC GD212') {
+          postVar.sysMode = _this.formValidate.sysMode;
+          postVar.searchMode = _this.formValidate.searchMode;
+          postVar.field = _this.formValidate.field;
+          postVar.systemChoose = _this.formValidate.systemChoose;
+        }
+
+
+        if(globalConfig.C738jrSupport)  postVar.net_type  = _this.net_type;
+
+       if(globalConfig.nssaiSupport){
+
+        if( _this.netNssaiSwitch =='1' && 99 != cs.num_range(_this.netNssaiLen, 0, 255)){
+          errorAlert(lang_t('modem.net_nssai_len') + lang_t('alert.msg15', [0, 255]));
+          return false;
+        }
+
+          postVar.netNssaiSwitch  = _this.netNssaiSwitch;
+          postVar.netNssaiLen  = _this.netNssaiLen;
+          postVar.netNssaiLenParameter  = _this.netNssaiLenParameter;
+       }
+
+
+
+      }
+      //uiPost.setModemCfg(postVar, apply_callback);
+      _this.sendPost(postVar);
+    },
+    sendPost: function(postVar) {
+      var _this = this;
+      var _this = this;
+      console.log(this.apnData);
+
+      if(this.applyIdx !=-1){
+        this.apnItemInfo.currentIdx = this.apnData[this.applyIdx].idx;
+
+      }else{
+
+        if(this.currenApn != ""){
+          for(var i in this.apnData){
+              if(this.apnData[i].apn == this.currenApn)
+                this.apnItemInfo.currentIdx = this.apnData[i].idx
+          }
+        }else{
+           this.apnItemInfo.currentIdx = this.apnData.length;
+        }
+
+      }
+
+
+
+
+      this.apnItemInfo.subnet = [].concat( this.apnData );
+      this.applyIdx = '-1';
+      this.editIdx = '-1';
+      $.extend(this.apnItemInfo, postVar);
+
+
+     if(globalConfig.moduleMultiApnSupport){
+
+          if(this.csApplyIdx !=-1){
+            this.apnItemInfo.csCurrentIdx = this.csApnData[this.csApplyIdx].idx;
+          }else{
+
+
+              if(this.currenCsApn != ""){
+                for(var j in this.csApnData){
+                    if(this.csApnData[j].csApn == this.currenCsApn)
+                      this.apnItemInfo.csCurrentIdx = this.csApnData[j].idx;
+                }
+              }else{
+                 this.apnItemInfo.csCurrentIdx = this.csApnData.length;
+              }
+
+          }
+
+          this.apnItemInfo.csSubnet = [].concat( this.csApnData );
+          this.csApplyIdx = '-1';
+          this.csEditIdx = '-1';
+           $.extend(this.apnItemInfo, postVar);
+
+     }
+
+
+      uiPost.setModemCfg(this.apnItemInfo,function(data) {
+        if (data.wtime != undefined && data.wtime != 0){
+          Cstools.count(data.wtime,'js',function(){
+            cs.localUrl(_this.modemIdx, 'href');
+          });
+        }else{
+          cs.localUrl(_this.modemIdx, 'href');
+        }
+      }
+      )
+
+    },
+	  dirSwitch:function(){
+      this.direction = this.direction ? false : true;
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

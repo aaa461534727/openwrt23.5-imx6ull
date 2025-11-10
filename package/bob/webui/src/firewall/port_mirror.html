@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+				<!-- <tr>
+					<td colspan="2">
+						<strong>{{ lang_t('macf.help') }}</strong>
+					</td>
+				</tr> -->
+              	<tr>
+                    <td>{{lang_t('common.state')}}</td>
+                    <td>
+                      <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" >
+                    </td>
+                </tr> 
+              <tr v-show="enable">
+                <td style="width: 30%">{{lang_t('mirror.mode')}}</td>
+                <td>
+                  <select v-model="mirrorMode" data-style="btn-default" >
+                    <option value="1">{{ lang_t('mirror.output') }}</option>
+                    <option value="2">{{ lang_t('mirror.input') }}</option>
+                    <option value="3">{{ lang_t('mirror.all') }}</option>
+                  </select>
+                </td>
+              </tr>   
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enable">
+              <thead>
+                <tr>
+                  <th>{{lang_t('index.port')}}</th>
+                  <th>{{lang_t('mirror.monitor_port')}}</th>
+                  <th>{{lang_t('mirror.monitored_port')}}</th>
+                </tr>
+              </thead>
+             <tbody>
+              <tr v-for="(data,index) in ports" :key="index">
+                <td>{{data}}</td>
+                <td v-if="data != 'WIFI'">
+                  <input type="radio" name="mirror" v-model="monitorDestinatPort" :value="data" @change="mirrorFun"/>
+                </td>
+                <td v-else>--</td>
+                <td>
+                  <input type="checkbox" v-model="monitorSourcePort[data]" :disabled="disableds[data]">
+                </td>
+              </tr>
+            </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" >
+               <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t,
+	  enable: false,
+	  ports: [],
+	  mirrorMode: '',
+	  monitorDestinatPort: '',
+	  monitorSourcePort: {},
+	  disableds: {}
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      $('#switch_status').bootstrapSwitch('state', this.enable);
+    },
+  },
+  created:function() {
+    var _this = this;
+    var postVar = {};
+    uiPost.getMirrorPort(postVar,function(data){
+	  if (!data) return
+	  _this.enable = data.mirrorPortEnable == "1";
+	  _this.ports = data.lanPort.split(',');
+	  _this.mirrorMode = data.mirrorMode;
+	  _this.monitorDestinatPort = data.monitorDestinatPort;
+	  for (var i = 0; i < _this.ports.length; i++) {
+		  _this.$set(_this.monitorSourcePort, _this.ports[i], !!~data.monitorSourcePort.indexOf(_this.ports[i]))
+		  _this.$set(_this.disableds, _this.ports[i], _this.ports[i] == data.monitorDestinatPort)
+	  }
+    });
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if(_this.enable != data){
+        _this.enable = data;
+      }
+    });
+  },
+  methods:{
+	mirrorFun: function() {
+		this.monitorSourcePort[this.monitorDestinatPort] = false
+		for (var i = 0; i < this.ports.length; i++) {
+			this.disableds[this.ports[i]] = false
+		}
+		this.disableds[this.monitorDestinatPort] = true
+	},
+    saveInfo:function () {
+		var postVar = {
+			mirrorPortEnable: this.enable ? '1' : '0',
+			mirrorMode: this.mirrorMode,
+			monitorDestinatPort: this.monitorDestinatPort,
+			monitorSourcePort: []
+		};
+      	for (var i = 0; i < this.ports.length; i++) {
+			if (this.monitorSourcePort[this.ports[i]]) postVar.monitorSourcePort.push(this.ports[i])
+		}
+		postVar.monitorSourcePort = postVar.monitorSourcePort.join(',')
+      	uiPost.setMirrorPort(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

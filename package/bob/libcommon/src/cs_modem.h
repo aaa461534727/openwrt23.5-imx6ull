@@ -1,0 +1,33 @@
+#ifndef __CS_MODEM_HEADER__
+#define __CS_MODEM_HEADER__
+
+typedef enum
+{
+	AUTH_NONE,
+	AUTH_PAP,
+	AUTH_CHAP,
+	AUTH_PAPCHAP
+}AUTH_T;
+
+enum {
+	PRIO_WIRE_FRIST=0,
+	PRIO_3GPP_ONLY,	//4g 5g
+	PRIO_ONLY_WIRE, //有线
+	PRIO_3GPP_FRIST,
+};
+
+enum {
+	MOBILE_NET_AUTO=0,
+	MOBILE_NET_NRSA,
+	MOBILE_NET_NRNSA,
+	MOBILE_NET_LTE,
+	MOBILE_NET_3G
+};
+
+enum {
+	IPV4=0,
+	IPV6,
+	IPV4V6
+};
+
+#endif /* __CS_MODEM_HEADER__ */

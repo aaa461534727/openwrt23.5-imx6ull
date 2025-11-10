@@ -1,0 +1,11 @@
+
+config rid 'main'
+	option enable '1'
+	option host ''
+	option port ''
+
+config rid 'location'
+	option 'lat'
+	option 'lon'
+
+

@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=60
+
+USE_PROCD=1
+PROG=/usr/sbin/shttpd
+
+prepare_dirs() {
+    # 创建 /var/cste 目录
+    mkdir -p /var/cste 2>/dev/null
+    
+    # 创建临时状态文件
+    touch /var/cste/temp_status 2>/dev/null
+    
+    # 设置权限
+    chmod 755 /var/cste 2>/dev/null
+    chmod 644 /var/cste/temp_status 2>/dev/null
+    
+    # 验证创建结果
+    if [ -d "/var/cste" ] && [ -f "/var/cste/temp_status" ]; then
+        echo "Directory and file created successfully"
+    else
+        echo "Warning: Failed to create directory or file" >&2
+    fi
+}
+
+start_service() {
+	prepare_dirs
+	procd_open_instance
+	procd_set_param command "$PROG" -root /web -ports 8080
+	#procd_set_param command "$PROG" -ssl_cert /etc/ssl/certs/server.pem -root /web -ports 80,443s
+	procd_set_param respawn 0
+	procd_close_instance
+}
+

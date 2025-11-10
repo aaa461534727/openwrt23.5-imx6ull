@@ -1,0 +1,14 @@
+{
+      "ttyEnable":"1",
+      "ttyMode":"0",
+      "ttyServerIp":"192.168.1.1",
+      "ttyType":"1",
+	  "ttyProto":"0",
+      "ttyTcpPort":"1555",
+      "ttyUdpPort":"1666",
+      "ttyBaudRate":"9600",
+      "ttyParity":"NONE",
+      "ttyFlowControl":"NONE",
+      "ttyDataBit":"8",
+      "ttyStopBit":"1"      
+}

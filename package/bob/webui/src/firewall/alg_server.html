@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <meta http-equiv="proma" content="no-cache"/>
+    <meta http-equiv="cache-control" content="no cache" />
+    <meta http-equiv="expires" content="0" />
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="/static/css/main.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="main">
+        <div class="row" v-cloak>
+            <!--****填充区******-->
+            <section class="col-xs-12">
+                <div class="content-box">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tr>
+                                <td colspan="2"><strong>{{ lang_t('vpnpass.help') }}</strong></td>
+                            </tr>
+                            <!--<tr>-->
+                                <!--<td>{{lang_t('vpnpass.ping_wan')}}</td>-->
+                                <!--<td>-->
+                                    <!--<input type="checkbox" id="pingWan_switch" :checked="toggle_status" data-on-color="warning">-->
+                                <!--</td>-->
+                            <!--</tr>-->
+
+                            <tr>
+                                <td style="width: 30%;">L2TP ALG</td>
+                                <td>
+                                    <input type="checkbox" id="l2tppt_switch" :checked="toggle_status" data-on-color="warning" style="display: none">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PPTP ALG</td>
+                                <td>
+                                    <input type="checkbox" id="pptppt_switch" :checked="toggle_status" data-on-color="warning"  style="display: none">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>IPSec ALG</td>
+                                <td>
+                                    <input type="checkbox" id="ipsecpt_switch" :checked="toggle_status" data-on-color="warning" style="display: none">
+                                </td>
+                            </tr>
+                            <!-- <tr>
+                                <td>FTP ALG</td>
+                                <td>
+                                    <input type="checkbox" id="ftpAlg_switch" :checked="toggle_status" data-on-color="warning" style="display: none">
+                                </td>
+                            </tr>
+                            <tr v-show="ftpPassThru">
+                                <td>{{ lang_t('vpnpass.ftp_port') }}</td>
+                                <td>
+                                    <input type="text" v-model="ftpprotf" :placeholder="lang_t('vpnpass.ftp_port_desc')">
+                                    <span>(1~65535)</span>
+                                </td>
+                            </tr> -->
+                            <!-- <tr>
+                                <td>H.323 ALG</td>
+                                <td>
+                                    <input type="checkbox" id="h323_switch" :checked="toggle_status" data-on-color="warning" style="display: none">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RTSP ALG</td>
+                                <td>
+                                    <input type="checkbox" id="rtsp_switch" :checked="toggle_status" data-on-color="warning" style="display: none">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SIP ALG</td>
+                                <td>
+                                    <input type="checkbox" id="sip_switch" :checked="toggle_status" data-on-color="warning" style="display: none">
+                                </td>
+                            </tr> -->
+                            <tr v-if="globalConfig.specialIotBanApply!='1'">
+                                <td colspan="2">
+                                    <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+    var cs_main = {
+        template:"#main",
+        data:function(){
+            var _this = this;
+            return {
+                globalConfig:globalConfig,
+                lang: $.lang,
+                lang_t:lang_t,
+                l2tpPassThru:false,
+                pptpPassThru:false,
+                ipsecPassThru:false,
+                wanPingFilter: false,
+                ftpPassThru: false,
+                h323PassThru: false,
+                rtspPassThru: false,
+                sipPassThru: false,
+                ftpprotf: ''
+            }
+        },
+        computed: {
+            toggle_status:function() {
+                var _this = this;
+//                $('#pingWan_switch').bootstrapSwitch('state',_this.wanPingFilter);
+                $('#l2tppt_switch').bootstrapSwitch('state',_this.l2tpPassThru);
+                $('#pptppt_switch').bootstrapSwitch('state',_this.pptpPassThru);
+                $('#ipsecpt_switch').bootstrapSwitch('state',_this.ipsecPassThru);
+               // $('#ftpAlg_switch').bootstrapSwitch('state',_this.ftpPassThru);
+                $('#h323_switch').bootstrapSwitch('state',_this.h323PassThru);
+                $('#rtsp_switch').bootstrapSwitch('state',_this.rtspPassThru);
+                $('#sip_switch').bootstrapSwitch('state',_this.sipPassThru);
+            }
+        },
+        created:function() {
+            var _this = this;
+            uiPost.getAlgServicesCfg(function(data){
+                _this.l2tpPassThru = data.l2tpPassThru == "1" ?true :false;
+                _this.pptpPassThru = data.pptpPassThru == "1" ?true :false;
+                _this.ipsecPassThru = data.ipsecPassThru == "1" ?true :false;
+
+                _this.h323PassThru = data.h323PassThru == "1" ?true :false;
+                _this.rtspPassThru = data.rtspPassThru == "1" ?true :false;
+                _this.sipPassThru = data.sipPassThru == "1" ?true :false;
+                //_this.ftpPassThru = data.ftpPassThru == "1" ?true :false;
+                _this.ftpprotf = data.ftpprotf;
+            });
+        },
+        mounted:function(){
+            var _this = this;
+            addSwitch('#l2tppt_switch', function(data) {
+                _this.l2tpPassThru = data;
+            });
+            addSwitch('#pptppt_switch', function(data) {
+                _this.pptpPassThru = data;
+            });
+            addSwitch('#ipsecpt_switch', function(data) {
+                _this.ipsecPassThru = data;
+            });
+
+            /* addSwitch('#ftpAlg_switch', function(data) {
+                _this.ftpPassThru = data;
+            }); */
+            /* addSwitch('#h323_switch', function(data) {
+                _this.h323PassThru = data;
+            });
+            addSwitch('#rtsp_switch', function(data) {
+                _this.rtspPassThru = data;
+            });
+            addSwitch('#sip_switch', function(data) {
+                _this.sipPassThru = data;
+            }); */
+        },
+        methods:{
+            handleSubmit: function(name) {
+                var _this = this;
+                var ftpPort = [];
+                /* if(_this.ftpPassThru){
+                    if(_this.ftpprotf.length == 0){
+                        Cstools.msg({
+                            content:  _this.lang_t('vpnpass.msg1'),
+                            type: 'error',
+                            messgetype: 'alert'
+                        });
+                        return false;
+                    }
+                    var ftpPortArr = _this.ftpprotf.split(',');
+                    if(ftpPortArr.length > 8){
+                        Cstools.msg({
+                            content:  _this.lang_t('vpnpass.msg2'),
+                            type: 'error',
+                            messgetype: 'alert'
+                        });
+                        return false;
+                    }
+                    for(var i in ftpPortArr){
+                        var _s = cs.num_range(ftpPortArr[i],1,65535);
+                        if(99 != _s && 0 != _s){
+                            Cstools.msg({
+                                content:  ftpPortArr[i] + _this.lang_t('vpnpass.msg3'),
+                                type: 'error',
+                                messgetype: 'alert'
+                            });
+                            return false;
+                        }
+                        if('' != ftpPortArr[i]){
+                            ftpPort.push(ftpPortArr[i]);
+                        }
+                    }
+                } */
+
+                var postVar = {};
+                postVar.l2tpPassThru = _this.l2tpPassThru == true ?"1" :"0";
+                postVar.pptpPassThru = _this.pptpPassThru == true ?"1" :"0";
+                postVar.ipsecPassThru = _this.ipsecPassThru == true ?"1" :"0";
+
+                /* postVar.h323PassThru = _this.h323PassThru == true ?"1" :"0";
+                postVar.rtspPassThru = _this.rtspPassThru == true ?"1" :"0";
+                postVar.sipPassThru = _this.sipPassThru == true ?"1" :"0"; */
+                /* postVar.ftpPassThru = _this.ftpPassThru == true ?"1" :"0";
+                postVar.ftpprotf = ftpPort.join(','); */
+                uiPost.setAlgServicesCfg(postVar,function(data){
+                    apply_callback(data, 30);
+                });
+            }
+        }
+    };
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+

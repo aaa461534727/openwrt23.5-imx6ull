@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{lang_t('ipsec.help_net2net')}}</strong></td>
+              </tr>     
+              <tr>
+                <td style="width: 20%">{{ lang_t('ipsec.status') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>  
+              <tbody v-show="enabled">
+              <tr>
+                <td>{{ lang_t('ipsec.connect_status') }}</td>
+                <td>
+                  <button type="button" class="btn btn-primary all-but" @click.stop="showLog">{{lang_t('ipsec.show_status')}}</button>
+                </td>
+              </tr>
+
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td>{{lang_t('ipsec.ipsec_log')}}</td>
+                <td >
+                  <!--<input type="text" v-model="debugOption" maxlength="128" />-->
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="downloadLog">{{lang_t('ipsec.download')}}</button>
+                </td>
+              </tr>
+
+              <tr>
+                <td>{{lang_t('ipsec.heart_check')}}</td>
+                <td>
+                  <select v-model="heartCheckEnable" @change="heart_check_status">
+                    <option value="0">{{lang_t('ipsec.off')}}</option>
+                    <option value="1">{{lang_t('ipsec.on')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="heartCheckEnable == '1'">
+                <td>{{lang_t('ipsec.target_ip')}}</td>
+                <td>
+                  <input type="text" v-model="heartCheckIp" maxlength="15" />
+                </td>
+              </tr>
+              <tr v-show="heartCheckEnable == '1'">
+                <td>{{lang_t('ipsec.time_interval')}}</td>
+                <td>
+                  <input type="text" v-model="heartCheckTime" maxlength="3" />
+                  <span>(10-300)</span>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1' && heartCheckEnable == '1'">
+                  <button type="submit" class="btn btn-primary all-but" @click="applyFun">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr> 
+
+              <tr v-show="globalConfig.ipsecCertSupport == '1'">
+                <td>{{lang_t('ipsec.certificate')}}</td>
+                <td>
+                  <select v-model="certEnable" @change="cert_status">
+                    <option value="0">{{lang_t('ipsec.off')}}</option>
+                    <option value="1">{{lang_t('ipsec.on')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="certEnable == '1' && globalConfig.ipsecCertSupport == '1'">
+                <td>{{lang_t('ipsec.country_name')}}</td>
+                <td>
+                  <input type="text" v-model="countryName" maxlength="15" />
+                </td>
+              </tr>
+              <tr v-show="certEnable == '1'&&globalConfig.ipsecCertSupport == '1'">
+                <td>{{lang_t('ipsec.organization_name')}}</td>
+                <td>
+                  <input type="text" v-model="organizationName" maxlength="15" />
+                </td>
+              </tr>
+             <tr v-show="certEnable == '1'&& globalConfig.ipsecCertSupport == '1'">
+                <td>{{lang_t('ipsec.common_name')}}</td>
+                <td>
+                  <input type="text" v-model="commonName" maxlength="15" />
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'&&certEnable == '1'&&globalConfig.ipsecCertSupport == '1'">
+                  <button type="submit" class="btn btn-primary all-but" @click="certApplyFun">{{lang_t('ipsec.generate_cert')}}</button>
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="downloadCert">{{lang_t('ipsec.download_cert')}}</button>
+                </td>
+              </tr> 
+              </tbody> 
+              <tr v-show="enabled">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button type="submit" class="btn btn-primary all-but" data-toggle="modal" data-target="#modal_info" >{{lang_t('common.add_rule')}}</button>
+				</td>
+              </tr>  
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enabled && ipsecData.length > 0">
+              <thead>
+                <tr>
+                  <th>ID&nbsp;&nbsp;<input type="checkbox" v-model="allSelect" @change="allChange" /></th>
+                  <th>{{ lang_t('ipsec.name') }}</th>
+                  <!-- <th v-show="globalConfig.wanNum != '1'">{{ lang_t('ipsec.local_iface') }}</th> -->
+                  <th>{{ lang_t('ipsec.local_ip') }}</th>
+                  <th>{{ lang_t('ipsec.remote_ip') }}</th>
+                  <th>{{ lang_t('ipsec.remote_subnet') }}</th>
+                  <th>{{ lang_t('common.operation') }}</th>
+                </tr>
+              </thead>
+              <tr v-for="(val,index) in ipsecData">
+                <td>{{index+1}}&nbsp;&nbsp;<input id="checked" type="checkbox" v-model="delRule[index]" :value="index"></td>
+                <td>{{val.ipsecName}}</td>
+                <!-- <td v-show="globalConfig.wanNum != '1'">{{val.ipsecBindIf}}</td> -->
+                <td>{{val.ipsecLeft}}</td>
+                <td>{{val.ipsecRight}}</td>
+                <td>{{val.ipsecRightsubnet}}</td>
+                <td><a @click.stop="modify_modal(val)" style="cursor: pointer">{{ lang_t('common.modify') }}</a></td>
+              </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enabled && ipsecData.length > 0">
+              <tr v-if="globalConfig.specialIotBanApply!='1'"><td colspan="2"><button class="btn btn-danger all-but" @click.prevent="submit_delete">{{ lang_t('common.delete') }}</button></td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      
+      <div class="modal fade" id="modal_info" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">{{ '0' == setIdx ? lang_t('common.add_rule') : lang_t('common.edit_rule') }}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">            
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.name')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecName" maxlength="32" />
+                  </td>
+                </tr>
+
+                <tr v-show="enabled && globalConfig.ipsecCertSupport == '1'">
+                  <td>{{lang_t('ipsec.auth_mode')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecAuthMode">
+                      <option value="0">{{lang_t('ipsec.key_auth')}}</option>
+                      <option value="1">{{lang_t('ipsec.ca_cert')}}</option>
+                    </select>
+                  </td>
+                </tr>
+
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.auto_link')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecAuto">
+                      <option value="0">add</option>
+                      <option value="1">start</option>
+                      <option value="2">route</option>
+                      <option value="3">ignore</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="enabled && forms.ipsecAuthMode != '1'">
+                  <td>{{lang_t('ipsec.aggressive')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecAggressive">
+                      <option value="0">{{lang_t('ipsec.off')}}</option>
+                      <option value="1">{{lang_t('ipsec.on')}}</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.local_iface')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecBindIf">
+                      <!--<option v-for="bindifOption in create_bindif" :value="bindifOption.value" :key="bindifOption.value">{{bindifOption.option}}</option>-->
+                      <option value="WAN1">WAN</option>
+                      <option value="WAN4G" v-show="globalConfig.modelType == '4g' && !globalConfig.modemDualband">WAN4G</option>
+                      <option value="WAN5G" v-show="globalConfig.modelType == '5g' && !globalConfig.modemDualband">WAN5G</option>
+                      <option value="MODEM1" v-show="globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode">MODEM1</option>
+                      <option value="MODEM2" v-show="globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode">MODEM2</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.local_id')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecLeftid" maxlength="32" />
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.local_ip')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecLeft" maxlength="15" />
+                    <span>(0.0.0.0 {{lang_t("ipsec.any")}})</span>
+                  </td>
+                </tr>                
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.local_subnet')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.leftsubnet" style="float: left;width: 70%;" maxlength="15"/>
+                    <span style="float: left;margin-top:6px">/</span>
+                    <input type="text" v-model="forms.leftmark" style="width: 50px;" maxlength="3"/>
+                    <span>(0.0.0.0/0 {{lang_t("ipsec.any")}})</span>
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.remote_id')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecRightid" maxlength="32" />
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.remote_ip')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecRight" maxlength="32" />
+                    <span>{{lang_t('ipsec.ip_domain')}}(0.0.0.0 {{lang_t("ipsec.any")}})</span>
+                  </td>
+                </tr>                
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.remote_subnet')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.rightsubnet" style="float: left;width: 70%;" maxlength="15"/>
+                    <span style="float: left;margin-top:6px">/</span>
+                    <input type="text" v-model="forms.rightmark" style="width: 50px;" maxlength="3"/>
+                    <span>(0.0.0.0/0 {{lang_t("ipsec.any")}})</span>
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.ike_version')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecKeyexchange">
+                      <option value="ike">ike</option>
+                      <option value="ikev1">ikev1</option>
+                      <option value="ikev2">ikev2</option>
+                    </select>
+                  </td>
+                </tr>     
+
+                <tr v-show="enabled && forms.ipsecAuthMode == '1'">
+                  <td>{{lang_t('ipsec.ca_cert')}}</td>
+                  <td >
+                    <input type="text" v-model="forms.caCertName" disabled>
+                    <label class="input-group-btn">
+                      <span class="btn btn-default">
+                      <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file"  id="clientFile_ca" style="display: none;" @change="filechange('ca')" />
+                      </span>
+                      <button id="cloudFw" type="primary" class="btn btn-primary all-but" @click="uploadmark('ca')">{{ lang_t("openvpn.upload") }}</button>
+
+                    </label>
+                  </td>
+                </tr> 
+
+                <tr v-show="enabled && forms.ipsecAuthMode == '1'">
+                  <td>{{lang_t('ipsec.client_cert')}}</td>
+                  <td >
+                    <input type="text" v-model="forms.clientCertName" disabled>
+                    <label class="input-group-btn">
+                      <span class="btn btn-default">
+                      <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file"  id="clientFile_cert" style="display: none;" @change="filechange('cert')" />
+                      </span>
+                      <button id="cloudFw" type="primary" class="btn btn-primary all-but" @click="uploadmark('cert')">{{ lang_t("openvpn.upload") }}</button>
+
+                    </label>
+                  </td>
+                </tr> 
+
+                <tr v-show="enabled && forms.ipsecAuthMode == '1'">
+                  <td>{{lang_t('ipsec.client_private')}}</td>
+                  <td >
+                    <input type="text" v-model="forms.clientPrivateName" disabled>
+                    <label class="input-group-btn">
+                      <span class="btn btn-default">
+                      <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file"  id="clientFile_key" style="display: none;" @change="filechange('key')" />
+                      </span>
+                      <button id="cloudFw" type="primary" class="btn btn-primary all-but" @click="uploadmark('key')">{{ lang_t("openvpn.upload") }}</button>
+
+                    </label>
+                  </td>
+                </tr> 
+
+
+                <tr v-show="enabled && forms.ipsecAuthMode != '1'">
+                  <td>{{lang_t('ipsec.key')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecPsk" maxlength="32" />
+                  </td>
+                </tr> 
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.ike_lifetime')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecIkelifetime" maxlength="5" />
+                    <span>(120-86400)</span>
+                  </td>
+                </tr>
+                <tr v-show="enabled && forms.ipsecAuthMode != '1'">
+                  <td>{{lang_t('ipsec.ike_cipher')}}</td>
+                  <td>
+                  <!--
+                    <select v-model="forms.ipsecIkeCipher">
+                      <option v-for="cipherOption in create_cipher" :value="cipherOption.value" :key="cipherOption.value">{{cipherOption.option}}</option>
+                    </select>
+                  -->
+                    <textarea v-model="forms.ipsecIkeCipher"></textarea>
+                  </td>
+                </tr> 
+                <tr v-show="enabled && forms.ipsecAuthMode != '1'">
+                  <td>{{lang_t('ipsec.esp_cipher')}}</td>
+                  <td>
+                  <!--
+                    <select v-model="forms.ipsecEspCipher">
+                      <option value="aes128-sha1">aes128-sha1</option>
+                      <option value="aes128-sha256">aes128-sha256</option>
+                      <option value="3des-sha1">3des-sha1</option>
+                    </select>
+                  -->
+                    <textarea v-model="forms.ipsecEspCipher"></textarea>
+                  </td>
+                </tr>             
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.dpd_action')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecDpdaction">
+                      <option value="0">none</option>
+                      <option value="1">restart</option>
+                      <option value="2">hold</option>
+                      <option value="3">clear</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="enabled && forms.ipsecDpdaction != '0'">
+                  <td>{{lang_t('ipsec.dpd_delay')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecDpddelay" maxlength="2" />
+                    <span>(1~60)</span>
+                  </td>
+                </tr>
+                <tr v-show="enabled && forms.ipsecDpdaction != '0'">
+                  <td>{{lang_t('ipsec.dpd_timeout')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecDpdtimeout" maxlength="3" />
+                    <span>(1~300)</span>
+                  </td>
+                </tr>   
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.sa_lifetime')}}</td>
+                  <td>
+                    <input type="text" v-model="forms.ipsecLifetime" maxlength="5" />
+                    <span>(120-86400)</span>
+                  </td>
+                </tr>
+                <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.ip_compress')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecCompress">
+                      <option value="0">{{lang_t('ipsec.off')}}</option>
+                      <option value="1">{{lang_t('ipsec.on')}}</option>
+                    </select>
+                  </td>
+                </tr>
+				        <tr v-show="enabled">
+                  <td>{{lang_t('ipsec.rekey')}}</td>
+                  <td>
+                    <select v-model="forms.ipsecRekey">
+                      <option value="0">{{lang_t('ipsec.off')}}</option>
+                      <option value="1">{{lang_t('ipsec.on')}}</option>
+                    </select>
+                  </td>
+                </tr>
+              </table>  
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button @click="closeFrame" class="btn btn-default all-but">{{ lang_t('common.cancel') }}</button>&nbsp;&nbsp;
+                    <button @click.prevent="handleSubmit" class="btn btn-primary all-but">{{ '0' == setIdx ? lang_t('common.add') : lang_t('common.modify') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div> 
+          </div>
+        </div>
+      </div>
+	  
+	  <div class="modal fade" id="modal_log" tabindex="-1" role="dialog" aria-labelledby="myModalLog" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLog">{{ lang_t('ipsec.connect_status') }}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">            
+                <tr>
+                  <td>
+                    <textarea rows="10" style="width:100%;min-width:100%;" v-model="ipsecStatusLog" readonly></textarea>
+                  </td>
+                </tr>
+              </table>  
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button @click="closeFrame(1)" class="btn btn-default all-but">{{ lang_t('common.close') }}</button>&nbsp;&nbsp;
+                  </td>
+                </tr>
+              </table>
+            </div> 
+          </div>
+        </div>
+      </div>
+	  
+	  <div style="display: none;">
+        <form ref="save" class="form-horizontal" method="post" :action="debugAction"></form>
+      </div>
+    <div style="display: none;">
+        <form ref="saveCert" class="form-horizontal" method="post" :action="dowanCertAction"></form>
+      </div>
+
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      enabled:false,
+	  heartCheckEnable:'0',
+    heartCheckEnableOld:'0',
+    certEnable:'0',
+    certEnableOld:'0',
+	  heartCheckIp:'',
+	  heartCheckTime:'300',
+	  debugAction:'/cgi-bin/cstecgi.cgi?action=exportInfo&type=ipsec',
+    dowanCertAction:'/cgi-bin/cstecgi.cgi?action=exportInfo&type=certIpsec',
+	  debugOption:'',
+    countryName:'',
+    organizationName:'',
+    commonName:'',
+    cafileData:'error',
+    certfileData:'error',
+    keyfileData:'error',
+	  ipsecStatusLog:'',
+      forms: {
+        ipsecName:'',
+        ipsecAuto:'1',
+        ipsecAggressive:'0',
+        ipsecBindIf:'WAN1',
+        ipsecLeft:'',
+        ipsecLeftid:'',
+        leftsubnet:'',
+        leftmark:'24',
+        ipsecRight:'',
+        ipsecRightid:'',
+        rightsubnet:'',
+        rightmark:'24',
+        ipsecKeyexchange:'ikev1',
+        ipsecPsk:'',
+        ipsecIkelifetime:'3600',
+        ipsecIkeCipher:'aes128-sha1-modp2048',
+        ipsecEspCipher:'aes128-sha1',
+        ipsecDpdaction:'0',
+        ipsecDpddelay:'10',
+        ipsecDpdtimeout:'300',
+        ipsecLifetime:'3600',
+        ipsecCompress:'0',
+		    ipsecRekey:'1',
+        ipsecAuthMode:'0',
+        caCertName:'',
+        clientCertName:'',
+        clientPrivateName:''
+      },
+      allSelect:false,
+      delRule:[],
+      setIdx:"0",
+      rule_num:"",
+      ipsecData:[]
+    }
+  },
+  watch:{
+    delRule:function(){
+      var num=0;
+      for(var i=0;i<this.ipsecData.length;i++){
+        if(this.delRule[i]) num++;
+      }
+      if(num == this.ipsecData.length)
+        this.allSelect = true;
+      else
+        this.allSelect = false;
+    }
+  },
+  computed:{    
+    create_bindif:function(){
+      var option = [];
+      var arr1 = [
+        {option:'WAN1',value:'WAN1'}
+      ];
+      var arr2 = [
+        {option:'WAN2',value:'WAN2'}
+      ];
+      var arr3 = [
+        {option:'WAN3',value:'WAN3'}
+      ];
+      var arr4 = [
+        {option:'WAN4',value:'WAN4'}
+      ];
+
+      if(this.globalConfig.wanNum == '4'){
+        option = arr1.concat(arr2,arr3,arr4);
+      }else if(this.globalConfig.wanNum == '3'){
+        option = arr1.concat(arr2,arr3);
+      }else if(this.globalConfig.wanNum == '2'){
+        option = arr1.concat(arr2);
+      }else if(this.globalConfig.wanNum == '1'){
+        option = arr1;
+      }
+      return option;
+    },
+/*
+    create_cipher:function(){
+      var option = [];
+      var arr1 = [
+        {option:'aes128-sha1-modp2048',value:'aes128-sha1-modp2048'},
+        {option:'3des-sha1-modp1536',value:'3des-sha1-modp1536'}
+      ];
+      var arr2 = [
+        {option:'3des-sha1-md5-modp1024',value:'3des-sha1-md5-modp1024'},
+        {option:'aes128-aes256-sha1-modp1536-modp2048',value:'aes128-aes256-sha1-modp1536-modp2048'}
+      ];
+      if(this.forms.ipsecKeyexchange == 'ikev2'){
+        option = arr1.concat(arr2);
+      }else{
+        option = arr1;
+      }
+      return option;
+    },
+*/
+    toggle_status:function(){
+      $('#switch_status').bootstrapSwitch('state',this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getIpsecNet2NetCfg(function(data){
+      _this.enabled = data.ipsecN2nEnable == "1" ? true : false;
+      _this.rule_num = data.subnet.length;
+      if(_this.rule_num >= 1){
+        _this.ipsecData = data.subnet;
+      }
+    });
+	uiPost.getIpsecHeartCheckCfg(function(data){
+      _this.heartCheckEnable = data.heartCheckEnable;
+      _this.heartCheckEnableOld = data.heartCheckEnable;
+      _this.heartCheckIp = data.heartCheckIp;
+	  _this.heartCheckTime = data.heartCheckTime;
+	  if (data.debugAction != '') {
+        _this.debugAction = data.debugAction;
+      }
+	  _this.debugOption = data.debugOption;
+    });
+  uiPost.getIpsecCertCfg(function(data){
+    _this.certEnable = data.certEnable;
+    _this.certEnableOld = data.certEnable;
+    _this.countryName = data.countryName;
+    _this.organizationName = data.organizationName;
+    _this.commonName = data.commonName;
+    if (data.dowanCertAction != '') {
+        _this.dowanCertAction = data.dowanCertAction;
+      }
+
+    
+    });
+
+  },
+  methods:{
+  	showLog:function(){
+	  var _this = this;
+	  uiPost.getIpsecStatus(function(data){
+        _this.ipsecStatusLog = data.ipsecStatusLog;
+      });
+	  $('#modal_log').modal('show');
+	},
+  	downloadLog:function(){
+	  this.$refs.save.submit();
+	},
+  downloadCert:function(){
+    this.$refs.saveCert.submit();
+  },
+
+filechange:function(name){
+      var _this = this;
+      var format = '';
+      var file,filename;
+
+        file = document.getElementById('clientFile_'+name);
+      
+      filename = file.files[0].name;
+      var filestatus = true;
+      {
+        if(name == 'ca'){
+          if(filename.indexOf('.cert') < 0){
+            format = 'cert';
+            filestatus = false;
+          }else
+           this.forms.caCertName = filename;
+
+          if(!filestatus){
+            this.formaterror(name,format,filename);
+            this.cafileData = 'error';
+          }else{
+            this.cafileData = file.files[0];
+          }
+        }else if(name == 'cert'){
+          if(filename.indexOf('.cert') < 0){
+            format = 'cert';
+            filestatus = false;
+          }else
+            this.forms.clientCertName = filename;
+
+          if(!filestatus){
+            this.formaterror(name,format,filename);
+            this.certfileData = 'error';
+          }else{
+            this.certfileData = file.files[0];
+          }
+
+        }else if(name == 'key'){
+          if(filename.indexOf('.private') < 0){
+            format = 'private';
+            filestatus = false;
+          }else
+            this.forms.clientPrivateName = filename;
+
+          if(!filestatus){
+            this.formaterror(name,format,filename);
+            this.keyfileData = 'error';
+          }else{
+            this.keyfileData = file.files[0];
+          }
+
+        }
+      }
+
+    },
+  submit_status:function(){
+     if(globalConfig.specialIotBanApply ==1 ) return;
+    var _this = this;
+    var postVar ={};
+    postVar.ipsecN2nEnable = _this.enabled ? "1" : "0";
+    postVar.addEffect = "0";//null
+    uiPost.setIpsecNet2NetCfg(postVar, apply_callback); 
+  },
+  formaterror:function(id,format,filename){
+    var _this = this;
+    Cstools.msg({ 
+      content: _this.lang_t('openvpn.'+id)+this.lang_t('openvpn.formaterror',[_this.lang_t('openvpn.'+id),format]),
+      type: 'error',
+      messgetype: 'alert'
+    });
+  },
+
+    uploadmark:function(name){
+        var _this = this;
+
+          if(name == 'ca'){
+             var caCertAction = '/cgi-bin/cstecgi.cgi?action=upload&uploadIpsecCert&type=caCert&name=';
+              if(this.cafileData != 'error'){
+                upload.fileUpload({
+                  url: caCertAction + _this.forms.ipsecName,
+                  data: this.cafileData,
+                  progress:function(v){
+
+                  },
+                success:function(){
+                  Cstools.msg({
+                    content: _this.lang_t('common.upload_success'),
+                    type: 'success',
+                    messgetype: 'alert'
+                  });
+                }
+                })
+             }
+          }else if(name == 'cert'){
+              var clientCertAction = '/cgi-bin/cstecgi.cgi?action=upload&uploadIpsecCert&type=clientCert&name=';
+              if(this.certfileData != 'error'){
+                upload.fileUpload({
+                  url: clientCertAction + _this.forms.ipsecName,
+                  data: this.certfileData,
+                  progress:function(v){
+
+                  },
+                success:function(){
+                  Cstools.msg({
+                    content: _this.lang_t('common.upload_success'),
+                    type: 'success',
+                    messgetype: 'alert'
+                  });
+                }
+                })
+             }
+
+          }else if(name == 'key'){
+            var clientPrivateAction = '/cgi-bin/cstecgi.cgi?action=upload&uploadIpsecCert&type=clientPrivate&name=';
+            if(this.keyfileData != 'error'){
+              upload.fileUpload({
+                url: clientPrivateAction + _this.forms.ipsecName,
+                data: this.keyfileData,
+                progress:function(v){
+
+                },
+                success:function(){
+                  Cstools.msg({
+                    content: _this.lang_t('common.upload_success'),
+                    type: 'success',
+                    messgetype: 'alert'
+                  });
+                }
+              })
+           }
+          }
+        
+    },
+	applyFun:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.heartCheckEnable = _this.heartCheckEnable;
+	  if (_this.heartCheckEnable == '1') {
+        var _s = cs.ip2(_this.heartCheckIp);
+        if(0 == _s){
+          errorAlert(lang_t('ipsec.target_ip') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.target_ip') + lang_t('ipsec.msg6'));
+          return false;
+        }
+	  	
+		_s = cs.num_range(_this.heartCheckTime,10,300);
+		if(0 == _s){
+		  errorAlert(lang_t('ipsec.time_interval') + lang_t('ipsec.msg1'));
+          return false;
+		}else if(99 != _s){
+          errorAlert(lang_t('ipsec.time_interval') + lang_t('ipsec.msg5',[10,300]));
+          return false;
+        }
+		
+      	postVar.heartCheckIp = _this.heartCheckIp;
+      	postVar.heartCheckTime = _this.heartCheckTime;
+	  }
+	  postVar.debugOption = _this.debugOption;
+      uiPost.setIpsechHeartCheckCfg(postVar,function(data){
+        if(data.wtime != undefined && data.wtime != ""){
+          Cstools.count(data.wtime,'js',function(){
+            location.reload();
+          });
+        }else{
+          location.reload();
+        }
+      });
+    },
+
+    certApplyFun:function(){
+        var _this = this;
+        var postVar = {};
+        postVar.certEnable = _this.certEnable;
+
+        _s = cs.string1(_this.countryName);
+        if(0 == _s) {
+          errorAlert(lang_t('ipsec.country_name') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.country_name') + lang_t('ipsec.msg8'));
+          return false;
+        } 
+        postVar.countryName = _this.countryName;
+
+        _s = cs.string1(_this.organizationName);
+        if(0 == _s) {
+          errorAlert(lang_t('ipsec.organization_name') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.organization_name') + lang_t('ipsec.msg8'));
+          return false;
+        } 
+        postVar.organizationName = _this.organizationName;
+
+        _s = cs.string1(_this.commonName);
+        if(0 == _s) {
+          errorAlert(lang_t('ipsec.common_name') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.common_name') + lang_t('ipsec.msg8'));
+          return false;
+        } 
+        postVar.commonName = _this.commonName;
+        uiPost.setIpsecCertCfg(postVar,function(data){
+          if(data.wtime != undefined && data.wtime != ""){
+            Cstools.count(data.wtime,'js',function(){
+              location.reload();
+            });
+          }else{
+            location.reload();
+          }
+        });
+      },
+
+
+
+    closeFrame:function(id){
+	  if(id == 1)
+      	$('#modal_log').modal('hide');
+	  else
+	    $('#modal_info').modal('hide');
+    },
+    allChange:function(){
+      if(this.allSelect){
+        for(var i=0;i<this.ipsecData.length;i++){
+          this.delRule[i] = true;
+        }
+      }else{
+        for(var i=0;i<this.ipsecData.length;i++){
+          this.delRule[i] = false;
+        }
+      }
+    },
+    modify_modal:function(obj){
+      var _this = this;
+      _this.setIdx = obj.idx;
+      _this.forms.ipsecName = obj.ipsecName;
+      _this.forms.ipsecAuto = obj.ipsecAuto;
+      _this.forms.ipsecAggressive = obj.ipsecAggressive;
+      _this.forms.ipsecBindIf = obj.ipsecBindIf;      
+      _this.forms.ipsecLeftid = obj.ipsecLeftid;
+      _this.forms.ipsecLeft = obj.ipsecLeft;
+      _this.forms.leftsubnet = obj.ipsecLeftsubnet.split("/")[0];
+      _this.forms.leftmark = obj.ipsecLeftsubnet.split("/")[1];
+      _this.forms.ipsecRightid = obj.ipsecRightid;
+      _this.forms.ipsecRight = obj.ipsecRight;
+      _this.forms.rightsubnet = obj.ipsecRightsubnet.split("/")[0];
+      _this.forms.rightmark = obj.ipsecRightsubnet.split("/")[1];
+      _this.forms.ipsecKeyexchange = obj.ipsecKeyexchange;
+      _this.forms.ipsecPsk = obj.ipsecPsk;
+      _this.forms.ipsecIkelifetime = obj.ipsecIkelifetime;
+      _this.forms.ipsecIkeCipher = obj.ipsecIkeCipher;
+      _this.forms.ipsecEspCipher = obj.ipsecEspCipher;
+      _this.forms.ipsecDpdaction = obj.ipsecDpdaction;
+      _this.forms.ipsecDpddelay = obj.ipsecDpddelay;
+      _this.forms.ipsecDpdtimeout = obj.ipsecDpdtimeout;
+      _this.forms.ipsecLifetime = obj.ipsecLifetime;
+      _this.forms.ipsecCompress = obj.ipsecCompress;
+	    _this.forms.ipsecRekey = obj.ipsecRekey;
+      _this.forms.ipsecAuthMode = obj.ipsecAuthMode;
+      _this.forms.caCertName = obj.caCertName;
+      _this.forms.clientCertName = obj.clientCertName;
+      _this.forms.clientPrivateName = obj.clientPrivateName;
+        
+      $('#modal_info').modal('show');
+    },
+    heart_check_status:function(){
+      if(globalConfig.specialIotBanApply ==1) return;
+      var _this = this
+      var postVar ={};      
+
+      if(_this.heartCheckEnable ==1 || _this.heartCheckEnableOld == 0) return;
+      postVar.heartCheckEnable = "0";
+      postVar.heartCheckIp = _this.heartCheckIp;
+      postVar.heartCheckTime = _this.heartCheckTime;
+      uiPost.setIpsechHeartCheckCfg(postVar, apply_callback); 
+
+    },
+    cert_status:function(){
+      if(globalConfig.specialIotBanApply ==1) return;
+      var _this = this
+      var postVar ={};      
+
+      if(_this.certEnable ==1 || _this.certEnableOld == 0) return;
+      postVar.certEnable = "0";
+      uiPost.setIpsecCertCfg(postVar, apply_callback); 
+
+    },
+    submit_delete:function(){
+      var _this = this;
+      var postVar = {};
+      var delnum = 0;
+      for(var i in _this.delRule){
+        if(_this.delRule[i]){
+          postVar["delRule"+i] = i;
+          delnum++;
+        }
+      }
+      if(delnum == 0){
+        errorAlert(lang_t('policy_route.msg2'));
+        return false;
+      }
+      Cstools.msg({
+        content: lang_t('policy_route.msg3'),
+        type: 'warn',
+        messgetype: 'confirm',
+        ok:function(){
+          uiPost.delIpsecNet2NetCfg(postVar, apply_callback);
+          return false;
+        }
+      });
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+
+      if('0' != _this.setIdx){
+        postVar.idx = _this.setIdx;
+        postVar.addEffect = "2";
+      }else{
+        for(var i in _this.ipsecData){
+          if(_this.forms.ipsecName == _this.ipsecData[i].ipsecName){
+            errorAlert(lang_t('ipsec.msg7'));
+            return false;
+          }
+        }
+        postVar.addEffect = "1";
+      }
+
+      _s = cs.string1(_this.forms.ipsecName);
+      if(0 == _s) {
+        errorAlert(lang_t('ipsec.name') + lang_t('ipsec.msg1'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('ipsec.name') + lang_t('ipsec.msg8'));
+        return false;
+      } 
+
+      if(_this.forms.ipsecLeftid){
+        if(1 == cs.string1(_this.forms.ipsecLeftid)){
+          errorAlert(lang_t('ipsec.local_id') + lang_t('ipsec.msg8'));
+          return false;
+        }
+      }      
+
+      if(_this.forms.ipsecLeft){
+        _s = cs.ip2(_this.forms.ipsecLeft);
+        if(0 == _s){
+          errorAlert(lang_t('ipsec.local_ip') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.local_ip') + lang_t('ipsec.msg6'));
+          return false;
+        }
+      }
+
+      _s = cs.ip_mark2(_this.forms.leftsubnet);
+      if(0 == _s){
+        errorAlert(lang_t('ipsec.local_subnet') + lang_t('ipsec.msg1'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('ipsec.local_subnet') + lang_t('ipsec.msg6'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.forms.leftmark,0,32)){
+        errorAlert(lang_t('ipsec.local_mark') + lang_t('ipsec.msg5',[0,32]));
+        return false;
+      } 
+
+      if(_this.forms.ipsecRightid){
+        if(1 == cs.string1(_this.forms.ipsecRightid)){
+          errorAlert(lang_t('ipsec.remote_id') + lang_t('ipsec.msg8'));
+          return false;
+        }
+      }      
+
+      if(_this.forms.ipsecRight){
+	    if (99 != cs.ip_domain_ipsec(_this.forms.ipsecRight)){
+		  errorAlert(lang_t('ipsec.remote_ip') + lang_t('ipsec.msg9'));
+          return false;
+	    }
+	  }
+
+      _s = cs.ip_mark2(_this.forms.rightsubnet);
+      if(0 == _s){
+        errorAlert(lang_t('ipsec.remote_subnet') + lang_t('ipsec.msg1'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('ipsec.remote_subnet') + lang_t('ipsec.msg6'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.forms.rightmark,0,32)){
+        errorAlert(lang_t('ipsec.remote_mark') + lang_t('ipsec.msg5',[0,32]));
+        return false;
+      } 
+
+      if(_this.forms.ipsecAuthMode == 0){
+
+        _s = cs.string(_this.forms.ipsecPsk);
+        if(0 == _s){
+          errorAlert(lang_t('ipsec.key') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.key') + lang_t('ipsec.msg2'));
+          return false;
+        }
+
+      }
+
+
+      if(_this.forms.ipsecIkeCipher){
+        if(1 == cs.string2(_this.forms.ipsecIkeCipher)){
+          errorAlert(lang_t('ipsec.ike_cipher') + lang_t('ipsec.msg10'));
+          return false;
+        }
+      }
+
+      if(_this.forms.ipsecEspCipher){
+        if(1 == cs.string2(_this.forms.ipsecEspCipher)){
+          errorAlert(lang_t('ipsec.esp_cipher') + lang_t('ipsec.msg10'));
+          return false;
+        }
+      }
+
+      if(99 != cs.num_range(_this.forms.ipsecIkelifetime,120,86400)){
+        errorAlert(lang_t('ipsec.ike_lifetime') + lang_t('ipsec.msg5',[120,86400]));
+        return false;
+      } 
+
+      if('0' != _this.forms.ipsecDpdaction){
+        if(99 != cs.num_range(_this.forms.ipsecDpddelay,1,60)){
+          errorAlert(lang_t('ipsec.dpd_delay') + lang_t('ipsec.msg5',[1,60]));
+          return false;
+        } 
+
+        if(99 != cs.num_range(_this.forms.ipsecDpdtimeout,1,300)){
+          errorAlert(lang_t('ipsec.dpd_timeout') + lang_t('ipsec.msg5',[1,300]));
+          return false;
+        } 
+      }      
+
+      if(99 != cs.num_range(_this.forms.ipsecLifetime,120,86400)){
+        errorAlert(lang_t('ipsec.sa_lifetime') + lang_t('ipsec.msg5',[120,86400]));
+        return false;
+      } 
+
+      if(globalConfig.ipsecCertSupport == 1){
+        postVar.ipsecAuthMode = _this.forms.ipsecAuthMode;
+      }
+
+      postVar.ipsecN2nEnable = "1";
+      postVar.ipsecName = _this.forms.ipsecName;
+      postVar.ipsecAuto = _this.forms.ipsecAuto;
+      postVar.ipsecAggressive = _this.forms.ipsecAggressive;
+      postVar.ipsecBindIf = _this.forms.ipsecBindIf;
+      postVar.ipsecLeftid = _this.forms.ipsecLeftid;
+      postVar.ipsecLeft = _this.forms.ipsecLeft;      
+      postVar.ipsecLeftsubnet = _this.forms.leftsubnet + "/" + _this.forms.leftmark;
+      postVar.ipsecRightid = _this.forms.ipsecRightid;
+      postVar.ipsecRight = _this.forms.ipsecRight;
+      postVar.ipsecRightsubnet = _this.forms.rightsubnet + "/" + _this.forms.rightmark;
+      postVar.ipsecKeyexchange = _this.forms.ipsecKeyexchange;
+      postVar.ipsecPsk = _this.forms.ipsecPsk;
+      postVar.ipsecIkelifetime = _this.forms.ipsecIkelifetime;
+      postVar.ipsecIkeCipher = _this.forms.ipsecIkeCipher;
+      postVar.ipsecEspCipher = _this.forms.ipsecEspCipher;
+      postVar.ipsecDpdaction = _this.forms.ipsecDpdaction;
+      if('0' != _this.forms.ipsecDpdaction){
+        postVar.ipsecDpddelay = _this.forms.ipsecDpddelay;
+        postVar.ipsecDpdtimeout = _this.forms.ipsecDpdtimeout;
+      }
+      postVar.ipsecLifetime = _this.forms.ipsecLifetime;
+      postVar.ipsecCompress = _this.forms.ipsecCompress;
+	    postVar.ipsecRekey = _this.forms.ipsecRekey;
+      uiPost.setIpsecNet2NetCfg(postVar, apply_callback);
+    }
+/*    
+    ikeChange:function(){
+      var option = this.create_cipher, mark = false;
+      this.tempRate && (this.forms.ipsecIkeCipher = this.tempRate);
+      for(var i = 0; i < option.length; i++){
+        if(option[i].option == this.forms.ipsecIkeCipher){
+          mark = true;
+          break;
+        }
+      }      
+      if(!mark){
+        this.tempRate = this.forms.ipsecIkeCipher;
+        this.forms.ipsecIkeCipher = option[0].option;
+      }else{
+        this.tempRate = null;
+      }
+    },
+*/
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status',function(data){
+
+      if(_this.enabled != data){
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    });
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

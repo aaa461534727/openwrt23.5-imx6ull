@@ -1,0 +1,21 @@
+{
+	"mode":	"1",
+	"server":	"192.168.0.2",
+	"serverPort":	"40002",
+	"heartBestContent":	"router_0001",
+	"heartBestInterval":	"6",
+	"gpsReportInterval":	"1",
+	"protocol":	"udp",
+	"bindPort":	"40001",
+	"socketTimeout":	"500",
+	"serialTimeout":	"500",
+	"packetPayload":	"1024",
+	"bandRate":	"9600",
+	"parityBit":	"none",
+	"dataBit":	"8",
+	"stopBit":	"1",
+	"module":	"1",
+	"longitude":	"113.45610",
+	"latitude":	"22.53154",
+	"gpsReportTime":	"30"
+}

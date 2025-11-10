@@ -1,0 +1,3 @@
+
+config mesh meshinfo
+	option debug    '0'

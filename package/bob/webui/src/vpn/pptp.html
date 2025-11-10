@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+           <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{  helpshow }}</strong></td>
+            </tr>
+            <!--<tr>
+              <td>
+                <span v-show="pptpServerShow">
+                  <input type="radio" value="0" name="mode" v-model="pptpMode"> {{lang_t('pptp_server.title')}}&nbsp;&nbsp;&nbsp;&nbsp;
+				</span>
+                <span v-show="pptpClientShow">
+				  <input type="radio" value="1" name="mode" v-model="pptpMode"> {{lang_t('pptp_server.client')}} 
+                </span>
+              </td>
+            </tr> -->         
+           </table>
+            <table class="table table-striped" v-show="pptpMode==0&&pptpServerShow">
+              <tr>
+               <td style="width: 20%">{{ lang_t('pptp_server.status') }}</td>
+               <td>
+                 <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none" >
+               </td>
+             </tr>
+             <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.server_addr')}}</td>
+                <td>
+                  <input type="text" v-model="forms.serverAddr">
+                  <!-- <span>{{ forms.serverAddr }}</span> -->
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.ip_start')}}</td>
+                <td>
+                  <input type="text" v-model="forms.startIpAddr" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.ip_end')}}</td>
+                <td>
+                  <input type="text" v-model="forms.endIpAddr" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.pri_dns')}}</td>
+                <td>
+                  <input type="text" v-model="forms.firstDns" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.sec_dns')}}</td>
+                <td>
+                  <input type="text"  v-model="forms.secondDns" />
+                </td>
+              </tr>
+              <tr v-if="forms.status">
+                <td>{{ lang_t('account.ip_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.ipMasq">
+                </td>
+              </tr>
+              <tr v-if="forms.status">
+                <td>{{ lang_t('account.lan_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.lanMasq">
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.mppe_encryption')}}</td>
+                <td>
+                  <select  v-model="forms.mppeEncrypt">
+                    <option value="0">{{lang_t('pptp_server.optional_encryp')}}</option>
+                    <option value="1">{{lang_t('pptp_server.unencryption')}}</option>
+                    <option value="2">{{lang_t('pptp_server.encryption')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.server_mtu')}}</td>
+                <td>
+                  <input type="text"  v-model="forms.servermtu" maxlength="4" /><span>(1400~1500)</span>
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('pptp_server.server_mru')}}</td>
+                <td>
+                  <input type="text" v-model="forms.servermru"  maxlength="4" /><span>(1400~1500)</span>
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td>{{lang_t('l2tp_server.allows_ip')}}</td>
+                <td>
+                  <input type="checkbox"  v-model="forms.allowsSpecifyIp" />
+                </td>
+              </tr>
+              <tr v-show="forms.status">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit(0)">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+            <table class="table table-striped" v-show="pptpMode==1&&pptpClientShow">
+             <tr>
+                <td style="width: 20%">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_client" :checked="toggle_client" data-on-color="warning" style="display: none">
+				</td>
+              </tr>
+             <tr v-show="forms.pptpEnable">
+               <td>{{ lang_t('wan.status') }}</td>
+               <td>
+                 <span>PPTP</span>
+                 <span style="color:#fff;background-color:#3399ff;" v-if="pptpConnect == 1">{{ lang_t('wan.connected') }}</span>
+                 <span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('wan.disconnected') }}</span>
+               </td>
+             </tr>
+              <tr v-show="forms.pptpEnable">
+                <td>{{lang_t('wan.server_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.pptpServerIp" maxlength="32"/>
+                </td>
+              </tr>
+              <tr v-show="forms.pptpEnable">
+                <td>{{lang_t('wan.user')}}</td>
+                <td>
+                  <input type="text" v-model="forms.pptpUser" maxlength="32"/>
+                </td>
+              </tr>
+              <tr v-show="forms.pptpEnable">
+                <td>{{lang_t('wan.pass')}}</td>
+                <td>
+                  <input type="text" v-model="forms.pptpPass" maxlength="32" v-pass/>
+                </td>
+              </tr>
+              <tr v-show="forms.pptpEnable">
+                <td>{{lang_t('wan.mppe_encryption')}}</td>
+                <td>
+                  <select  v-model="forms.pptpMppe">
+                    <option value="0">{{lang_t('wan.optional_encryp')}}</option>
+                    <option value="1">{{lang_t('wan.unencryption')}}</option>
+                    <option value="2">{{lang_t('wan.encryption')}}</option>
+                  </select>
+                </td>
+              </tr>
+            <!--
+              <tr v-show="forms.pptpEnable">
+                <td>{{ lang_t('wan.df_router') }}</td>
+                <td>
+                    <select v-model="dfRouter">
+                      <option value="0">{{ lang_t('common.off') }}</option>
+                      <option value="1">{{ lang_t('common.on') }}</option>
+                    </select>
+                </td>
+              </tr>
+            -->
+              <tr v-if="forms.pptpEnable">
+                <td>{{ lang_t('account.ip_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.clientipMask">
+                </td>
+              </tr>
+            <!--
+              <tr v-if="forms.pptpEnable">
+                <td>{{ lang_t('account.lan_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="forms.clientlanMasq">
+                </td>
+              </tr>
+              <tr v-show="forms.pptpEnable  && globalConfig.csid != 'C734ZR'">
+                <td>{{ lang_t('account.bind_export') }}</td>
+                <td>
+                  <select v-model="forms.bindExport" style="display: inline-block;">
+                    <option value="NOT">{{ lang_t('account.unbound') }}</option>
+                    <option v-for="data in exportOption" :value="data.value" :key="data.value">{{data.name}}</option>
+                    <option value="CUSTOM">{{ lang_t('account.custom') }}</option>
+                  </select>
+                  <input type="text" v-model="customExport" v-if="forms.bindExport=='CUSTOM'" style="display: inline-block;width: 110px;" maxlength="15">
+                </td>
+              </tr>
+            -->
+              <tr v-show="forms.pptpEnable">
+                <td colspan="2">
+                  <add-subnet ref="mysubnet" :label="lang_t('wan.custo_route')" :subnet="subnetInitial"></add-subnet>
+                </td>
+              </tr>
+              <tr v-show="forms.pptpEnable">
+                <td>{{lang_t('l2tp_server.my_ip')}}</td>
+                <td>{{pptpClientAddr}}</td>
+              </tr>
+              <!--<tr v-show="forms.pptpEnable">
+                <td>{{lang_t('account.mapping')}}</td>
+                <td>
+                  <input type="text" v-model="mapping">-->
+                  <!-- <div>
+                    <input type="checkbox" @change="useIpFun">
+                    <span>{{ lang_t('wan.ip') + ': ' + pptpClientAddr }}</span>
+                  </div> -->
+                <!--</td>
+              </tr>-->
+              <tr v-show="forms.pptpEnable">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit(1)">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>     
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+        globalConfig:globalConfig,
+        lang: $.lang,
+        lang_t: lang_t,
+        tabsParam:['pptp_server.title','pptp_server.client'],
+        status:false,
+        pptpMode:'0',
+        pptpServerShow:false,
+        pptpClientShow:true,
+        forms: {
+            //server
+            status: false,
+            InitialStatusVal:false,
+            startIpAddr:'',
+            endIpAddr:'',
+            mppeEncrypt:'0',
+            serverAddr:'',
+            firstDns:'',
+            secondDns:'',
+            servermtu:'',
+            servermru:'',
+            ipMasq: false,
+            lanMasq: false,
+            //client
+            pptpEnable:false, 
+            pptpInitialEnableVal:false,
+            pptpServerIp:'',
+            pptpUser:'',
+            pptpPass:'',
+            pptpMppe:'0',
+            allowsSpecifyIp: false,
+            clientipMask: false,
+            clientlanMasq: false,
+            bindExport: ''
+        },
+        mapping: '',
+        vpnType:'',
+        pptpConnect:'',
+        pptpClientAddr:'',
+        percent:0,
+        dfRouter: '0',
+        actionIcon: ['fa fa-plus-square-o'],
+        vpnlan: [''],
+        vpnmask: [''],
+        isslect: false,
+        refreshFlag:false,
+        customExport: '',
+        subnetInitial: []
+    }
+  },
+  computed: {
+    helpshow: function(){
+      var _this = this;
+      if(_this.pptpMode == "0"){
+          return _this.lang_t('pptp_server.help');
+      }else{
+          return _this.lang_t('wan.pptp');
+      }
+    },
+    exportOption: function() {
+      var op = [];
+      if (globalConfig.multiWanSupport) {
+        for (var i = 1; i <= Number(globalConfig.wanNum); i++) {
+          op.push(
+            {
+              name: "WAN" + i,
+              value: "WAN" + i
+            }
+          )
+        }
+        for (var i = 1; i <= Number(globalConfig.lanNum); i++) {
+          op.push(
+            {
+              name: "LAN" + i,
+              value: "LAN" + i
+            }
+          )
+        }
+      } else {
+        op = [
+          {
+            value: "WAN",
+            name: "WAN"
+          }, {
+            value: "LAN",
+            name: "LAN"
+          }
+        ]
+      }
+      op.push(
+        {
+          name: "MODEM",
+          value: "MODEM"
+        }
+      )
+      return op;
+    },
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.forms.status);
+    },
+    toggle_client:function() {
+      var _this = this;
+      $('#switch_client').bootstrapSwitch('state',_this.forms.pptpEnable);
+    },
+    // client_on:function() {
+    //   var _this = this;
+    //   $('.bootstrap-switch-handle-on').text(_this.lang_t('common.on'));
+    //   return _this.lang_t('common.on');
+    // },
+    // client_off:function() {
+    //   var _this = this;
+    //   $('.bootstrap-switch-handle-off').text(_this.lang_t('common.off'));
+    //   return _this.lang_t('common.off');
+    // },
+    maskOption:function(){
+      return cs.maskOption();
+    }
+  },
+  created:function() {
+      var pptpMode = cs.local(this.pptpMode);
+      if(pptpMode != ''){
+          this.refreshFlag = true;
+          this.pptpMode = pptpMode;
+      }
+      if(this.pptpServerShow){
+          this.pptpServerInit();
+      }else{
+          this.pptpServerShow = false;
+          this.pptpMode = '1';
+      }
+      if(this.pptpClientShow){
+          this.pptpClientInit();
+      }else{
+          this.pptpClientShow = false;
+      }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+    if(_this.forms.status == false && data){//启用
+        _this.forms.status = data;
+        _this.submit_server();
+    }
+    if(_this.forms.status && data == false){//禁用
+        _this.forms.status = data;
+        _this.submit_server();
+    }
+  });
+  addSwitch('#switch_client', function(data) {
+    if(_this.forms.pptpEnable == false && data){//启用
+      _this.forms.pptpEnable = data;
+      _this.submit_client();
+    }
+    if(_this.forms.pptpEnable && data == false){//禁用
+      _this.forms.pptpEnable = data;
+      _this.submit_client();
+    }
+  });
+  },
+  methods:{
+    useIpFun: function(e) {
+      this.mapping = (e.target.checked ? this.pptpClientAddr : this.tempdata.mapping) || '';
+    },
+    pptpServerInit:function(){
+      var _this = this;
+      uiPost.getPptpServerCfg(function(data) {
+          _this.forms.status = data.enable == "1" ?true :false;
+          _this.modeSelect(_this.forms.status,'server');
+          _this.forms.InitialStatusVal = data.enable == "1" ?true :false;
+          _this.forms.allowsSpecifyIp = data.allowsSpecifyIp == "1" ? true : false;
+          // if(null != data.localip){
+              _this.forms.startIpAddr = data.sip;
+              _this.forms.endIpAddr = data.eip;
+              _this.forms.serverAddr = data.serverip;
+              _this.forms.firstDns = data.priDns;
+              _this.forms.secondDns = data.secDns;
+              _this.forms.servermtu = data.mtu;
+              _this.forms.servermru = data.mru;
+              _this.forms.mppeEncrypt = data.mppe;
+              _this.forms.ipMasq = data.ipMasq == '1';
+              _this.forms.lanMasq = data.lanMasq == '1';
+          // }
+      });
+    },
+    pptpClientInit:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.vpnType = "2";//1:l2tp，2：pptp
+      uiPost.getPptpClientCfg(postVar,function(data) {
+        _this.tempdata = data;
+          _this.forms.pptpEnable = data.enablec == "1" ? true : false;
+          _this.modeSelect(_this.forms.enablec,'client');
+          _this.forms.pptpInitialEnableVal = data.enablec == "1" ? true : false;
+          _this.forms.pptpServerIp = data.serverip;
+          _this.forms.pptpUser = data.user;
+          _this.forms.pptpPass = data.pass;
+          _this.forms.pptpMppe = data.mppe;
+          _this.pptpConnect = data.connect;
+          _this.pptpClientAddr = data.addr;
+          _this.dfRouter       = data.defr;
+          _this.mapping = data.mapping;
+          _this.forms.clientipMask = data.ipMasq == '1';
+          _this.forms.clientlanMasq = data.lanMasq == '1';
+          if(data.subnet && data.subnet.length != 0){
+            _this.subnetInitial = data.subnet;
+          }
+
+          if (!data.bindExport) {
+            _this.forms.bindExport = "NOT";
+          } else if (/^#/.test(data.bindExport)) {
+            _this.forms.bindExport = "CUSTOM";
+            _this.customExport = (data.bindExport || '').replace(/^#/, '');
+          } else {
+            _this.forms.bindExport = data.bindExport;
+          }
+      });
+    },
+    modeSelect:function(flag,type){
+      if(!this.refreshFlag){
+          if(type == 'server'){
+            if(flag){
+              this.pptpMode = '0';
+              this.isslect = true;
+            }
+          }else{
+            if(!this.isslect){
+              if(flag)
+                this.pptpMode = '1';
+            }
+          }
+      }
+    },
+    submit_server:function(){
+      var _this = this
+      var postVar = {};
+     if(_this.forms.status == false && (_this.forms.status != _this.forms.InitialStatusVal)){
+        _this.handleSubmit(0);
+      }
+    },
+    submit_client:function(){
+      var _this = this
+      var postVar = {};
+     if(_this.forms.pptpEnable == false && (_this.forms.pptpEnable != _this.forms.pptpInitialEnableVal)){
+        _this.handleSubmit(1);
+      }
+    },
+    handleSubmit: function(mode) {
+      var _this = this;
+      var postVar = {};
+      if((mode == 0 && this.forms.status) || (mode == 1 && this.forms.pptpEnable)){
+        if(mode == 0){
+            var _s = cs.ip(_this.forms.startIpAddr);
+            if (_s != 99) {
+              if(0 == _s){
+                Cstools.msg({
+                  content: this.lang_t('pptp_server.msg1'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+              }else{
+                 Cstools.msg({
+                  content: this.lang_t('pptp_server.msg2'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;              
+              }
+            }
+            var _a=cs.ip_same(_this.forms.serverAddr,_this.forms.startIpAddr);
+          	if(_a == 1){
+            	Cstools.msg({
+                  content: this.lang_t('l2tp_server.msg16'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+            }
+
+            var _s = cs.ip(_this.forms.endIpAddr);
+            if (_s != 99) {
+              if(0 == _s){
+                Cstools.msg({
+                  content: this.lang_t('pptp_server.msg3'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+              }else{
+                 Cstools.msg({
+                  content: this.lang_t('pptp_server.msg4'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;              
+              }
+            }else{
+              var _start = cs.ip2int(_this.forms.startIpAddr);
+              var _end = cs.ip2int(_this.forms.endIpAddr);
+              if(_start > _end){
+                Cstools.msg({
+                  content: this.lang_t('pptp_server.msg15'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+              }
+            }
+
+            var _d=cs.ip_same(_this.forms.serverAddr,_this.forms.endIpAddr);
+          	if(_d == 1){
+            	Cstools.msg({
+                  content: this.lang_t('l2tp_server.msg17'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+            }
+            /*var _s = cs.ip(_this.forms.serverAddr);
+            if (_s != 99) {
+              if(0 == _s){
+                Cstools.msg({
+                  content: this.lang_t('pptp_server.msg5'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+              }else{
+                 Cstools.msg({
+                  content: this.lang_t('pptp_server.msg6'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;              
+              }
+            }*/
+            
+            var _s = cs.ip(_this.forms.firstDns);
+            if(99 != _s){
+              if (0 == _s) {
+                Cstools.msg({
+                  content: this.lang_t('pptp_server.msg8'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+              }else{
+                 Cstools.msg({
+                  content: this.lang_t('pptp_server.msg9'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;              
+              }
+            }
+
+            var _s = cs.ip(_this.forms.secondDns);
+            if (_s != 0) {
+              if(99 != _s){
+                Cstools.msg({
+                  content: this.lang_t('pptp_server.msg10'),
+                  type: 'error',
+                  messgetype: 'alert',
+                });
+                return false;
+              }
+            }
+            var _s = cs.num_range(_this.forms.servermtu,1400,1500);
+            if (0 == _s) {
+              Cstools.msg({
+                content: this.lang_t('pptp_server.server_mtu')+this.lang_t('pptp_server.msg13'),
+                type: 'error',
+                messgetype: 'alert',
+              });
+              return false;
+            }else if (1 == _s) {
+              Cstools.msg({
+                content: this.lang_t('pptp_server.server_mtu')+this.lang_t('pptp_server.msg14'),
+                type: 'error',
+                messgetype: 'alert',
+              });
+              return false;
+            }else if (2 == _s) {
+              Cstools.msg({
+                content: this.lang_t('pptp_server.msg_servermtu',[1400,1500]),
+                type: 'error',
+                messgetype: 'alert',
+              });
+              return false;
+            }
+            //mru
+            var _s = cs.num_range(_this.forms.servermru,1400,1500);
+            if (0 == _s) {
+              Cstools.msg({
+                content: this.lang_t('pptp_server.server_mru')+this.lang_t('pptp_server.msg13'),
+                type: 'error',
+                messgetype: 'alert',
+              });
+              return false;
+            }else if (1 == _s) {
+              Cstools.msg({
+                content: this.lang_t('pptp_server.server_mru')+this.lang_t('pptp_server.msg14'),
+                type: 'error',
+                messgetype: 'alert',
+              });
+              return false;
+            }else if (2 == _s) {
+              Cstools.msg({
+                content: this.lang_t('l2tp_server.msg_servermru',[1400,1500]),
+                type: 'error',
+                messgetype: 'alert',
+              });
+              return false;
+            }
+            postVar.enable = _this.forms.status?'1':'0';
+            postVar.sip = _this.forms.startIpAddr;
+            postVar.eip = _this.forms.endIpAddr;
+            postVar.mppe = _this.forms.mppeEncrypt;
+            postVar.serverip = _this.forms.serverAddr;
+            postVar.priDns = _this.forms.firstDns;
+            postVar.secDns = _this.forms.secondDns;
+            postVar.mtu = _this.forms.servermtu;
+            postVar.mru = _this.forms.servermru;
+            postVar.ipMasq = _this.forms.ipMasq ? '1' : '0';
+            postVar.lanMasq = _this.forms.lanMasq ? '1' : '0';
+            postVar.allowsSpecifyIp = _this.forms.allowsSpecifyIp ? "1" : "0";
+            uiPost.setPptpServerCfg(postVar,function(data){
+               Cstools.msg({
+                content: _this.lang_t('central.set_success'),
+                type: 'success',
+                messgetype: 'no',
+                time:1
+              });
+             setTimeout(function () {
+                cs.href(_this.pptpMode);
+              },1000); 
+            });
+        }else{
+            if(!_this.forms.pptpServerIp){
+              Cstools.msg({
+                content: this.lang_t('wan.server_ip')+this.lang_t('wan.msg1'),
+                type: 'error',
+                messgetype: 'alert'
+              });
+              return false;
+            } else if (!cs.isUrl(_this.forms.pptpServerIp)) {
+              Cstools.msg({
+                content: this.lang_t('wan.server_ip')+this.lang_t('alert.msg42'),
+                type: 'error',
+                messgetype: 'alert'
+              });
+              return false;
+            }
+            var _s = cs.string(_this.forms.pptpUser);
+            if(0 == _s){
+              Cstools.msg({
+                content: this.lang_t('wan.msg12'),
+                type: 'error',
+                messgetype: 'alert',
+                time:1
+              });
+              return false;
+            }else if (1 == _s) {
+              Cstools.msg({
+                content: this.lang_t('wan.msg13'),
+                type: 'error',
+                messgetype: 'alert',
+                time:1
+              });
+              return false;
+            }
+            var _s = cs.string(_this.forms.pptpPass);
+            if(0 == _s){
+              Cstools.msg({
+                content: this.lang_t('wan.msg14'),
+                type: 'error',
+                messgetype: 'alert',
+                time:1
+              });
+              return false;
+            }else if (1 == _s) {
+              Cstools.msg({
+                content: this.lang_t('wan.msg15'),
+                type: 'error',
+                messgetype: 'alert',
+                time:1
+              });
+              return false;
+            }
+
+            if (this.mapping && this.mapping != '0.0.0.0') {
+              if (cs.ip(this.mapping) != 99) {
+                Cstools.msg({
+                  content: lang_t('account.mapping') + lang_t('ipv6.msg2'),
+                  type: 'error'
+                });
+                return;
+              }
+            }
+            if (_this.forms.bindExport == "NOT") {
+              postVar.bindExport = "";
+            } else if (_this.forms.bindExport == "CUSTOM") {
+              if (!_this.customExport) {
+                Cstools.msg({
+                  content: lang_t('ip_flow.msg5', [lang_t('account.bind_export')]),
+                  type: 'error'
+                });
+                return;
+              }
+              postVar.bindExport = '#' + _this.customExport;
+            } else {
+              postVar.bindExport = _this.forms.bindExport;
+            }
+
+            var arr = this.$refs.mysubnet.verify();
+            if (!arr) return;
+
+            postVar.subnet = arr;
+            postVar.vpnType = "2";
+            postVar.enablec = "1";
+            postVar.defr = _this.dfRouter;
+            postVar.serverip = _this.forms.pptpServerIp;
+            postVar.user = _this.forms.pptpUser;
+            postVar.pass = _this.forms.pptpPass;
+            postVar.mppe = _this.forms.pptpMppe;
+            postVar.mapping = this.mapping;
+            postVar.ipMasq = _this.forms.clientipMask ? '1' : '0';
+            postVar.lanMasq = _this.forms.clientlanMasq ? '1' : '0';
+            uiPost.setPptpClientCfg(postVar,function(data) {
+              if (data.wtime != undefined && data.wtime != 0){
+                Cstools.count(data.wtime,'js',function(){
+                  cs.href(_this.pptpMode);
+                });
+              }else {
+                cs.href(_this.pptpMode);
+              }
+            });
+        }
+      }else{
+        if(mode == 0){
+          postVar.Enabled = "0";
+            uiPost.setPptpServerCfg(postVar,function(data){
+              Cstools.msg({
+                content: _this.lang_t('central.set_success'),
+                type: 'success',
+                messgetype: 'no',
+                time:1
+              });
+             setTimeout(function () {
+                cs.href(_this.pptpMode);
+              },1000);  
+          });
+        }else{
+            postVar.vpnType = "2";
+            postVar.enablec = "0";
+            uiPost.setPptpClientCfg(postVar,function(data) {
+              if (data.wtime != undefined && data.wtime != 0){
+                Cstools.count(data.wtime,'js',function(){
+                  cs.href(_this.pptpMode);
+                });
+              }else {
+                cs.href(_this.pptpMode);
+              } 
+            });
+        }
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+
+    
+
+

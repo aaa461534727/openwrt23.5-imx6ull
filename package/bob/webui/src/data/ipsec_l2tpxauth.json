@@ -1,0 +1,8 @@
+{
+  	"ipsecL2tpEnable":"1",	 
+	"ipsecXauthEnable":"1",	
+  	"ipsecXauthRightsourceip":"192.168.0.100/32",
+	"ipsecL2tpUserPasswdEnable":"1",	
+  	"ipsecXauthPasswd":"abc12345678",
+	"ipsecPsk":"12345678"
+}

@@ -1,0 +1,17 @@
+{
+   	"wan4gConnStatus":"connected",
+	   "wan4gIp":"10.20.30.30",
+	   "wan4gUptime":"0;0;43;10",
+	   "registStatus":"simPinLock",
+   	"signal":"50",
+   	"imei":"450050475635516",
+   	"imsi":"450050488888888",
+   	"phoneNumber":"18099991111",
+   	"model":"EC25",
+   	"isp":"5",
+   	"bandLte":"88",
+      "pci":"88",
+      "sinr":"28",
+      "rsrp":"58",
+   	"netType":"1"
+}

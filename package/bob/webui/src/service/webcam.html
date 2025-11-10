@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{  lang_t('webcam.help') }}</strong></td>
+              </tr>         
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+
+              <tbody v-if ="enabled == '1'">
+                <tr>
+                  <td>{{ lang_t('webcam.action_t') }}</td>
+                  <td>
+                    <select v-model="formValidate.action">
+                      <option value="1">{{ lang_t('webcam.register') }}</option>
+                      <option value="2">{{ lang_t('webcam.cancellation') }}</option>
+                      <option value="3">{{ lang_t('webcam.Keep_alive') }}</option>
+                      <!-- <option value="4">{{ lang_t('webcam.timing') }}</option> -->
+                      <option value="5">{{ lang_t('webcam.up_photo') }}</option>
+                    </select>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>{{ lang_t('webcam.pro_type') }}</td>
+                  <td>
+                    <select v-model="formValidate.proType">
+                      <option value="1">HTTP</option>
+                      <option value="2">HTTPS</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('webcam.pro_type') }}</td>
+                  <td>
+                    <select v-model="formValidate.validation">
+                      <option value="1">MD5/SHA256</option>
+                      <option value="2">SHA256</option>
+                    </select>
+                  </td>
+                </tr>
+
+                
+                <tr>
+                  <td>{{ lang_t('webcam.ip_addr') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.ip" maxlength="32">
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>{{ lang_t('webcam.port') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.port" maxlength="128">
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>{{ lang_t('webcam.device_id') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.id" maxlength="128">
+                  </td>
+                </tr>  
+
+                <tr>
+                  <td>{{ lang_t('changelogin.user') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.username" maxlength="128">
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>{{ lang_t('changelogin.pass') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.password" maxlength="128">
+                  </td>
+                </tr>           
+
+                
+                <tr>
+                  <td colspan="2">
+                    <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                  </td>
+                </tr>
+              </tbody>
+           
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      enabled:false,
+      formValidate: {
+        action:'',
+        proType:'',
+        validation:'',
+        ip : '',
+        port:'',
+        id:'',
+        username:'',
+        password:'',
+      },
+	    connStatus:'0'
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(_this.enabled == false && data){//启用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+      if(_this.enabled && data == false){//禁用
+        _this.enabled = data;
+        _this.submit_status();
+      }
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getDigest(function(data){
+      console.log(data)
+      _this.enabled = data.enable == "1" ? true : false;
+      _this.formValidate.proType = data.proType;
+	    _this.formValidate.validation = data.validation;
+      _this.formValidate.ip = data.ip;
+      _this.formValidate.port = data.port;
+      _this.formValidate.id = data.id;
+      _this.formValidate.username = data.username;
+      _this.formValidate.password = data.password;
+      _this.formValidate.action = data.action;
+    });
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar ={};
+      if(!_this.enabled){
+        postVar.enable = "0";
+        postVar.addEffect = "1"; 
+        console.log(5555555555555)
+        uiPost.setDigest(postVar, apply_callback);
+      }
+      
+    },
+    handleSubmit: function(){
+      var _this = this;
+      var postVar = {};
+      postVar.enable = "1";
+      postVar.addEffect = "0";     
+			postVar.proType = _this.formValidate.proType;
+			postVar.validation = _this.formValidate.validation;
+			postVar.ip = _this.formValidate.ip;
+			postVar.port = _this.formValidate.port;
+      postVar.id = _this.formValidate.id;
+      postVar.username = _this.formValidate.username;
+      postVar.password = _this.formValidate.password;
+      postVar.action = _this.formValidate.action;
+      console.log(postVar)
+      uiPost.setDigest(postVar, apply_callback)
+    }   
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache" />
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div id="app">
+    <div id="main">
+      <div class="row" v-cloak>
+        <!--****填充区******-->
+        <section class="col-xs-12">
+          <div class="content-box">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <tr>
+                  <td colspan="2"><strong>{{ lang_t('vxlan.help') }}</strong></td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('common.state')}}</td>
+                  <td>
+                    <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning"
+                      style="display: none">
+                  </td>
+                </tr>
+              </table>
+              <table class="table table-striped table-bordered table-hover" v-show="enabled">
+                <thead>
+                  <tr>
+                    <!-- <td colspan="6"> {{ lang_t('vxlan.urlf_table') }}</td> -->
+                  </tr>
+                  <tr>
+                    <th>ID</th>
+                    <th>{{lang_t('vxlan.vid')}}</th>
+                    <th>{{lang_t('vxlan.source_ip')}}</th>
+                    <th>{{lang_t('vxlan.peer_ip')}}</th>
+                    <th>{{lang_t('vxlan.peer_port')}}</th>
+                    <th>{{lang_t('vxlan.interface')}}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in vxlanData" :key="index" @click="editItem(index,val)">
+                    <td>{{index+1}}</td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input type="text" v-model="editItemInfo.vid" maxlength="40" />
+                      </div>
+                      <span v-else>{{val.vid}}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input type="text" v-model="editItemInfo.source_ip" maxlength="40" />
+                      </div>
+                      <span v-else>{{val.source_ip}}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input type="text" v-model="editItemInfo.peer_ip" maxlength="40" />
+                      </div>
+                      <span v-else>{{val.peer_ip}}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input type="text" v-model="editItemInfo.peer_port" maxlength="40" />
+                      </div>
+                      <span v-else>{{val.peer_port}}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.interface" data-style="btn-default" v-if="editIdx == index">
+                        <option value="wan">wan</option>
+                        <option value="modem">modem</option>
+                      </select>
+                      <span v-else>{{ val.interface}}</span>
+                    </td>
+                    <td class="operation">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td>
+                      <input type="text" v-model="vid" maxlength="10" />
+                    </td>
+                    <td>
+                      <input type="text" v-model="source_ip" maxlength="15" />
+                    </td>
+                    <td>
+                      <input type="text" v-model="peer_ip" maxlength="15" />
+                    </td>
+                    <td>
+                      <input type="text" v-model="peer_port" maxlength="10" />
+                    </td>
+                    <td>
+                      <select v-model="interface">
+                        <option value="wan">wan</option>
+                        <option value="modem">modem</option>
+                      </select>
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <table class="table table-striped table-bordered table-hover" v-show="enabled">
+                <tr v-if="globalConfig.specialIotBanApply!='1'">
+                  <td colspan="2">
+                    <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                    <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+  <script src="/plugin/vue.js"></script>
+  <script src="/plugin/jquery-3.2.1.min.js"></script>
+  <script src="/plugin/bootstrap.min.js"></script>
+  <script src="/plugin/bootstrap-switch.min.js"></script>
+  <script src="/static/js/config.js"></script>
+  <script src="/static/js/layout.js"></script>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/topicurl.js"></script>
+  <script>
+    var cs_main = {
+      template: "#main",
+      data: function () {
+        var _this = this;
+        return {
+          globalConfig: globalConfig,
+          lang: $.lang,
+          lang_t: lang_t,
+          enabled: false,
+          interface: "modem",
+          vid: '',
+          peer_ip: '',
+          peer_port: '4789',
+          source_ip: '',
+          vxlanData: [],
+          editIdx: '-1',
+          editItemInfo: {}
+        }
+      },
+      computed: {
+        toggle_status: function () {
+          var _this = this;
+          $('#switch_status').bootstrapSwitch('state', _this.enabled);
+        },
+      },
+      created: function () {
+        var _this = this;
+        var postVar = {};
+        uiPost.getVxlanCfg(postVar, function (data) {
+
+          _this.enabled = data.enabled == "1" ? true : false;
+          
+          if (data.rule) {
+            _this.vxlanData = data.rule;
+          }
+        });
+      },
+      mounted: function () {
+        var _this = this;
+        addSwitch('#switch_status', function (data) {
+          if(_this.enabled == false && data){//启用
+            _this.enabled = data;
+            _this.submit_status();
+          }
+          if(_this.enabled && data == false){//禁用
+            _this.enabled = data;
+            _this.submit_status();
+          }          
+        });
+      },
+      methods: {
+        saveInfo: function () {
+          var _this = this;
+          this.editIdx = '-1';
+          var postVar = {};
+          postVar.subnet = [].concat(this.vxlanData);
+          postVar.addEffect = "1";
+          postVar.enabled = _this.enabled ? "1" : "0";
+          uiPost.setVxlanCfg(postVar, apply_callback);
+        },
+        cancelAll: function () {
+          location.href = location.href;
+        },
+        modifyRule: function (idx) {
+          if (!this.veriyfun(this.editItemInfo, idx)) return;
+          $.extend(this.vxlanData[idx], this.editItemInfo);
+          this.editIdx = '-1';
+        },
+        delRuleFun: function (idx, obj) {
+          this.editIdx = "-1";
+          this.vxlanData.splice(idx, 1);
+        },
+        editItem: function (index, obj) {
+          if ('-1' != this.editIdx) {
+            return false;
+          }
+          this.editItemInfo = {};
+          $.extend(this.editItemInfo, obj);
+          this.editIdx = index;
+        },
+        cancelEdit: function (obj) {
+          this.editIdx = "-1";
+          this.editItemInfo = obj;
+        },
+        submit_status: function () {
+          if (globalConfig.specialIotBanApply == 1) return;
+          var _this = this;
+          var postVar = {};
+          postVar.addEffect = "0";
+          if(!_this.enabled){
+            
+            postVar.enabled = _this.enabled ? "1" : "0";
+            uiPost.setVxlanCfg(postVar, apply_callback);
+          }
+        },
+
+        veriyfun: function (val, flag) {
+          if (val.vid) {
+            range_vid = cs.num_range(val.vid, 1, 16777215);
+            if (range_vid == 0) {
+              errorAlert(lang_t('vxlan.vid') + lang_t('alert.msg15', [1, 16777215]));
+              return false;
+            } else if (range_vid == 1) {
+              errorAlert(lang_t('vxlan.vid') + lang_t('alert.msg15', [1, 16777215]));
+              return false;
+            } else if (range_vid != 99) {
+              errorAlert(lang_t('vxlan.vid') + lang_t('alert.msg15', [1, 16777215]));
+              return false;
+            }
+          }
+          else {
+            errorAlert(lang_t('vxlan.vid') + lang_t('alert.msg15', [1, 16777215]));
+            return false;
+          }
+
+          if (val.peer_ip) {
+            _s = cs.ip(val.peer_ip);
+            if (0 == _s) {
+              errorAlert(lang_t('vxlan.peer_ip') + lang_t('alert.msg5'));
+              return false;
+            } else if (99 != _s) {
+              errorAlert(lang_t('vxlan.peer_ip') + lang_t('alert.msg11'));
+              return false;
+            }
+          } else {
+            errorAlert(lang_t('vxlan.peer_ip') + lang_t('alert.msg11'));
+            return false;
+          }
+
+          if (val.peer_port) {
+            range = cs.num_range(val.peer_port, 1, 65535);
+            if (range == 0) {
+              errorAlert(lang_t('vxlan.peer_port') + lang_t('alert.msg15', [1, 65535]));
+              return false;
+            } else if (range == 1) {
+              errorAlert(lang_t('vxlan.peer_port') + lang_t('alert.msg15', [1, 65535]));
+              return false;
+            } else if (range != 99) {
+              errorAlert(lang_t('vxlan.peer_port') + lang_t('alert.msg15', [1, 65535]));
+              return false;
+            }
+          } else {
+            errorAlert(lang_t('vxlan.peer_port') + lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+
+          if (val.source_ip) {
+            _s = cs.ip(val.source_ip);
+            if (0 == _s) {
+              errorAlert(lang_t('vxlan.source_ip') + lang_t('alert.msg5'));
+              return false;
+            } else if (99 != _s) {
+              errorAlert(lang_t('vxlan.source_ip') + lang_t('alert.msg11'));
+              return false;
+            }
+          } else {
+            errorAlert(lang_t('vxlan.source_ip') + lang_t('alert.msg11'));
+            return false;
+          }
+
+
+          return true;
+        },
+        addRule: function () {
+          var _this = this;
+          var temp = {
+            interface: this.interface,
+            vid: this.vid,
+            peer_ip: this.peer_ip,
+            peer_port: this.peer_port,
+            source_ip: this.source_ip
+          };
+          if (!this.veriyfun(temp)) return;
+          this.vxlanData.push(temp);
+          this.interface = "";
+          this.vid = "";
+          this.peer_ip = "";
+          this.peer_port = "";
+          this.source_ip = "";
+        }
+      }
+    };
+  </script>
+  <script src="/static/js/main.js"></script>
+</body>
+
+</html>

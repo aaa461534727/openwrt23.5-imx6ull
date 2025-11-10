@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{  lang_t('iot.help') }}</strong></td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td style="width: 25%;">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+
+             <tbody>
+              <tr v-show="enabled">
+                <td style="width: 25%;">{{ lang_t('iot.serverHost') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.serverHost" maxlength="32">
+                  <span>({{lang_t('index.domain_ip')}})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.port') }}</td>
+                <td>
+                  <input type="number" v-model="formValidate.port" maxlength="5">
+                  <span>(1-65535)</span>
+               </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('iot.keepaLive') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.keepaLive" maxlength="5">
+                  <span>(1-65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && globalConfig.iotMqttWebShowUserPass">
+                <td>{{ lang_t('iot.username') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.userName" maxlength="32">
+                </td>
+              </tr>
+              <tr v-show="enabled && globalConfig.iotMqttWebShowUserPass">
+                <td>{{ lang_t('iot.password') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.passWord" maxlength="32">
+                </td>
+              </tr>
+            </tbody>
+             <tr v-show="enabled && globalConfig.aiotSupport">
+              <td>{{ lang_t('net_strategy.device_id') }}</td>
+              <td>
+                <input type="text" v-model="formValidate.deviceId" maxlength="64">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('iot.bind_code') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.bindCode" maxlength="64">
+                </td>
+              </tr>
+              <tr v-show="enabled && !globalConfig.aiotSupport">
+                <td>{{ lang_t('iot.warm_interver') }}(s)</td>
+                <td>
+                  <input type="number" v-model="warningInterval" maxlength="5">
+                </td>
+              </tr>
+              <tr v-show="enabled  && !globalConfig.aiotSupport && globalConfig.gpsSupport">
+                <td>{{ lang_t('gps.time') }}(s)</td>
+                <td>
+                  <input type="number" v-model="gpsInterval" maxlength="5">
+                </td>
+              </tr>
+              <tr v-show="enabled  && !globalConfig.aiotSupport">
+                <td v-if="globalConfig.c735irSupport">{{ lang_t('iot.lte_interver_1') }}(s)</td>
+                <td v-else>{{ lang_t('iot.lte_interver') }}(s)</td>
+                <td>
+                  <input type="number" v-model="lteInterval" maxlength="5">
+                </td>
+              </tr>
+
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.status') }}</td>
+                <td>
+                  <!--<span  v-if="connStatus == 0"><span style="color:#fff;background-color:#4682B4;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_crpc_error') }}</span></span>
+                  <span  v-if="connStatus == 1"><span style="color:#fff;background-color:#6495ED;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_port_net_error') }}</span></span>
+                  <span  v-if="connStatus == 2"><span style="color:#fff;background-color:#778899;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_code_error') }}</span></span>
+                  <span  v-if="connStatus == 3"><span style="color:#fff;background-color:#4169E1;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_ready') }}</span></span>
+                  <span  v-if="connStatus == 4"><span style="color:#fff;background-color:#035e1e;">{{ lang_t('index.connected') }}</span></span>
+                  -->
+                 <span  v-if="connStatus == 0"><span style="color:#fff;background-color:#e19641;">{{ lang_t('iot.no_conn') }}</span></span>
+                  <span  v-if="connStatus == 1"><span style="color:#fff;background-color:#e14141;">{{ lang_t('iot.conn_fail') }}</span></span>
+                  <span  v-if="connStatus == 2"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('iot.conn_success') }}</span></span>
+                  <span  v-if="connStatus == 3"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('iot.conn_ing') }}</span></span>
+                  <span  v-if="connStatus == 2 && bindStatus == 0"><span style="color:#fff;background-color:#e19641;">({{ lang_t('iot.no_bind') }})</span></span>
+                  <span  v-if="connStatus == 2 && bindStatus == 1"><span style="color:#fff;background-color:#e14141;">({{ lang_t('iot.bind_fail') }})</span></span>
+                  <span  v-if="connStatus == 2 && bindStatus == 2"><span style="color:#fff;background-color:#00ad34;">({{ lang_t('iot.bind_success') }})</span></span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      enabled:false,
+      formValidate: {
+        pubHostPath: '',
+        pubPort: '',
+        priHostPath: '',
+        bindCode: '',
+        priPort: '',
+        serverHost:'',
+        keepaLive : '',
+        userName:'',
+        passWord:'',
+      },
+	    connStatus:'0',
+      bindStatus:'0',
+      longitude: '',
+      latitude: '',
+      gpsReportTime: '',
+      interval: '',
+      warningInterval: '',
+      warnRecoverInterval: '',
+      gpsInterval: '',
+      lteInterval: '',
+      percentTimer: '',
+      gpsModule: '',
+      deviceId: ''
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getAIotMCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.serverHost = data.serverHost;
+	    _this.formValidate.port = data.port;
+      _this.formValidate.keepaLive = data.keepaLive;
+      _this.formValidate.userName = data.userName;
+      _this.formValidate.passWord = data.passWord;
+       _this.formValidate.bindCode = data.bindCode;
+      //_this.connStatus = data.connStatus;
+      _this.warningInterval = data.warningInterval;
+      //_this.warnRecoverInterval = data.warnRecoverInterval;
+      _this.gpsInterval = data.gpsInterval;
+      _this.lteInterval = data.lteInterval;
+      _this.formValidate.bindCode = data.bindCode;
+      if(globalConfig.aiotSupport) {
+        _this.infoInterval = data.infoInterval;
+        _this.formValidate.deviceId = data.deviceId;
+      }
+
+    });
+      _this.getAIotStatus();
+      _this.percentTimer = setInterval(function(){
+        if(_this.connStatus == 2 || _this.connStatus == 1 || _this.enabled == false)
+          clearInterval(_this.percentTimer);
+        _this.getAIotStatus();
+      },5000);
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";
+        uiPost.setAIotMCfg(postVar, apply_callback);
+      }
+    },
+    getAIotStatus:function(){
+      var _this = this;
+      uiPost.getAIotMStateCfg(function(data){
+        _this.connStatus = data.connStatus;
+        _this.bindStatus = data.bindStatus;
+      });
+    },
+    /*submitgps: function() {
+      if(99 != cs.num_range(this.gpsReportTime, 1, 86400)){
+        errorAlert(lang_t('iot.gps_report') + lang_t('alert.msg15', [1, 86400]));
+        return false;
+      }
+      uiPost.setGpsReportTimeCfg({gpsReportTime: this.gpsReportTime}, apply_callback)
+    },*/
+    handleSubmit: function(){
+      var _this = this;
+      var postVar = {};
+      if(!globalConfig.aiotSupport) {
+        if(_this.formValidate.serverHost == ""){
+          errorAlert(lang_t('iot.serverHost') + lang_t('alert.msg5'));
+          return false;
+        }else if (99 != cs.ip_domain(_this.formValidate.serverHost)){
+          errorAlert(lang_t('iot.serverHost') + lang_t('alert.msg19'));
+          return false;
+        }
+
+        if(99 != cs.num_range(_this.formValidate.port,1,65535)){
+          errorAlert(lang_t('index.port') + lang_t('alert.msg15',[1,65535]));
+          return false;
+        }
+
+      if(99 != cs.num_range(this.warningInterval, 300, 86400)){
+        errorAlert(lang_t('iot.warm_interver') + lang_t('alert.msg15', [300, 86400]));
+        return false;
+      }
+
+      if(99 != cs.num_range(this.gpsInterval, 300, 86400)){
+        errorAlert(lang_t('gps.time') + lang_t('alert.msg15', [300, 86400]));
+        return false;
+      }
+      if(99 != cs.num_range(this.lteInterval, 300, 86400)){
+        if(globalConfig.c735irSupport)
+        errorAlert(lang_t('iot.lte_interver_1') + lang_t('alert.msg15', [300, 86400]));
+        else
+        errorAlert(lang_t('iot.lte_interver') + lang_t('alert.msg15', [300, 86400]));
+        return false;
+      }
+    }else {
+      if(99 != cs.num_range(this.infoInterval, 300, 86400)) {
+            errorAlert(lang_t('iot.interval_report') + lang_t('alert.msg15', [300, 86400]));
+            return false;
+          }
+          if(this.formValidate.deviceId == '') {
+            errorAlert(lang_t('net_strategy.device_id') + lang_t('alert.msg5'));
+            return false;
+          }
+          postVar.infoInterval = _this.infoInterval;
+          postVar.deviceId = _this.formValidate.deviceId;
+    }
+      postVar.enabled = "1";
+			postVar.serverHost = _this.formValidate.serverHost;
+			postVar.keepaLive = _this.formValidate.keepaLive;
+			postVar.port = _this.formValidate.port;
+			postVar.userName = _this.formValidate.userName;
+			postVar.passWord = _this.formValidate.passWord;
+      postVar.bindCode = _this.formValidate.bindCode;
+      postVar.warningInterval = _this.warningInterval;
+      postVar.gpsInterval = _this.gpsInterval;
+      postVar.lteInterval = _this.lteInterval;
+      postVar.bindCode = _this.formValidate.bindCode;
+      uiPost.setAIotMCfg(postVar, apply_callback)
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

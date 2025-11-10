@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box tab-content table-responsive __mb">
+        	<table class="table table-striped">
+            <tr>
+              <td colspan="2">{{ lang_t("firmware.cloud_upload_help") }}</td>
+            </tr>
+            <tr>
+              <td>{{ lang_t("firmware.firmware_ver") }}</td>
+              <td>
+                {{ version }}
+              </td>
+            </tr>
+            <tr v-show="bootVersion !=''">
+              <td>{{ lang_t("index.boot_version") }}</td>
+              <td>
+                {{ bootVersion }}
+              </td>
+            </tr>
+            <tr>
+              <td>{{ lang_t("firmware.build_time") }}</td>
+              <td>
+              	{{ buildTime }}
+              </td>
+            </tr>
+            <tr v-if="globalConfig.specialIotBanApply!='1'">
+              <td colspan="2">
+                <button class="btn btn-primary" id="cloudFw" :data-loading-text="lang_t('firmware.newcloudUpdateing')" :data-complete-text="lang_t('firmware.found_newfw')" @click="cloudCheck">{{ lang_t("firmware.cloud_check_newversion") }}</button>
+              </td>
+            </tr>
+            <tr v-if="result != 0">
+              <td>{{ lang_t("firmware.cloud_check_result") }}</td>
+              <td v-if="(result == 1 && csteVersion=='1.0') || (result == 4 && csteVersion=='2.0')">{{ lang_t('firmware.found_newfw')}}:&nbsp;&nbsp;&nbsp;<span style="font-weight:bold;color:#EA7105;">{{newVersion}}</span> {{lang_t('firmware.manual_upgrade') }} 
+                <button class="btn btn-primary all-but" id="cloud_upload" @click.prevent="cloudUpgrade">{{ lang_t('firmware.upgrade') }}</button>
+              </td>
+              <td v-else-if="(result == 2 && csteVersion=='1.0') || (result == 1 && csteVersion=='2.0')">{{ lang_t('firmware.check_internet_result') }}</td>
+              <td v-else-if="result == 3">{{ csteVersion=='2.0' ? lang_t('firmware.newcloudUpdateing') : lang_t('firmware.cloudUpdateing') }}</td>
+              <td v-else-if="(result == 4 && csteVersion=='1.0') || (result == 2 && csteVersion=='2.0')">{{ lang_t('firmware.check_if_newver') }}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div class="content-box tab-content table-responsive __mb">
+        	<form method="post" enctype="multipart/form-data">
+          <table class="table table-striped hidden-xs hidden-sm" >
+            <tr>
+              <td colspan="2">{{ lang_t('firmware.help') }}</td>
+            </tr>
+            <tr>
+              <td>
+                <input type="checkbox" v-model="selectbox">
+                {{ lang_t('firmware.upgrade_with_reset') }}
+              </td>
+            </tr>
+            <tr v-if="isSafari">
+              <td colspan="2">
+                <input type="file" name="file" id="f_upload" @change="filechange">
+              </td>
+            </tr>
+            <tr v-else>
+              <td style="width: 260px;"> 
+                <input type="text" id="filename" v-model="filename" disabled>
+              </td>
+              <td>
+                <label class="input-group-btn">
+                  <span class="btn btn-default">
+                    <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" name="file" id="f_upload" style="display: none;" @change="filechange" >
+                  </span>
+                </label>
+              </td>
+            </tr>
+            <tr v-if="(csteVersion == '1.0' || csteupdate) && globalConfig.specialIotBanApply!='1'">
+              <td colspan="2">
+                <button class="btn btn-primary all-but" id="upgrade" :data-loading-text="lang_t('firmware.uploading')" @click.prevent="submit_Upgrade">{{lang_t('firmware.upgrade')}}</button>
+              </td>
+            </tr>
+          </table>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t,
+      platform:false,
+      result:"",
+      buildTime:'',
+      newVersion:'',
+      bootVersion:'',
+      version:'',
+      upgradeAction:"/cgi-bin/cstecgi.cgi?action=upload&upgrade",
+      setUpgradeFW:"0",
+      maxSize:0,
+      filename:'',
+      selectbox:false,
+      csteVersion:'1.0',
+      csteupdate:false,
+      isSafari:false
+    }
+  },
+  created:function(){
+     var _this = this;
+    _this.isSafari = isSafari();
+    uiPost.FirmwareUpgrade(function(data){
+      if(data.csteVersion){
+        _this.csteVersion = data.csteVersion;
+      }
+      _this.hardModel = data.hardModel;
+      _this.flashSize = data.flashSize;
+      _this.version = data.fmVersion;
+      _this.bootVersion = data.bootVersion;
+      if (data.buildTime.indexOf("-") != -1){
+        _this.buildTime = data.buildTime;
+      }else{    
+        var _time =  /\s+/g;
+        var time_ = data.buildTime.replace(_time, ' ');
+        var month=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        for(var j=0; j<12; j++){
+          if(time_.split(" ")[0] == month[j]){
+            var time = j+1;
+          }
+        }
+        _this.buildTime = time_.split(" ")[2] +"-"+ time +"-"+ time_.split(" ")[1] +" "+ time_.split(" ")[3];
+      }
+      _this.cloudFw = data.cloudFw;
+      _this.maxSize = parseInt(data.maxSize);
+      _this.lanip = data.lanIp;
+      if (data.upgradeAction!='') {
+        _this.upgradeAction = data.upgradeAction;
+      }
+      if (data.setUpgradeFW!='') {
+        _this.setUpgradeFW = data.setUpgradeFW;
+      }
+      console.log(_this.selectbox)
+      /*if(data.reservedFlag == "0"){
+        _this.selectbox = true;
+      }*/
+    });
+  },
+  methods:{
+    cloudCheck:function(){
+      if(this.csteVersion == '2.0')
+        this.newCloudCheck();
+      else
+        this.oldCloudCheck();
+    },
+    oldCloudCheck:function(){
+      var _this = this;
+      uiPost.CloudSrvVersionCheck(function(data){
+        _this.newVersion = data.newVersion;
+        if(data.cloudFwStatus == "New"){
+          _this.result=1;
+          $('#cloudFw').button('complete');
+        }else if(data.cloudFwStatus == "UnNet"){
+          _this.result=2;
+        }else if(data.cloudFwStatus == "Update"){
+          _this.result=3;
+        }else if(data.cloudFwStatus == "Idle"){
+          _this.result=4;
+        }
+      });
+    },
+    newCloudCheck:function(){
+      var _this = this;
+      var time = 0;
+      $('#cloudFw').button('loading');
+      uiPost.CloudSrvVersionCheck(function(){
+        var checktime = setInterval(function(){
+          if(time >= 30){
+            time = 0;
+            _this.result = 2;
+            $('#cloudFw').button('reset');
+            clearInterval(checktime);
+            return false;
+          }
+          uiPost.getCloudSrvCheckStatus(function(data){
+            if(data.cloudFwStatus == "1"){
+              _this.result = 1;
+              $('#cloudFw').button('reset');
+              clearInterval(checktime);
+            }else if(data.cloudFwStatus == "2"){
+              _this.result = 2;
+              $('#cloudFw').button('reset');
+              clearInterval(checktime);
+            }else if(data.cloudFwStatus == "4"){
+              _this.newVersion = data.newVersion;
+              _this.result = 4;
+              $('#cloudFw').button('complete');
+              clearInterval(checktime);
+            }else{
+              _this.result = 3;
+            }
+          });
+          time++;
+        },1000);
+      });
+    },
+    cloudUpgrade:function(){
+        var _this = this;
+        var postVar = {};
+        var wtime = 0;
+        if(_this.selectbox){
+          postVar.flags = "1";
+        }else{
+          postVar.flags = "0";
+        }
+        if(_this.setUpgradeFW == '1'){
+          postVar.cloudFlag = "1";
+          uiPost.setUpgradeFW(postVar,function(data){
+            if(data.wtime != undefined && data.wtime != ""){
+              wtime = data.wtime;
+            }else{
+              wtime = 120;
+            }
+            _this.countmsg(wtime);
+          });
+        }else{
+          uiPost.CloudACMunualUpdate(postVar,function(data){
+            if(data.wtime != undefined && data.wtime != ""){
+              wtime = data.wtime;
+            }else{
+              wtime = 140;
+            }
+            _this.countmsg(wtime);
+          });
+        }
+    },
+    countmsg:function(wtime){
+      var lanip = location.host;
+      Cstools.count(wtime,'up',function(){
+        parent.location.href='http://'+lanip+'/login.html';
+      });
+    },
+    submit_Upgrade:function(){      
+      var _this = this;
+      var postVar = {};
+      var time; 
+
+      if($("#filename").val()==""){
+        Cstools.msg({
+          content: _this.lang_t('config.msg1'),
+          type: 'error',
+          messgetype: 'alert',
+        });
+        return false;
+      }
+      var file = document.getElementById("f_upload").files[0];
+      var flag;
+      if(_this.selectbox){
+        flag = "1";
+      }else{
+        flag = "0";
+      }
+      if(_this.csteVersion == '2.0'){
+        postVar.Flags = flag;
+        postVar.cloudFlag = "0";
+        uiPost.setUpgradeFW(postVar,function(data){
+          if(data.wtime != undefined && data.wtime != ""){
+            time = data.wtime;
+          }else{
+            time = 100;
+          }
+          _this.countmsg(time);
+        });
+      }else{
+        $("#upgrade").button('loading');  
+        _this.upload(file,flag);
+      }
+    },
+    filechange:function(){
+      var file = document.getElementById("f_upload");
+      var data = file.files[0];
+      var name = data.name;
+      if((name.indexOf('.web') < 0)&&(name.indexOf('.bin') < 0)){
+        Cstools.msg({ 
+          content: this.lang_t('config.msg2',['web、bin']),
+          type: 'error',
+          messgetype: 'alert'
+        });
+        file.value = '';
+        return false;
+      }
+	  
+      var filesize = file.files[0].size;
+      if((filesize/(this.flashSize*1024*1024))>=1){
+        Cstools.msg({
+          content: this.lang_t('config.msg3'),
+          type: 'error',
+          messgetype: 'alert',
+        });
+		file.value = '';
+        return false;
+      }
+	  
+      this.filename = name;
+      if(this.csteVersion == '2.0'){
+        this.upload(data,'');
+      }
+    },
+    upload:function(file,flag){
+      var _this = this;
+      if(_this.csteVersion == '2.0')
+        _tempCount_ = 0;
+      else
+        _tempCount_ = null;
+	  var token_tmp=get_token_from_url();
+      var token="";
+      if(token_tmp!=""){
+        token=token_tmp.split('=')[1];
+      }
+      
+      upload.fileUpload({
+        data:file,
+		url: this.upgradeAction + "&" + token,
+        progress:function(v){
+          if(_this.csteVersion == '2.0'){
+            if(_tempCount_ == 0){
+              Cstools.count(1,'load');
+            }
+            _tempCount_ = v;
+            if(v >= 100){
+              Cstools.msg({
+                content: _this.lang_t('config.msg5'),
+                type: 'info',
+                messgetype: 'no',
+                time: 6
+              });
+            }
+          }
+        },
+        success:function(result){
+          if(result.upgradeStatus == "1"){
+            if(_this.csteVersion == '2.0'){
+              Cstools.msg({
+                content: _this.lang_t('config.msg4'),
+                type: 'success',
+                messgetype: 'no',
+                time: 1,
+                timeout:function(){
+                  _this.csteupdate = true;
+                }
+              });
+            }else{
+              $("#upgrade").button('reset');
+              _this.countmsg(130);
+            }
+          }else{
+            _this.csteupdate = false;
+            $("#upgrade").button('reset');
+            Cstools.msg({
+              content: _this.lang_t('firmware["'+result.upgradeERR+'"]'),
+              type: 'error',
+              messgetype: 'alert'
+            });
+          }
+        },
+        error:function(result){
+          _this.csteupdate = false;
+          $("#upgrade").button('reset');
+          Cstools.msg({
+            content: _this.lang_t('firmware.MM_fwupload_error'),
+            type: 'error',
+            messgetype: 'alert'
+          });
+        }
+       })
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

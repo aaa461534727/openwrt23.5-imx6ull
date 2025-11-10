@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache" />
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div id="app">
+    <div id="main">
+      <div class="row" v-cloak>
+        <!--****填充区******-->
+        <section class="col-xs-12">
+          <div class="content-box">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <tr>
+                  <td colspan="2"><strong>{{ lang_t('network.help') }}</strong></td>
+                </tr>
+                <!-- <tr v-show="globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode "> -->
+                <tr v-show="0">
+                  <td>
+                    <input type="radio" value="0" v-model="lanIdx" id="radio_0"><label for="radio_0">LAN1</label>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <input type="radio" value="1" v-model="lanIdx" id="radio_1"><label for="radio_1">LAN2</label>
+                  </td>
+                </tr>
+                <!-- <tr>
+                <td>{{lang_t('network.msg17')}}</td>
+              </tr> -->
+                <tr>
+                  <td colspan="12" style="padding-left: 0;">
+                    <table class="table table-striped">
+                      <tr v-show="globalConfig.operationMode == 0">
+                        <td style="width: 30%">{{ lang_t('network.proto') }}</td>
+                        <td>
+                          <select v-model="proto">
+                            <option value="0">{{ lang_t('network.manual') }}</option>
+                            <option value="1">{{ lang_t('network.auto') }}</option>
+                          </select>
+                        </td>
+                      </tr>
+                      <tr v-show="globalConfig.operationMode != 0 || (globalConfig.operationMode == 0 && proto=='0')">
+                        <td style="width: 30%">{{ lang_t('network.ip') }}</td>
+                        <td>
+                          <input type="text" v-model="lanIp" maxlength="15" @input="autoChangePool()" />
+                        </td>
+                      </tr>
+                      <tr v-show="globalConfig.operationMode != 0 || (globalConfig.operationMode == 0 && proto=='0')">
+                        <td>{{ lang_t('network.mask') }}</td>
+                        <td>
+                          <input type="text" v-model="lanNetmask" maxlength="15" @input="autoChangePool()" />
+                        </td>
+                      </tr>
+                      <tr v-show="(globalConfig.operationMode == 0 && proto=='0')">
+                        <td style="width: 30%">{{ lang_t('network.gateway') }}</td>
+                        <td>
+                          <input type="text" v-model="gateway" maxlength="15" />
+                        </td>
+                      </tr>
+                      <tr v-show="globalConfig.operationMode != 2 && globalConfig.operationMode != 0">
+                        <td>{{ lang_t('network.dhcp_server') }}</td>
+                        <td>
+                          <select v-model="dhcpServer" data-style="btn-default">
+                            <option value="1">{{ lang_t('common.on') }}</option>
+                            <option value="0">{{ lang_t('common.off') }}</option>
+                          </select>
+                        </td>
+                      </tr>
+                      <tr v-show="dhcpServer == '1'">
+                        <td>{{ lang_t('network.start_ip') }}</td>
+                        <td>
+                          <input type="text" v-model="dhcpStart" maxlength="15" />
+                        </td>
+                      </tr>
+                      <tr v-show="dhcpServer == '1'">
+                        <td>{{ lang_t('network.end_ip') }}</td>
+                        <td>
+                          <input type="text" v-model="dhcpEnd" maxlength="15" />
+                        </td>
+                      </tr>
+                      <tr v-show="dhcpServer == '1'">
+                        <td>{{ lang_t('network.lease_time') }}(s)</td>
+                        <td style="display: flex; align-items: center;">
+                          <input type="text" v-model="dhcpLease" maxlength="5" style="margin-right: 5px;" />
+                          <span>{{ lang_t('network.lease_describe') }}</span>
+                        </td>
+                      </tr>
+                      <tr v-show="globalConfig.operationMode != 0">
+                        <td></td>
+                        <td>
+                          <input type="checkbox" v-model="highSet" checked="checked" />&nbsp;{{ lang_t('ipsec.high_set')
+                          }}
+                        </td>
+                      </tr>
+
+                      <tr v-show="highSet || (globalConfig.operationMode == 0 && proto=='0')">
+                        <td>{{ lang_t('index.pri_dns') }}</td>
+                        <td>
+                          <input type="text" v-model="priDns" maxlength="15" />
+                        </td>
+                      </tr>
+                      <tr v-show="highSet || (globalConfig.operationMode == 0 && proto=='0')">
+                        <td>{{ lang_t('index.sec_dns') }}</td>
+                        <td>
+                          <input type="text" v-model="secDns" maxlength="15" />
+                        </td>
+                      </tr>
+                      <tr v-show="highSet || (globalConfig.operationMode == 0 && proto=='0')">
+                        <td>{{ lang_t('index.mac') }}</td>
+                        <td>
+                          <input type="text" v-model="mac" readonly />
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- <tr v-if="ipv6Support">
+                    <td colspan="2" style="font-weight:bold">IPv6 LAN</td>
+                </tr>
+                <tr v-if="ipv6Support">
+                    <td>{{lang_t('ipv6.addr_type')}}</td>
+                    <td>
+                        <span>SLAAC+DHCPv6</span>
+                    </td>
+                </tr>
+                <tr v-if="ipv6Support">
+                    <td>{{lang_t('ipv6.prefix_type')}}</td>
+                    <td>
+                        <input type="radio" value="0" v-model="lanIpPrefixType">
+                        {{lang_t('ipv6.prefix_type1')}} &nbsp;&nbsp;&nbsp;&nbsp;
+                        <input type="radio" value="1" v-model="lanIpPrefixType">
+                        {{lang_t('ipv6.prefix_type2')}}
+                    </td>
+                </tr>
+                <tr v-show="ipv6Support && lanIpPrefixType == 1">
+                    <td>{{lang_t('ipv6.address_prefix')}}</td>
+                    <td>
+                        <input type="text" v-model="lanIpPrefix" :maxlength="48" />
+                    </td>
+                </tr>
+                <tr v-show="ipv6Support && lanIpPrefixType == 1">
+                    <td>{{lang_t('ipv6.prefix_len')}}</td>
+                    <td>
+                        <input min="1" max="128" type="number" v-model="lanIpPrefixLen" oninput="if(value.length>3) value=value.slice(0,3)" />（1~128）
+                    </td>
+                </tr>               -->
+                <tr>
+                  <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                    <input name="save" @click="saveBut()" type="button" class="btn btn-primary all-but"
+                      :value="lang_t('common.save')" />
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script src="/plugin/vue.js"></script>
+  <script src="/plugin/jquery-3.2.1.min.js"></script>
+  <script src="/plugin/bootstrap.min.js"></script>
+  <script src="/static/js/config.js"></script>
+  <script src="/static/js/layout.js"></script>
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/topicurl.js"></script>
+  <script>
+    var cs_main = {
+      template: "#main",
+      data: function () {
+        return {
+          globalConfig: globalConfig,
+          lang: $.lang,
+          lang_t: lang_t,
+          lanIp: '',
+          lanNetmask: '',
+          dhcpServer: '0',
+          dhcpStart: '',
+          dhcpEnd: '',
+          dhcpLease: '',
+          lanIpPrefixType: '0',
+          lanIpPrefix: '',
+          lanIpPrefixLen: '',
+          ipv6Support: false,
+          lanip: '',
+          ipv6Enable: '',
+          wanIp: '',
+          lanIdx: '0',
+          wanNetmask: '',
+          highSet: false,
+          priDns: '',
+          secDns: '',
+          proto: '1',
+          gateway: '',
+          mac: ''
+        }
+      },
+      watch: {
+        "lanIdx": function () {
+          this.getLanConfig();
+        }
+      },
+      created: function () {
+        var _this = this;
+        if (globalConfig.urlNetPage == '2') {
+          this.lanIdx = "1";
+        } else {
+          this.lanIdx = "0";
+        }
+        var postVar = {};
+        postVar.lanIdx = _this.lanIdx;
+        uiPost.getLanCfg(postVar, function (data) {
+          _this.selectLan(data);
+          _this.wanIp = data.wanIp;
+          _this.wanNetmask = data.wanMask;
+        });
+      },
+      methods: {
+        getLanConfig: function () {
+          var _this = this;
+          var postVar = {};
+          postVar.lanIdx = _this.lanIdx;
+          uiPost.getLanCfg(postVar, function (data) {
+            _this.selectLan(data);
+            _this.wanIp = data.wanIp;
+            _this.wanNetmask = data.wanMask;
+          });
+        },
+        selectLan: function (data) {
+          this.lanIp = data.ip;
+          this.lanNetmask = data.mask;
+          this.dhcpServer = data.dhcpServer;
+          this.dhcpStart = data.dhcpStart;
+          this.dhcpEnd = data.dhcpEnd;
+          this.dhcpLease = data.dhcpLease;
+          this.priDns = data.priDns;
+          this.secDns = data.secDns;
+          this.proto = data.proto;
+          this.gateway = data.gateway;
+          this.mac = data.mac;
+          // _this.ipv6Enable = data.ipv6Enable;
+
+          // if(globalConfig.ipv6Support && '1' == data.ipv6Enable){
+          //     _this.ipv6Support = true;
+          //     _this.lanIpPrefixType = data.lanIpPrefixType;
+          //     _this.lanIpPrefix = data.lanIpPrefix;
+          //     _this.lanIpPrefixLen = data.lanIpPrefixLen;
+          // }else{
+          //     _this.ipv6Support = false;
+          // }
+        },
+        autoChangePool: function () {
+          var lanip = this.lanIp;
+          var lanmask = this.lanNetmask;
+          if (lanip) {
+            var ipaddr1 = lanip.split(".")[0];
+            var ipaddr2 = lanip.split(".")[1];
+            var ipaddr3 = lanip.split(".")[2];
+            var ipaddr4 = lanip.split(".")[3];
+            if (Number(ipaddr4 > 254)) { return false; }
+            var maskaddr1 = lanmask.split(".")[0];
+            var maskaddr2 = lanmask.split(".")[1];
+            var maskaddr3 = lanmask.split(".")[2];
+            var maskaddr4 = lanmask.split(".")[3];
+          }
+
+          var ipaddr = (Number(ipaddr1) * 16777216) + (Number(ipaddr2) << 16) + (Number(ipaddr3) << 8) + (Number(ipaddr4));
+          var maskaddr = (Number(maskaddr1) * 16777216) + (Number(maskaddr2) << 16) + (Number(maskaddr3) << 8) + (Number(maskaddr4));
+          var ip1 = Math.floor(ipaddr / 4);
+          var ip2 = Number(ipaddr % 4);
+          var mask1 = Math.floor(maskaddr / 4);
+          var mask2 = Number(maskaddr % 4);
+          var network = Number(ip1 & mask1) * 4 + Number(ip2 & mask2);
+          var netIp = (ipaddr & (~maskaddr)) + 1;
+          var firstIpAdd = 0;
+          if (netIp < 256 && netIp > 128) {
+            netIp = 1;
+            firstIpAdd = network + netIp;
+          } else {
+            if (Number(ipaddr4) > 128) { netIp = 1; }
+            firstIpAdd = network + netIp;
+          }
+          var ipStart1 = Math.floor(Number(firstIpAdd / 16777216));
+          var ipStart2 = Math.floor(Number(firstIpAdd % 16777216) / 65536);
+          var ipStart3 = Math.floor(Number(firstIpAdd % 65536) / 256);
+          var ipStart4 = Math.floor(Number(firstIpAdd % 65536) % 256);
+          this.dhcpStart = ipStart1 + "." + ipStart2 + "." + ipStart3 + "." + ipStart4;
+          var network1 = Math.floor(network / 2);
+          var network2 = Number(network % 2);
+          var lastIpAdd = Number(network2 | ((~maskaddr) % 2)) + Number(network1 | ((~maskaddr) / 2)) * 2 - 1;
+          var netIp1 = (ipaddr & (~maskaddr)) + 1;
+          if ((netIp1 > 129 && maskaddr == 4294967040) || netIp1 == 129) {
+            lastIpAdd = network + netIp1 - 2;
+          }
+          if (lastIpAdd == ipaddr) lastIpAdd--;
+          var ipEnd1 = Math.floor(Number(lastIpAdd / 16777216));
+          var ipEnd2 = Math.floor(Number(lastIpAdd % 16777216) / 65536);
+          var ipEnd3 = Math.floor(Number(lastIpAdd % 65536) / 256);
+          if (ipEnd3 > 255) { ipEnd3 = 255; }
+          var ipEnd4 = Math.floor(Number(lastIpAdd % 65536) % 256);
+          this.dhcpEnd = ipEnd1 + "." + ipEnd2 + "." + ipEnd3 + "." + ipEnd4;
+        },
+        ipverivy: function (ip) {
+          var _s = cs.ip(ip), f = errorAlert;
+          if (_s == 0) {
+            f(lang_t('network.ip') + lang_t('alert.msg5'));
+            return false;
+          } else if (_s == 1) {
+            f(lang_t('network.ip') + lang_t('alert.msg31'));
+            return false;
+          } else if (_s == 2) {
+            f(lang_t('network.ip') + lang_t('alert.msg32'));
+            return false;
+          } else if (_s == 3) {
+            f(lang_t('network.ip') + lang_t('alert.msg33'));
+            return false;
+          } else if (_s == 4) {
+            f(lang_t('network.ip') + lang_t('alert.msg34'));
+            return false;
+          }
+          return true;
+        },
+        saveBut: function () {
+          var _this = this;
+          var postVar = {};
+          var f = errorAlert;
+
+          if (globalConfig.operationMode != 0 || (globalConfig.operationMode == 0 && _this.proto == 0)) {
+            if (!this.ipverivy(this.lanIp)) return;
+
+            if (!_this.lanNetmask) {
+              f(lang_t('network.mask') + lang_t('alert.msg5'));
+              return false;
+            } else {
+              if (cs.mask(_this.lanNetmask) != 99) {
+                f(lang_t('network.mask') + lang_t('alert.msg31'));
+                return false;
+              }
+            }
+
+            if (this.priDns != '') {
+              if (cs.ip(this.priDns) != 99) {
+                f(lang_t('index.pri_dns') + lang_t('alert.msg31'));
+                return false;
+              }
+            }
+
+            if (this.secDns) {
+              if (cs.ip(this.secDns) != 99) {
+                f(lang_t('index.sec_dns') + lang_t('alert.msg31'));
+                return false;
+              }
+            }
+
+          }
+
+          if ((globalConfig.operationMode == 0 && _this.proto == 0)) {
+
+            if (cs.ip(this.gateway) != 99) {
+              f(lang_t('network.gateway') + lang_t('alert.msg31'));
+              return false;
+            }
+
+            if (cs.ip(this.priDns) != 99) {
+              f(lang_t('index.pri_dns') + lang_t('alert.msg31'));
+              return false;
+            }
+          }
+
+
+          if (_this.dhcpServer == '1') {
+            var dhcpStart = _this.dhcpStart.split('.');
+            var dhcpEnd = _this.dhcpEnd.split('.');
+            var lanip = _this.lanIp.split('.');
+            if (_this.commonVerify(_this.lanIp, _this.lanNetmask, f) == false) return;
+
+            if (!this.ipverivy(this.dhcpStart)) return;
+            if (!this.ipverivy(this.dhcpEnd)) return;
+
+            if (cs.ip_range(_this.dhcpStart, _this.dhcpEnd) == 0) {
+              f(lang_t('network.msg2'));
+              return false;
+            }
+            if (_this.dhcpStart == _this.lanIp || _this.dhcpEnd == this.lanIp) {
+              f(lang_t('network.msg14'));
+              return false;
+            }
+          }
+
+
+
+          var ret = cs.mac(this.mac);
+          if (ret == 0) {
+            f(lang_t('index.mac') + lang_t('alert.msg5'));
+            return false;
+          } else if (ret == 1) {
+            f(lang_t('alert.msg8'));
+            return false;
+          } else if (ret == 2) {
+            f(lang_t('alert.msg9'));
+            return false;
+          } else if (ret == 3) {
+            f(lang_t('alert.msg10'));
+            return false;
+          }
+
+          postVar.priDns = this.priDns;
+          postVar.secDns = this.secDns;
+          postVar.mac = this.mac;
+          postVar.ip = this.lanIp;
+          postVar.mask = this.lanNetmask;
+          postVar.dhcpServer = this.dhcpServer;
+          postVar.dhcpStart = this.dhcpStart;
+          postVar.dhcpEnd = this.dhcpEnd;
+          postVar.dhcpLease = this.dhcpLease;
+          postVar.proto = this.proto;
+          postVar.gateway = this.gateway;
+          postVar.lanIdx = _this.lanIdx;
+          uiPost.setLanCfg(postVar, function (data) {
+            apply_callback(data, 15, function () {
+              location.href = 'http://' + _this.lanIp;
+            })
+          });
+
+        },
+        commonVerify: function (lanip, mask, f) {
+          var _this = this;
+          if (cs.ip_subnet2(lanip, mask, _this.wanIp, _this.wanNetmask) == 1) {
+            f(lang_t('network.msg12'));
+            return false;
+          }
+
+          if (!_this.dhcpStart) {
+            f(lang_t('network.start_ip') + lang_t('alert.msg5'));
+            return false;
+          } else if (cs.ip(_this.dhcpStart) != 99) {
+            f(lang_t('network.start_ip') + lang_t('alert.msg31'));
+            return false;
+          } else if (cs.ip_subnet(_this.dhcpStart, mask, lanip) == 0) {
+            f(lang_t('network.start_ip') + lang_t('alert.msg13'));
+            return false;
+          }
+          if (!_this.dhcpEnd) {
+            f(lang_t('network.end_ip') + lang_t('alert.msg5'));
+            return false;
+          } else if (cs.ip(_this.dhcpEnd) != 99) {
+            f(lang_t('network.end_ip') + lang_t('alert.msg31'));
+            return false;
+          } else if (cs.ip_subnet(_this.dhcpEnd, mask, lanip) == 0) {
+            f(lang_t('network.end_ip') + lang_t('alert.msg13'));
+            return false;
+          }
+
+          if (cs.ip_subnet(lanip, mask, _this.wanIp) == 1) {
+            f(lang_t('network.msg15'));
+            return false;
+          }
+
+          if (_this.dhcpLease == 0) {
+            return true;
+          } else {
+            if (cs.num_range(_this.dhcpLease, 300, 86400) != 99) {
+              f(lang_t('network.lease_time') + lang_t('alert.msg15',[300, 86400]) + lang_t('network.msg16'));
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+    };
+  </script>
+  <script src="/static/js/main.js"></script>
+</body>
+
+</html>

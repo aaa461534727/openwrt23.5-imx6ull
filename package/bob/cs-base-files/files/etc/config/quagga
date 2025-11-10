@@ -1,0 +1,14 @@
+config rule 'ripd'
+	option num '0'
+	option reCnnt ''
+	option reStatic ''
+	option reKernel ''
+
+config rule 'ospfd'
+	option num '0'
+	option reCnnt ''
+	option reStatic ''
+	option reKernel ''
+
+config rule 'bgpd'
+	option num '0'

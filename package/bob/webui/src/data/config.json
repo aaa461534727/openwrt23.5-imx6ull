@@ -1,0 +1,8 @@
+{
+  "operationMode": 0,
+  "hardModel": "",
+  "meshEnabled": 0,
+  "exportAction":"/cgi-bin/ExportSettings.sh",
+  "importAction":"/cgi-bin/cstecgi.cgi?action=upload&setting/setUploadSetting",
+  "maxSize":"10000"
+}

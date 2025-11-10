@@ -1,0 +1,20 @@
+{
+
+	"newVersion":"V6.2c.464",
+	"cloudFwStatus":"New",
+	"upgradeStatus":"1",
+	"platform":"mtk",
+	"upgradeERR":"MM_flashsize_error",
+	"fmVersion":"0",
+    "buildTime":"Oct 17 2017 10:34:08",
+    "cloudFw":"1",
+    "customUpgrade":"0",
+    "flashSize":"16",
+    "lanIp":"192.168.0.1",
+	"FileName":"totolink",
+    "ContentLength":"64",
+    "maxSize":"10000",
+    "bootVersion":"6666666666",
+    "setUpgradeFW":"1",
+    "reservedFlag":"0"
+}

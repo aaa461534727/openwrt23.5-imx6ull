@@ -1,0 +1,6 @@
+{
+  "server":	"abc.test.com",
+  "port":	"1812",
+  "key":	"1234567890",
+  "interface":	"default"
+}

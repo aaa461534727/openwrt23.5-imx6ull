@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('internet.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td style=" width: 20%;">{{ lang_t('internet.type') }}</td>
+                <td>
+                  <select v-model="wanMode" data-style="btn-default">
+                    <option value="0" v-if="globalConfig.wanTypeList_STATIC">{{ lang_t('internet.staticip') }}</option>
+                    <option value="1" v-if="globalConfig.wanTypeList_DHCP">DHCP</option>
+                    <option value="3" v-if="globalConfig.wanTypeList_PPPOE && globalConfig.operationMode != '3'">PPPOE</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="wanMode == '3' && origWanMode == '3'">
+                <td>{{ lang_t('internet.status') }}</td>
+                <td>
+                  <span style="color:#fff;background-color:#3399ff;" v-if="wanConnStatus == 'connected'">{{ lang_t('index.connected') }}</span>
+                  <span style="color:#fff;background-color:#EA7105" v-else>{{ lang_t('index.disconnected') }}</span>
+                  &nbsp;&nbsp;
+                  <button @click="manualDial('1')" class="btn btn-primary all-but" :disabled="wanConnStatus=='connected'">{{ lang_t('common.connect') }}</button>
+                  &nbsp;&nbsp;
+                  <button @click="manualDial('0')" class="btn btn-primary all-but" :disabled="wanConnStatus=='disconnected'">{{ lang_t('common.disconnect') }}</button>
+                </td>
+              </tr>
+              <tr v-show="wanMode == '0'">
+                <td>{{ lang_t('internet.ipaddr') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.staticIp" :maxlength="15" />
+                </td>
+              </tr>
+              <tr v-show="wanMode == '0'">
+                <td>{{ lang_t('internet.netmask') }}</td>
+                 <td>
+                   <input type="text" v-model="formdatas.staticMask" :maxlength="15" />
+                 </td>
+              </tr>
+              <tr v-show="wanMode == '0'">
+                <td>{{ lang_t('internet.gateway') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.staticGw" :maxlength="15" />
+                </td>
+              </tr>
+              <tr v-show="wanMode == '3'">
+                <td>{{ lang_t('internet.account') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.pppoeUser" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="wanMode == '3'">
+                <td>{{ lang_t('internet.password') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.pppoePass" :maxlength="32" v-pass/>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.pppoeSpecSupport && specShow && wanMode == '3'">
+                <td>{{ lang_t('internet.spec') }}</td>
+                <td>
+                  <select v-model="formdatas.pppoeSpecType">
+                    <option value="0">{{ lang_t('internet.none') }}</option>
+                    <option v-for="(i,v) in 3" :value="i">{{ lang_t('internet.spec')+i }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="wanMode != '0'">
+                <td></td>
+                <td><label style="cursor: pointer;" @click="advSwitch"><i :class="['fa',advShow ? 'fa-chevron-up' : 'fa-chevron-down']" aria-hidden="true"></i>{{lang_t('openvpn.setting')}}</label></td>
+              </tr>
+              <tr v-if="wanMode != '0' && advShow">
+                <td>{{ lang_t('internet.dns_mode') }}</td>
+                <td>
+                  <select v-model="formdatas.dnsMode" data-style="btn-default">
+                    <option value="0">{{ lang_t('internet.get_dns') }}</option>
+                    <option value="1">{{ lang_t('internet.set_dns') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="(wanMode == '0' || formdatas.dnsMode == '1') && advShow">
+                <td>{{ lang_t('internet.preferred_dns') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.priDns" :maxlength="15" />
+                </td>
+              </tr>
+              <tr v-if="(wanMode == '0' || formdatas.dnsMode == '1') && advShow">
+                <td>{{ lang_t('internet.alternative_dns') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.secDns" :maxlength="15" />
+                </td>
+              </tr>
+              <tr v-if="advShow">
+                <td>MTU</td>
+                <td>
+                  <input v-if="wanMode == '0'" type="number" v-model="formdatas.staticMtu" />
+                  <input v-if="wanMode == '1'" type="number" v-model="formdatas.dhcpMtu" />
+                  <input v-if="wanMode == '3'" type="number" v-model="formdatas.pppoeMtu" />
+                  <span v-if="wanMode == '0'">(576~1500)</span>
+                  <span v-if="wanMode == '1'">(576~1500)</span>
+                  <span v-if="wanMode == '3'">(576~1492)</span>
+                </td>
+              </tr>
+              <tr v-if="advShow">
+                <td>{{ lang_t('internet.macaddr') }}</td>
+                <td>
+                  <input type="text" v-model="formdatas.macCloneMac" :maxlength="17" :disabled="macDisabled"/>
+                  <br>
+                  <input type="checkbox" v-model="formdatas.macEnabled" checked="checked" @change="cloneMac"/>&nbsp;{{ lang_t('internet.clone_mac') }}
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button @click="handleSubmit()" class="btn btn-primary all-but" >{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      wanMode:'0',
+      wanModeTmp: '0',
+      origDnsMode:'',
+      origWanMode:'',
+      wanDefMac:'',
+      macDisabled:false,
+      wanConnStatus:'',
+      formdatas:{        
+        staticIp:'',
+        staticMask:'',
+        staticGw:'',
+        pppoeUser:'',
+        pppoePass:'',
+        dnsMode:'0',
+        priDns:'',
+        secDns:'',
+        staticMtu:'',
+        dhcpMtu:'',
+        pppoeMtu:'',
+        macCloneMac:'',
+        pppoeSpecType:'0'
+      },
+	    advShow:false,
+      specShow: false
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    if(_this.globalConfig.showLanguage.length == 1) _this.specShow = true;
+    uiPost.getWanCfg(function(data){
+      _this.wanConnStatus = data.wanConnStatus;
+      _this.wanDefMac = data.wanDefMac;
+      _this.wanModeTmp = _this.wanMode = data.wanMode;
+	    _this.origDnsMode = data.dnsMode;
+      _this.origWanMode = data.wanMode;	    
+      _this.formdatas.staticMtu = data.staticMtu;
+      _this.formdatas.dhcpMtu = data.dhcpMtu;
+      _this.formdatas.pppoeMtu = data.pppoeMtu;
+      _this.formdatas.pppoeUser = data.pppoeUser;
+      _this.formdatas.pppoePass = data.pppoePass;
+	    _this.formdatas.pppoeSpecType = data.pppoeSpecType;
+      _this.formdatas.dnsMode = data.dnsMode;      
+      _this.formdatas.priDns = data.priDns;
+      _this.formdatas.secDns = data.secDns;
+      _this.formdatas.staticIp = data.staticIp;
+      _this.formdatas.staticMask = data.staticMask;
+      _this.formdatas.staticGw = data.staticGw;
+      _this.formdatas.macCloneMac = data.wanDefMac;
+      if ('1' == data.macCloneEnabled){
+        _this.formdatas.macCloneMac = data.macCloneMac;
+        _this.formdatas.macEnabled = true;
+      }else{
+        _this.formdatas.macEnabled = false;
+        _this.macDisabled = true;
+      }
+      if ('0' == data.wanMode){
+        _this.advShow = true;
+      }else{
+        _this.advShow = false;
+      }
+
+    });
+  },
+  watch:{
+    wanMode:function(){
+      var _this = this;
+      if(_this.wanMode == '1' || _this.wanMode == '3'){
+        if(_this.wanMode == _this.origWanMode && _this.origDnsMode == '1'){
+          _this.formdatas.dnsMode = 1;
+        }else{
+          _this.formdatas.dnsMode = 0;
+        }
+		    _this.advShow = false;
+      }else{
+		    _this.advShow = true;
+	    }
+    }
+  },
+  created:function(){
+    
+  },
+  methods:{
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if(_this.formdatas.macEnabled == true){
+        _this.macCloneEnabled = '1';
+      }else{
+        _this.macCloneEnabled = '0';
+      }
+
+      if ('0' == _this.wanMode){
+        if (!_this.formdatas.staticIp){
+          errorAlert(lang_t('internet.ipaddr') + lang_t('alert.msg5'));
+          return false;
+        }else{
+          if (99 != cs.ip(_this.formdatas.staticIp)){
+            errorAlert(lang_t('internet.ipaddr') + lang_t('alert.msg14'));
+            return false;
+          }
+        }
+
+        if (!_this.formdatas.staticMask){
+          errorAlert(lang_t('internet.netmask') + lang_t('alert.msg5'));
+          return false;
+        }else{
+          if (99 != cs.mask(_this.formdatas.staticMask)){
+            errorAlert(lang_t('internet.netmask') + lang_t('alert.msg14'));
+            return false;
+          }
+        }
+
+        if (!_this.formdatas.staticGw){
+          errorAlert(lang_t('internet.gateway') + lang_t('alert.msg5'));
+          return false;
+        }else{
+          if (99 != cs.ip(_this.formdatas.staticGw)){
+            errorAlert(lang_t('internet.gateway') + lang_t('alert.msg14'));
+            return false;
+          }
+        }
+
+        if(!cs.ip_subnet(_this.formdatas.staticIp, _this.formdatas.staticMask, _this.formdatas.staticGw)){
+          errorAlert(lang_t('alert.msg36'));
+          return false;
+        }
+
+        if(_this.formdatas.staticGw == _this.formdatas.staticIp){
+          errorAlert(lang_t('internet.ipaddr') + lang_t('alert.msg37'));
+          return false;
+        }
+
+        if (!_this.formdatas.priDns){
+          errorAlert(lang_t('internet.preferred_dns') + lang_t('alert.msg5'));
+          return false;
+        }else{
+          if (!checkIp(_this.formdatas.priDns)){
+            errorAlert(lang_t('internet.preferred_dns') + lang_t('alert.msg14'));
+            return false;
+          }
+        }
+
+        if (_this.formdatas.secDns){
+          if (!checkIp(_this.formdatas.secDns)){
+            errorAlert(lang_t('internet.alternative_dns') + lang_t('alert.msg14'));
+            return false;
+          }
+        }
+
+    	  if (!_this.formdatas.staticMtu){
+      	  errorAlert('MTU' + lang_t('alert.msg5'));
+      		return false;
+      	}else if(cs.num(_this.formdatas.staticMtu) == 1){
+      		errorAlert('MTU' + lang_t('alert.msg18'));
+      		return false;
+      	}else{
+      		if (576 > _this.formdatas.staticMtu || 1500 < _this.formdatas.staticMtu){
+      		  errorAlert('MTU' + lang_t('alert.msg39'));
+      		  return false;
+      		}
+    	  }
+
+        postVar.staticIp = _this.formdatas.staticIp;
+        postVar.staticMask = _this.formdatas.staticMask;
+        postVar.staticGw = _this.formdatas.staticGw;
+        postVar.staticMtu = _this.formdatas.staticMtu;
+        postVar.dnsMode = '1';
+        postVar.priDns = _this.formdatas.priDns;
+        postVar.secDns = _this.formdatas.secDns;
+
+        postVar.macCloneEnabled = _this.macCloneEnabled;
+        postVar.macCloneMac = _this.formdatas.macCloneMac;
+        postVar.wanMode = '0';
+      }else if ('1' == _this.wanMode){
+        if (true == _this.advShow){
+          if (!_this.formdatas.dhcpMtu){
+            errorAlert('MTU' + lang_t('alert.msg5'));
+            return false;
+          }else if(cs.num(_this.formdatas.dhcpMtu) == 1){
+            errorAlert('MTU' + lang_t('alert.msg18'));
+            return false;
+          }else{
+            if (576 > _this.formdatas.dhcpMtu || 1500 < _this.formdatas.dhcpMtu){
+              errorAlert('MTU' + lang_t('alert.msg39'));
+              return false;
+            }
+          }
+
+          if (_this.formdatas.dnsMode == '1'){
+            var v_dns = cs.ip(_this.formdatas.priDns);
+            if (v_dns == 0){
+              errorAlert(lang_t('internet.preferred_dns') + lang_t('alert.msg5'));
+              return false;
+            }else if(v_dns != 99){
+              errorAlert(lang_t('internet.preferred_dns') + lang_t('alert.msg14'));
+              return false;
+            }
+            if (_this.formdatas.secDns){
+              var v_secdns = cs.ip(_this.formdatas.secDns);
+              if (v_secdns != 99){
+                errorAlert(lang_t('internet.alternative_dns') + lang_t('alert.msg14'));
+                return false;
+              }
+            }
+          }
+        }
+
+        postVar.dhcpMtu = _this.formdatas.dhcpMtu;
+        postVar.dnsMode = _this.formdatas.dnsMode;
+        postVar.priDns = _this.formdatas.priDns;
+        postVar.secDns = _this.formdatas.secDns;
+        postVar.macCloneEnabled = _this.macCloneEnabled;
+        postVar.macCloneMac = _this.formdatas.macCloneMac;
+        postVar.wanMode = '1';
+      }else if ('3' == _this.wanMode){
+        var _s = cs.string(_this.formdatas.pppoeUser);
+        if(0 == _this.formdatas.pppoeUser.length) {
+          errorAlert(lang_t('internet.account') + lang_t('alert.msg5'));
+          return false;
+        }else if(99 != _s) {
+          errorAlert(lang_t('internet.account') + lang_t('alert.msg6'));
+          return false;
+        }
+
+        var _t = cs.string(_this.formdatas.pppoePass);
+        if(0 == _this.formdatas.pppoePass.length) {
+          errorAlert(lang_t('internet.password') + lang_t('alert.msg5'));
+          return false;
+        }else if(99 != _t) {
+          errorAlert(lang_t('internet.password') + lang_t('alert.msg6'));
+          return false;
+        }
+
+        if (true == _this.advShow){
+          if (!_this.formdatas.pppoeMtu){
+            errorAlert('MTU' + lang_t('alert.msg5'));
+            return false;
+          }else if(cs.num(_this.formdatas.pppoeMtu) == 1){
+            errorAlert('MTU' + lang_t('alert.msg18'));
+            return false;
+          }else{
+            if (576 > _this.formdatas.pppoeMtu || 1492 < _this.formdatas.pppoeMtu){
+              errorAlert('MTU' + lang_t('alert.msg40'));
+              return false;
+            }
+          }
+
+          if (_this.formdatas.dnsMode == '1'){
+            if (!_this.formdatas.priDns){
+              errorAlert(lang_t('internet.preferred_dns') + lang_t('alert.msg5'));
+              return false;
+            }else{
+              if (!checkIp(_this.formdatas.priDns)){
+                errorAlert(lang_t('internet.preferred_dns') + lang_t('alert.msg14'));
+                return false;
+              }
+            }
+            if (_this.formdatas.secDns){
+              if (!checkIp(_this.formdatas.secDns)){
+                errorAlert(lang_t('internet.alternative_dns') + lang_t('alert.msg14'));
+                return false;
+              }
+            }
+          }
+        }
+
+        postVar.wanMode = '3';
+        postVar.pppoeUser = $.trim(_this.formdatas.pppoeUser);
+        postVar.pppoePass = $.trim(_this.formdatas.pppoePass);
+        postVar.pppoeMtu = _this.formdatas.pppoeMtu;
+        if(_this.globalConfig.pppoeSpecSupport && _this.specShow){
+          postVar.pppoeSpecType = _this.formdatas.pppoeSpecType;
+        }else{
+          postVar.pppoeSpecType = '0';
+        }
+        postVar.pppoeOpMode = '0';
+        postVar.dnsMode = _this.formdatas.dnsMode;
+        postVar.priDns = _this.formdatas.priDns;
+        postVar.secDns = _this.formdatas.secDns;
+        postVar.macCloneEnabled = _this.macCloneEnabled;
+        postVar.macCloneMac = _this.formdatas.macCloneMac;
+      }
+
+      if (true == _this.advShow){
+        if (!_this.formdatas.macCloneMac){
+          errorAlert(lang_t('internet.macaddr') + lang_t('alert.msg5'));
+          return false;
+        }
+        var ret = cs.mac(_this.formdatas.macCloneMac);
+        if(ret == 0){
+          errorAlert(lang_t('alert.msg7'));
+          return false;
+        }else if(ret == 1){
+          errorAlert(lang_t('alert.msg8'));
+          return false;
+        }else if(ret == 2){
+          errorAlert(lang_t('alert.msg9'));
+          return false;
+        }else if(ret == 3){
+          errorAlert(lang_t('alert.msg10'));
+          return false;
+        }
+      }
+      uiPost.setWanCfg(postVar, apply_callback);
+    },
+    manualDial:function(state){
+      var postVar = {};
+      postVar.dialStatus = state;
+      uiPost.setManualDialCfg(postVar, apply_callback);
+    },
+    cloneMac:function(){
+      var _this = this;
+      if (_this.formdatas.macEnabled == true){
+        uiPost.getStationMacByIp(function(data){
+          _this.formdatas.macCloneMac = data.stationMac;
+          _this.macDisabled = false;
+        });
+      }else{
+        _this.formdatas.macCloneMac = _this.wanDefMac;
+        _this.macDisabled = true;
+      }
+    },
+	  advSwitch:function(){
+      this.advShow = this.advShow ? false : true;
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('bgp.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('bgp.route_as') }}</td>
+                <td>
+                  <input type="number" v-model="routerAs" :maxlength="5" />
+                  <span>(1-65535)</span>
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('bgp.route_id') }}</td>
+                <td>
+                  <input type="text" v-model="routerId" :maxlength="15" />
+                </td>
+              </tr>              
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="submit_basic()">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+            <div class="table-phone-width">
+              <table class="table table-striped table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>{{ lang_t('index.type') }}</th>
+                    <th>{{ lang_t('index.address') }}</th>
+                    <th>{{ lang_t('bgp.remote_as') }}</th>
+                    <th>{{ lang_t('bgp.update_source') }}</th>
+                    <th>{{ lang_t('bgp.log') }}</th>
+                    <th>{{ lang_t('bgp.auto_route_sunmary') }}</th>
+                    <th>{{ lang_t('bgp.synchronization') }}</th>
+                    <th>{{lang_t('common.operation')}}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in bgpData" :key="index" @click="editItem(index,val)">
+                    <td>{{ index+1 }}</td>
+                    <td>
+                      <select v-model="editItemInfo.type" @change="SHFun()" v-if="editIdx == index">
+                        <option value="network">network</option>
+                        <option value="neighbour">neighbour</option>
+                      </select>
+                      <span v-else>{{ val.type }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="editItemInfo.address" v-if="editIdx == index" ref="addr" />
+                      <span v-else>{{ val.address }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="editItemInfo.remoteAs" class="jssh-neighbour" maxlength="5" placeholder="(1-65535)" v-if="editIdx == index" />
+                      <span v-else>{{ 'neighbour' == val.type ? val.remoteAs : '--' }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.updateSource" class="jssh-neighbour" v-if="editIdx == index">
+                        <option value="lan">lan</option>
+                        <option value="wan">wan</option>
+                        <option value="modem">modem</option>
+                      </select>
+                      <span v-else>{{ 'neighbour' == val.type ? val.updateSource : '--' }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.logChange" class="jssh-neighbour" v-if="editIdx == index">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                      <span v-else>{{ get_val(val, val.logChange) }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.autoSummary" class="jssh-neighbour" v-if="editIdx == index">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                      <span v-else>{{ get_val(val, val.autoSummary) }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.synchronization" class="jssh-neighbour" v-if="editIdx == index">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                      <span v-else>{{ get_val(val, val.synchronization) }}</span>
+                    </td>
+                    <td class="operation">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td></td>
+                    <td>
+                      <select v-model="type" @change="SHFun('jssh-add-neighbour')">
+                        <option value="network">network</option>
+                        <option value="neighbour">neighbour</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" v-model="address" :placeholder="'network' == type ? lang_t('index.net_addr') : lang_t('index.ip_addr')"/>
+                    </td>
+                    <td>
+                      <input type="text" v-model="remoteAs" class="jssh-add-neighbour" maxlength="5" placeholder="(1-65535)" />
+                    </td>
+                    <td>
+                      <select v-model="updateSource" class="jssh-add-neighbour">
+                        <option value="lan">lan</option>
+                        <option value="wan">wan</option>
+                        <option value="modem">modem</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select v-model="logChange" class="jssh-add-neighbour" >
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select v-model="autoSummary" class="jssh-add-neighbour" >
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select v-model="synchronization" class="jssh-add-neighbour" >
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              </div>
+            <table class="table table-striped table-bordered table-hover">
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+               <td colspan="2">
+                 <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                 <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+               </td>
+             </tr>
+           </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      routerAs:"",
+      routerId:"",
+      logChange: "0",
+      autoSummary: "0",
+      synchronization: "0",
+      type: "network",
+      address: "",
+      remoteAs: "",
+      updateSource: "lan",
+      bgpData:[],
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getRoutingBgpCfg(function(data){
+      if(data){
+        _this.routerAs = data.routerAs;
+        _this.routerId = data.routerId;
+        data.rule && (_this.bgpData = data.rule);
+      }
+    });
+    this.SHFun('jssh-add-neighbour');
+  },
+  methods:{
+    get_val: function(d, v) { 
+      if (d.type == "neighbour") {
+        return v == "1" ? lang_t('common.on') : lang_t('common.off');
+      } else {
+        return "--";
+      }
+    },
+    SHFun: function(cla) {
+      var edit = this.editItemInfo;
+      if (!cla) {
+        $(this.$refs.addr).attr("placeholder", 'network' == edit.type ? lang_t('index.net_addr') : lang_t('index.ip_addr'));
+        if ('neighbour' == edit.type) {
+          if (!edit.updateSource) this.$set(edit, "updateSource", "lan");
+          if (!edit.logChange) this.$set(edit, "logChange", "0");
+          if (!edit.autoSummary) this.$set(edit, "autoSummary", "0");
+          if (!edit.synchronization) this.$set(edit, "synchronization", "0");
+        }
+      }
+        
+      var type = cla ? this.type : edit.type;
+      cla = cla || "jssh-neighbour";
+      var not_cla = cla + "-hide";
+      cla = "." + cla;
+      
+      if (type == "network") {
+        $(cla).hide();
+        $(cla).after('<span class="'+not_cla+'">--</span>');
+      } else {
+        $(cla).show();
+        $("." + not_cla).remove();
+      }
+    },
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.rule = [].concat( this.bgpData );
+      postVar.addEffect = "1";
+      uiPost.setRoutingBgpCfg(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.reload();
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.bgpData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.bgpData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+      this.$nextTick(function() {
+        this.SHFun();
+      })
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    veriyfun:function(val, flag) {
+      var _s;
+      if('network' == val.type){  // network
+        _s = cs.ip_mark(val.address);
+        if (0 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg5'));
+          return false;
+        } else if(1 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg17'));
+          return false;
+        } else if(2 == _s || 3 == _s || 4 == _s || 5 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg14'));
+          return false;
+        } else if(6 == _s || 7 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('network.mark') + lang_t('alert.msg15',[1,32]));
+          return false;
+        } 
+      }else { // neighbour
+        _s = cs.ip(val.address);
+        if (0 == _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg5'));
+          return false;
+        } else if(99 != _s) {
+          errorAlert(lang_t('index.address') + lang_t('alert.msg14'));
+          return false;
+        }
+        if (99 != cs.num_range(val.remoteAs,1 , 65535)) {
+          errorAlert(lang_t('bgp.remote_as') + lang_t('alert.msg15', [1, 65535]));
+          return false;
+        } 
+      }
+
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.bgpData.length >= 32){
+        errorAlert(lang_t('alert.msg1',[32]));
+        return false;
+      }
+      var temp = {
+        type: this.type,
+        address: this.address
+      };
+      if (this.type == "neighbour") {
+        temp.remoteAs = this.remoteAs;
+        temp.updateSource = this.updateSource;
+        temp.logChange = this.logChange;
+        temp.autoSummary = this.autoSummary;
+        temp.synchronization = this.synchronization;
+      }
+      if(!this.veriyfun(temp)) return;
+      this.bgpData.push(temp);      
+      this.type = "network";
+      this.remoteAs = "";
+      this.updateSource = "lan";
+      this.logChange = "0";
+      this.autoSummary = "0";
+      this.synchronization = "0";
+      this.$nextTick(function() {
+        this.SHFun('jssh-add-neighbour');
+      })
+    },
+    submit_basic:function(){
+      var postVar = {};
+      if (99 != cs.num_range(this.routerAs,1,65535)) {
+        errorAlert(lang_t('bgp.route_as') + lang_t('alert.msg15',[1,65535]));
+        return false;
+      } 
+
+      var _s = cs.ip(this.routerId);
+      if (0 == _s) {
+        errorAlert(lang_t('bgp.route_id') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('bgp.route_id') + lang_t('alert.msg14'));
+        return false;
+      } 
+      
+      postVar.setType = "2";
+      postVar.routerAs = this.routerAs;
+      postVar.routerId = this.routerId;      
+      uiPost.setBasicRoutingCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

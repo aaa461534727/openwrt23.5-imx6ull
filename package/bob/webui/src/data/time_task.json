@@ -1,0 +1,40 @@
+{
+  "rule": [
+    {
+      "idx": 1,
+      "enabled": "1",
+      "taskName": "ww",
+      "taskMode": "1",
+      "taskAction": "reboot",
+      "hourStart": "4",
+      "hourEnd": "",
+      "minuteStart": "30",
+      "minuteEnd": "",
+      "dayStart": "5",
+      "dayEnd": "8",
+      "weekStart": "",
+      "weekEnd": ""
+  }, {
+      "idx": 2,
+      "enabled": "1",
+      "taskName": "yy",
+      "taskMode": "1",
+      "taskAction": "modem-online",
+      "hourStart": "6",
+      "hourEnd": "18",
+      "minuteStart": "30",
+      "minuteEnd": "45",
+      "dayStart": "",
+      "dayEnd": "",
+      "weekStart": "2",
+      "weekEnd": "6"
+    }, {
+      "idx": "3",
+      "enabled": "0",
+      "taskName": "2222",
+      "taskAction": "reboot",    
+      "recMinute": "16",
+      "taskMode": "2"
+    }
+  ]
+}

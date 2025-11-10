@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <title></title>
+  <style>
+    .home{margin: auto; padding: 20px;}
+    .title{color: rgba(0, 0, 0, 0.98);text-align: center}
+	  .cursor{cursor:pointer; text-decoration:underline;}
+    input[type=button]{color: #fff;background-color: #EA7105;padding: 6px 12px;border: 1px solid transparent;}
+    .btn{}
+    .header{width: 100%;height: 50px;background: #3C3C3B;position: fixed;top:0;left: 0;_right:0;_position: absolute;_bottom: auto;_top:expression(eval('0'));}
+    .header-lang{float: right;padding-top: 15px;padding-right: 35px;}
+  </style>
+</head>
+<script type="text/javascript" src="/plugin/json2.js"></script>
+<script type="text/javascript" src="/static/js/kr.js"></script>
+<script type="text/javascript" src="/static/js/config_ie.js"></script>
+<script type="text/javascript" src="/static/js/md5.js"></script>
+<body style="display: none;" id="myui">
+<div class="header">
+  <div class="header-lang">
+    <div id="lang_select"></div>
+  </div>
+</div>
+<br>
+<br>
+<div class="home" align="center">
+  <table>
+	<input type="hidden" name="username" value="admin">
+	<tr>
+	  <td><h1 class="title">{{w('login.title')}}</h1></td>
+	</tr>
+	<tr>
+	  <td>{{w('login.msg1')}} <input type="password" id="password" name="password" autofocus="autofocus" maxlength="32">
+	  <button onClick="handleSubmit()" class="btn">{{w('login.login_btn')}}</button></td>
+	</tr>
+	<tr style="display:none">
+	  <td align="center"><br><a onClick="forgetPwd()" class="cursor">{{w('login.msg2')}}</a></td>
+	</tr>
+	<tr>
+	  <td align="center"><br><br><div id="copyright"></div></td>
+	</tr>
+  </table>
+</div>
+<script>
+    (function() {
+        kr.html('copyright', 'Copyright © '+(new Date).getFullYear());
+        kr.html('lang_select', lang_select);
+        new kr$1({});
+        kr.request({
+            type: "POST",
+            url: "/cgi-bin/cstecgi.cgi",
+            data: {"topicurl": "getLoginCfg"},
+            success:function(data) {
+				if ('1' == data.loginFlag) {
+					alert(lang_t('login.msg7'));
+					document.getElementById('password').focus();
+				}
+            }
+        });
+    })();
+    function handleSubmit(){
+        var password =kr.get('password');
+		
+		encrypt();
+		
+        var form_submit = document.getElementById('form-submit');
+        if ('' == password){
+            alert(lang_t('login.msg3'));
+            return false;
+        }
+		var postVar = {};
+        if(initData.custom.md5Support){
+		  postVar.username = calcMD5("admin");
+		  postVar.password = calcMD5(password);
+        }else{
+	      postVar.username = "admin";
+          postVar.password = password;
+        }
+		postVar.verify = "0";
+        postVar.flag = "0";
+        postVar.topicurl = "loginAuth";
+        kr.request({
+            type: "POST",
+            url: "/cgi-bin/cstecgi.cgi",
+            data: postVar,
+            success:function(data) {
+                if (data.loginFlag != undefined && '1' == data.loginFlag){
+                    alert(lang_t('login.msg7'));
+                }else{
+                    setTimeout(function(){
+                        location.href = data.jump_page;
+                    },500);
+                }
+            }
+        });
+    }
+    function forgetPwd(){
+        alert(lang_t('login.msg6'));
+    }
+	
+	function encrypt() {
+		document.getElementById('username').value = calcMD5(document.getElementById('username').value)
+		document.getElementById('password').value = calcMD5(document.getElementById('password').value);
+	}
+</script>
+</body>
+</html>

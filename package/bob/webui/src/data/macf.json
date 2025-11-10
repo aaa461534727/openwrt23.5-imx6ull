@@ -1,0 +1,16 @@
+{
+  "enable":"1",
+  "rule":[
+    {"idx":"1","mac":"00:e0:4c:81:96:71","desc":"a","delRuleName":"delRule0"},
+    {"idx":"2","mac":"00:e0:4c:81:96:72","desc":"b","delRuleName":"delRule1"},
+    {"idx":"3","mac":"00:e0:4c:81:96:73","desc":"c","delRuleName":"delRule2"},
+    {"idx":"4","mac":"00:e0:4c:81:96:74","desc":"d","delRuleName":"delRule3"},
+    {"idx":"5","mac":"00:e0:4c:81:96:71","desc":"a","delRuleName":"delRule4"},
+    {"idx":"6","mac":"00:e0:4c:81:96:72","desc":"b","delRuleName":"delRule5"},
+    {"idx":"7","mac":"00:e0:4c:81:96:73","desc":"c","delRuleName":"delRule6"},
+    {"idx":"8","mac":"00:e0:4c:81:96:74","desc":"d","delRuleName":"delRule7"},
+    {"idx":"9","mac":"00:e0:4c:81:96:71","desc":"a","delRuleName":"delRule8"},
+    {"idx":"10","mac":"00:e0:4c:81:96:72","desc":"b","delRuleName":"delRule9"},
+    {"idx":"11","mac":"00:e0:4c:81:96:73","desc":"c","delRuleName":"delRule10"}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  	"proto":"static",
+  	"lanIp":"192.168.0.253",
+  	"lanNetmask":"255.255.255.0",
+  	"lanGateway":"192.168.0.1",
+  	"lanPriDns":"192.168.0.1",
+  	"lanSecDns":"",
+
+  
+	"lanProto":	"static",
+	"SecondLanIp":	"192.168.10.10",
+	"lanNetmask2":	"255.255.255.0",
+	"dns":	"114.114.114.114"
+}

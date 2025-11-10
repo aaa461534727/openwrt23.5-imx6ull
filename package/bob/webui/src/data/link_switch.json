@@ -1,0 +1,19 @@
+{
+  "enabled":	"1",
+  "linkStatus":	"NONE",
+  "mainInterface":	"WAN",
+  "mainServer":	"192.168.11.11",
+  "mainNormalInterval":	"111",
+  "mainRetryTimes":	"222",
+  "mainInterfaceBind":	"none",  
+  "sim1Interface":	"SIM1",
+  "sim1Server":	"192.168.55.11",
+  "sim1NormalInterval":	"11",
+  "sim1RetryTimes":	"22",
+  "sim1InterfaceBind":	"none",
+  "sim2Interface":	"SIM2",
+  "sim2Server":	"192.168.141.11",
+  "sim2NormalInterval":	"33",
+  "sim2RetryTimes":	"44",
+  "sim2InterfaceBind":	"none"
+}

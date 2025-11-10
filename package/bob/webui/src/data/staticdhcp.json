@@ -1,0 +1,20 @@
+{
+	"enable":"1",	
+	"lanIp":"192.168.0.1",
+	"lanNetmask":"255.255.255.0",
+	"lan":[
+		{
+			"ip":"192.168.0.1",
+			"mask":"255.255.255.0"
+		},{
+			"ip":"192.168.3.1",
+			"mask":"255.255.255.0"
+		}
+	],
+	"rule":[
+		{"idx":"1","ip":"192.168.0.2","mac":"00:e0:4c:81:96:71","desc":"toto","delRuleName":"delRule0"},
+		{"idx":"2","ip":"192.168.0.3","mac":"00:e0:4c:81:96:72","desc":"new","delRuleName":"delRule1"},
+		{"idx":"3","ip":"192.168.0.4","mac":"00:e0:4c:81:96:73","desc":"love","delRuleName":"delRule2"},
+		{"idx":"4","ip":"192.168.0.5","mac":"00:e0:4c:81:96:74","desc":"new","delRuleName":"delRule3"}
+	]
+}

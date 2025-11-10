@@ -14,6 +14,7 @@
 /feeds
 /feeds.conf
 /files
+scripts/config/
 /overlay
 /package/feeds
 /package/openwrt-packages

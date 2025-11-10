@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('link_priority.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td style="width: 20%;">{{ lang_t('link_priority.priority') }}</td>
+                <td v-show="globalConfig.onlyModemSupport == false">
+                  <select v-model="strategy" data-style="btn-default" style="display: inline-block;">
+                    <option value="0" v-if="noWireFrist!='1' && globalConfig.csid != 'C7335R' && globalConfig.csid != 'C7362R' && globalConfig.csid != 'C738DR'">{{ lang_t('link_priority.wired_priority') }}</option>
+                    <option value="1" v-if="globalConfig.modelType=='4g'">4G</option>
+                    <option value="6" v-if="globalConfig.csid == 'C738DR'">5G</option>
+					          <option value="1" v-if="globalConfig.modelType=='5g' && globalConfig.csid != 'C738DR'">5G</option>
+                    <option value="3" v-if="globalConfig.csid == 'C7362R' && globalConfig.csid != 'C738DR'">{{ lang_t('link_priority.4g_priority') }}</option>
+					          <option value="4" v-if="globalConfig.csid == 'C7362R' && globalConfig.csid != 'C738DR'">{{ lang_t('link_priority.5g_priority') }}</option>
+                    <option value="2" v-show="globalConfig.csid != 'C7335R'">{{ lang_t('link_priority.wired') }}</option>
+                    <option value="5" v-show="globalConfig.csid == 'C738DR'">{{ lang_t('link_priority.double_modem') }}</option>
+                  </select>
+                  <span v-show="strategy!='2' && globalConfig.csid != 'C738DR'">
+                    <div class="tips">!</div>
+                    <span v-if="globalConfig.modelType=='4g'">{{lang_t('link_priority.tips')}}</span>
+					          <span v-if="globalConfig.modelType=='5g'">{{lang_t('link_priority.tips_5g')}}</span>
+                  </span>
+                </td>
+
+                <td v-show="globalConfig.onlyModemSupport == true">
+                  <select v-model="strategy" data-style="btn-default" style="display: inline-block;">
+                    <option value="1" v-if="globalConfig.modelType=='4g'">4G</option>
+                    <option value="1" v-if="globalConfig.modelType=='5g' && globalConfig.csid != 'C738DR'">5G</option>
+                  </select>
+                </td>
+
+              </tr>
+              <tr v-if="globalConfig.wanRouteSupport">
+                <td>{{ lang_t('link_priority.route_mode') }}</td>
+                <td>
+                  <select v-model="routeMode">          
+                  <option value="0">{{ lang_t('common.off') }}</option>
+                  <option value="1">{{ lang_t('common.on') }}</option>
+                  </select>
+                  </td>
+              </tr>
+              <tbody v-if="globalConfig.detectNetSupport">
+              <tr>
+                <td>{{ lang_t('link_priority.net_check') }}</td>
+                <td>
+                  <select v-model="mode" @change="modeChange">          
+                  <option value="0">{{ lang_t('common.off') }}</option>
+                  <option value="1">{{ lang_t('link_priority.default') }}</option>
+                  <option value="2">TCP</option>
+                  <option value="3">ICMP</option>
+                  </select>
+                  </td>
+              </tr>
+              <tr v-show="mode=='2' || mode == '3'">
+                <td>{{ lang_t('link_priority.check_address') }} 1</td>
+                <td>
+                  <div style="width:400px;">
+                    <input type="text" :style="textStyle" v-model="addr1" maxlength="15" />
+                    <span v-show="mode == '2'" style="float:left;width:10px;margin:6px 0 0 5px;"> : </span>
+                    <input v-show="mode == '2'" type="text" style="float:left;width:70px;" v-model="port1" maxlength="5" />
+                  </div>
+                  </td>
+              </tr>   
+              <tr v-show="mode=='2' || mode == '3'">
+                <td>{{ lang_t('link_priority.check_address') }} 2</td>
+                <td>
+                  <div style="width:400px;">
+                    <input type="text" :style="textStyle" v-model="addr2" maxlength="15" />
+                    <span v-show="mode == '2'" style="float:left;width:10px;margin:6px 0 0 5px;"> : </span>
+                    <input v-show="mode == '2'" type="text" style="float:left;width:70px;" v-model="port2" maxlength="5" />
+                  </div>
+                  </td>
+              </tr> 
+              <tr v-show="mode=='2' || mode == '3'">
+                <td>{{ lang_t('link_priority.check_address') }} 3</td>
+                <td>
+                  <div style="width:400px;">
+                    <input type="text" :style="textStyle" v-model="addr3" maxlength="15" />
+                    <span v-show="mode == '2'" style="float:left;width:10px;margin:6px 0 0 5px;"> : </span>
+                    <input v-show="mode == '2'" type="text" style="float:left;width:70px;" v-model="port3" maxlength="5" />
+                  </div>
+                  </td>
+              </tr>            
+              </tbody>
+              <tr  v-show="globalConfig.modemPpsSupport">
+                <td>{{ lang_t('link_priority.pub_pri') }}</td>
+                <td>
+                  <select v-model="searchnetmode">          
+                  <option value="0">{{ lang_t('common.off') }}</option>
+                  <option value="1">{{ lang_t('link_priority.pri_first') }}</option>
+                  <option value="2">{{ lang_t('link_priority.pub_first') }}</option>
+                  <option value="3">{{ lang_t('link_priority.pri_fix') }}</option>
+                  <option value="4">{{ lang_t('link_priority.pub_fix') }}</option>
+                  <option value="5">{{ lang_t('link_priority.local_switch') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button @click="handleSubmit()" class="btn btn-primary all-but">{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+      textStyle:'float:left;width:264px;',
+	   noWireFrist:'0',
+     routeMode: '',
+     searchnetmode: '',
+  	  strategy:"0",
+      disabled: false,
+      mode:"0",
+      addr1:"",
+      addr2:"",
+      addr3:"",
+      port1:"",
+      port2:"",
+      port3:""
+  	}
+  },
+  computed:{
+
+  },
+  mounted:function(){
+    var _this = this;
+  	uiPost.getWanStrategy(function(data){
+	  _this.noWireFrist = data.noWireFrist;	  
+  	  _this.strategy = data.strategy;	
+      _this.routeMode = data.routeMode;
+      _this.searchnetmode = data.searchnetmode;
+
+      if(data.disabled == 1){
+        _this.disabled = true;
+      }else{
+        _this.disabled = false;
+      }
+
+      if(globalConfig.detectNetSupport){
+        if(data.detectNet){
+          _this.mode = data.detectNet.mode;
+          _this.addr1 = data.detectNet.addr[0];
+          _this.addr2 = data.detectNet.addr[1];
+          _this.addr3 = data.detectNet.addr[2];
+          _this.port1 = data.detectNet.port[0];
+          _this.port2 = data.detectNet.port[1];
+          _this.port3 = data.detectNet.port[2];
+          _this.textStyle = _this.mode=='3'?'float:left;':'float:left;width:264px;';
+        }
+      }      
+  	});	
+  },
+  methods:{
+    veriyfun:function(val, flag){
+      var _this = this, range;
+      var f = function(m){
+        Cstools.msg({
+          content: m,
+          type: 'error',
+          messgetype: 'alert'
+        });
+      };
+      if(_this.mode == '2' || _this.mode == '3'){
+        if(cs.ip(_this.addr1) == 0){
+          f(_this.lang_t('link_priority.check_address')+'1'+_this.lang_t('alert.msg5'));
+          return false;
+        }
+        if(cs.ip(_this.addr1) != 99){
+          f(_this.lang_t('link_priority.check_address')+'1'+_this.lang_t('alert.msg11'));
+          return false;
+        }
+        if(_this.mode == '2'){
+          range = cs.num_range(_this.port1, 1, 65535);
+          if(range == 0){
+            f(_this.lang_t('link_priority.check_port')+'1'+_this.lang_t('alert.msg5'));
+            return false;
+          }else if(range != 99){
+            f(_this.lang_t('link_priority.check_port')+'1'+_this.lang_t('alert.msg51'));
+            return false;
+          }
+        }
+        if(_this.addr2){
+          if(cs.ip(_this.addr2) != 99){
+            f(_this.lang_t('link_priority.check_address')+'2'+_this.lang_t('alert.msg11'));
+            return false;
+          }
+          if(_this.mode == '2'){
+            range = cs.num_range(_this.port2, 1, 65535);
+            if(range == 0){
+              f(_this.lang_t('link_priority.check_port')+'2'+_this.lang_t('alert.msg5'));
+              return false;
+            }else if(range != 99){
+              f(_this.lang_t('link_priority.check_port')+'2'+_this.lang_t('alert.msg51'));
+              return false;
+            }
+          }          
+        }
+        if(_this.addr3){
+          if(cs.ip(_this.addr3) != 99){
+            f(_this.lang_t('link_priority.check_address')+'3'+_this.lang_t('alert.msg11'));
+            return false;
+          }
+          if(_this.mode == '2'){
+            range = cs.num_range(_this.port3, 1, 65535);
+            if(range == 0){
+              f(_this.lang_t('link_priority.check_port')+'3'+_this.lang_t('alert.msg5'));
+              return false;
+            }else if(range != 99){
+              f(_this.lang_t('link_priority.check_port')+'3'+_this.lang_t('alert.msg51'));
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    },
+  	handleSubmit:function(){
+  	  var _this = this;
+  	  var postVar = {};      
+      if(globalConfig.detectNetSupport){
+        var temp = {};
+        if(!this.veriyfun(temp)) return;
+        var obj = {}, arr_addr = [], arr_port = [];
+        obj.addr = arr_addr.concat(_this.addr1).concat(_this.addr2).concat(_this.addr3);
+        if(_this.mode == '3'){
+          _this.port1 = _this.port2 = _this.port3 = '';
+        }
+        obj.port = arr_port.concat(_this.port1).concat(_this.port2).concat(_this.port3);
+        obj.mode = _this.mode;
+        postVar.detectNet = obj;
+      }     
+  	  postVar.strategy = _this.strategy;
+      postVar.routeMode = _this.routeMode;
+      postVar.searchnetmode = _this.searchnetmode;
+      uiPost.setWanStrategy(postVar, apply_callback);
+  	},
+    modeChange:function(){
+      var _this = this;
+      if(_this.mode == '2')
+        _this.textStyle = 'float:left;width:264px;';
+      else
+        _this.textStyle = 'float:left;';
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

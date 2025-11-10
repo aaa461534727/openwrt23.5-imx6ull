@@ -1,0 +1,97 @@
+config KL_CUSTOM
+	bool "KL_CUSTOM"
+	default "y"
+	help
+		The is used to Carystudio specified
+
+config KL_CSID
+	string
+	prompt "Target Profile"
+	default "default"
+	help
+		The specified project CSID is used to specify the profile from Release
+
+config MULTI_GUEST_SSID_SUPPORT
+	bool "KL Multiple Guest Ssid"
+	default "n"
+	help
+		This is used to control guest ssid show
+
+config KL_NAND_FLASH
+	bool "KL NAND FLASH"
+	default "n"
+	help
+		The is used to Carystudio specified
+
+config USB_STORAGE_SUPPORT
+	bool "USB_STORAGE_SUPPORT"
+	default "n"
+	help
+		Usb Storage function for Carystudio
+
+config AUTO_SERIALNUMBER 
+	bool "AUTO_SERIALNUMBER_SUPPORT"
+	default "n"
+	help
+		Range SerialNumber for Carystudio
+
+config TIME_ZONE_CUSTOM
+        bool "TIME_ZONE_CUSTOM_SUPPORT"
+        default "n"
+        help
+                custom timeZone value for Carystudio
+
+config IPV6_FIREWALL_SUPPORT
+	bool "IPV6_FIREWALL_SUPPORT"
+	default "n"
+	help
+		IPv6 firewall function for Carystudio
+
+menuconfig ETH_PORT_MAP
+	bool "Ethernet PORT MAP"
+	default "y"
+
+if ETH_PORT_MAP
+	config  ETH_PORT_WAN
+		int "ETH WAN Port ID (0..6)"
+		default 4
+		help
+		  please choose port ID from range 0..6
+
+	config  ETH_PORT_LAN1
+		int "ETH LAN1 Port ID (0..6)"
+		default 3
+		help
+		  please choose port ID from range 
+
+	config  ETH_PORT_LAN2
+		int "ETH LAN2 Port ID (0..6)"
+		default 2
+		help
+		  please choose port ID from range 0..6
+
+	config  ETH_PORT_LAN3
+		int "ETH LAN3 Port ID (0..6)"
+		default 1
+		help
+		  please choose port ID from range 0..6
+
+	config  ETH_PORT_LAN4
+		int "ETH LAN4 Port ID (0..6)"
+		default 0
+		help
+		  please choose port ID from range 0..6
+
+	config  ETH_PORT_LAN5
+		int "ETH LAN5 Port ID (0..6), -1 is disabled, P5 is GMAC1, P6 is GMAC0"
+		default -1
+		help
+		  please choose port ID from range 0..6
+
+	config  ETH_PORT_LAYOUT
+		string "LAN/WAN Board Layout (WL1L2L3L4)"
+		default "L1"
+		help
+			please set lan/wan layout
+
+endif

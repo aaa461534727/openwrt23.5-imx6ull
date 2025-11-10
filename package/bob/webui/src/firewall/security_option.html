@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+    <meta http-equiv="proma" content="no-cache"/>
+    <meta http-equiv="cache-control" content="no cache" />
+    <meta http-equiv="expires" content="0" />
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="/static/css/main.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="main">
+        <div class="row" v-cloak>
+            <!--****填充区******-->
+            <section class="col-xs-12">
+                <div class="content-box">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <tr>
+                                <td colspan="2"><strong>{{ lang_t('vpnpass.help1') }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>{{lang_t('vpnpass.ping_wan')}}</td>
+                                <td>
+                                    <input type="checkbox" id="pingWan_switch" :checked="toggle_status" data-on-color="warning">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>{{lang_t('vpnpass.ping_spi')}}</td>
+                                <td>
+                                    <input type="checkbox" id="spi_switch" :checked="toggle_status" data-on-color="warning">
+                                </td>
+                            </tr>
+                            <tr v-if="globalConfig.specialIotBanApply!='1'">
+                                <td colspan="2">
+                                    <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+    var cs_main = {
+        template:"#main",
+        data:function(){
+            var _this = this;
+            return {
+                globalConfig:globalConfig,
+                lang: $.lang,
+                lang_t:lang_t,
+                wanPingFilter: false,
+                fwEnable: false
+            }
+        },
+        computed: {
+            toggle_status:function() {
+                $('#pingWan_switch').bootstrapSwitch('state', this.wanPingFilter);
+                $('#spi_switch').bootstrapSwitch('state', this.fwEnable);
+            }
+        },
+        created:function() {
+            var _this = this;
+            uiPost.getWanPingCfg(function(data){
+                _this.wanPingFilter = data.wanPingFilter == "1" ?true :false;
+                _this.fwEnable = data.fwEnable == "1" ?true :false;
+            });
+        },
+        mounted:function(){
+            var _this = this;
+            addSwitch('#pingWan_switch', function(data) {
+                _this.wanPingFilter = data;
+            });
+            addSwitch('#spi_switch', function(data) {
+                _this.fwEnable = data;
+            });
+        },
+        methods:{
+            handleSubmit: function(name) {
+                var _this = this;
+                var postVar = {};
+                postVar.wanPingFilter = _this.wanPingFilter ?"1" :"0";
+                postVar.fwEnable = _this.fwEnable ?"1" :"0";
+                uiPost.setWanPingCfg(postVar, apply_callback);
+            }
+        }
+    };
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+

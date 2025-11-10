@@ -1,0 +1,10 @@
+{
+	"hostPath":"iot.crabox-sys.com",
+	"port":"80",
+	"enabled":"1",
+	"interval":"1",
+	"pubHostPath":"iot.crabox-sys.com",
+	"pubPort":"55",
+	"priHostPath":"192.168.1.5",
+	"priPort":"33"
+}

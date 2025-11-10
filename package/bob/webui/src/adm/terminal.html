@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/terminal.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <form method="post" id="iform">
+        <section class="col-xs-12">
+          <div class="content-box tab-content table-responsive __mb">
+            <table class="table table-striped">
+              <tr>
+                <td>
+                  <div id="terminal" style="background-color:#000;height:500px;width:70em;overflow:auto"></div>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </section>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/terminal.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+	    lang_t:lang_t
+    }
+  },
+  computed:{
+    
+  },
+  created:function(){
+    var timeout=null;
+    var index=0;
+    var prompt;
+    var ctrl_c=0;
+    function send_interval(term){
+      if(ctrl_c==0) term.set_prompt('');
+      var postVar = {};
+      postVar.topicurl = 'getCommand';
+      postVar = JSON.stringify(postVar);
+      $.ajax({
+        type:'post',
+        url:'/cgi-bin/cstecgi.cgi',
+        dataType:'text',
+        data:postVar,
+        cache:false,
+        success:function(data,textStatus){
+          if(data.length>0){
+            var sp = data.split("\r\n");
+            for(var i=0;i<sp.length;i++){
+              if(sp[i].length>3)
+                term.echo(sp[i]);
+            }
+          }
+          if(data.length>0)
+            index=0;
+          else
+            index++;
+          if(ctrl_c>0)
+            ctrl_c++;
+		  
+          if(index>=20
+            || ctrl_c>=3
+            || data.search("round-trip")>=0
+            || data.search("Network unreachable")>=0
+            || data.search("ping: bad address")>=0)
+          {
+            index=0;
+            ctrl_c=0;
+            term.set_prompt(prompt);
+            window.clearInterval(timeout);
+            timeout=null;
+          }
+        }
+      })
+    }
+    jQuery(function($){
+      $('#terminal').terminal(function(command, term){
+        if(command.split(" ")[0] == 'ping' || command.search("trace")>=0){
+          if(timeout){
+            window.clearInterval(timeout);
+            timeout=null;
+          }
+          ctrl_c=0;
+          prompt=term.get_prompt();
+          timeout=window.setInterval(function(){send_interval(term)},500);
+        }
+        if(command[command.length-2]=='^' && command[command.length-1]=='C'){
+          ctrl_c=1;
+        }
+        var postVar = {};
+        postVar.command = command;
+        postVar.topicurl = 'getCommand';
+        postVar = JSON.stringify(postVar);
+        $.ajax({
+          type:'post',
+          url:'/cgi-bin/cstecgi.cgi',
+          dataType:'text',
+          data:postVar,
+          cache:false,
+          success:function(data,textStatus){
+      			data_true=data.replace(/\[\d+;\d+m|\[\d+m/g,'');
+      			data_true1=data_true.replace(//g,'');
+      			sp=data_true1.split("\r\n");
+            term.set_prompt(sp[sp.length-1]);
+            if(sp.slice(1, sp.length-1).length > 0)
+              term.echo(sp.slice(1, sp.length-1));
+          }
+        })
+      }, {
+        greetings: "Press 'enter' to start.",
+        prompt: '',
+        onBlur: function(){
+          return false;
+        },
+        keypress: function(e, term){
+          var postVar = {};
+          postVar.command = term.get_command();
+          postVar.topicurl = 'getCommand';
+          postVar = JSON.stringify(postVar);
+          if (e.which == 63){
+            $.ajax({
+              type:'post',
+              url:'/cgi-bin/cstecgi.cgi',
+              dataType:'text',
+              data:postVar,
+              cache:false,
+              success:function(data,textStatus){
+                sp = data.split("\r\n");
+                cmd = term.get_command();
+                term.set_prompt(sp[sp.length-1].split(" ")[0]+' ');
+                term.set_command(cmd.slice(0, cmd.length-1));
+                if(sp.slice(1, sp.length-1).length > 0)
+                  term.echo(sp.slice(1, sp.length-1));
+              }
+            })
+          }
+        },
+        keydown: function(e){
+          if(e.which == 8){
+            e.preventDefault();
+            var str = $(e.currentTarget).val();
+            $(e.currentTarget).val(str.substr(0,str.length-1));
+          } 
+        }
+      });
+    });
+  },
+  methods:{
+    
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

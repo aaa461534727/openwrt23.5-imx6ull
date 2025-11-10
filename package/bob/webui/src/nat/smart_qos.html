@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+           <table class="table table-striped" v-show="qosMode=='3'">
+            <tr>
+              <td colspan="2"><strong>{{  helpshow }}</strong></td>
+            </tr>
+            <tr >
+              <td style="width: 20%">{{ lang_t('common.state') }}</td>
+              <td>
+                <input type="checkbox" id="switch_status" data-on-color="warning">
+              </td>
+            </tr>
+            <tr v-show="enable">
+              <td colspan="2">
+                <button class="btn btn-primary all-but" @click="qosMode='2'">{{ lang_t('menu.ip_flow') }}</button>
+              </td>
+            </tr>
+           </table>
+           <table class="table table-striped" v-show="enable && qosMode=='3' && globalConfig.qosDefSingleIpSupport=='1'">
+              <tr>
+                <td colspan="2">
+                  <span style="font-weight: bold;">{{ lang_t('smart_flow.limit') }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="fun-left" style="width: 20%">{{ lang_t('smart_flow.up') }}</td>
+                <td>
+                  <input type="text" maxlength="3" v-model="upPercent" style="float: left;">
+                  <span style="float:left;margin-top:6px;"><small>&nbsp;(%)</small></span>
+                </td>
+              </tr>
+                <tr>
+                  <td class="fun-left">{{ lang_t('smart_flow.down') }}</td>
+                  <td>
+                    <input type="text" maxlength="3" v-model="downPercent" style="float: left">
+                    <span style="float:left;margin-top:6px;"><small>&nbsp;(%)</small></span>
+                  </td>
+              </tr>
+            </table>
+            <table class="table table-striped" v-for="(v,index) in qosSetData" :key="index" v-show="enable && qosMode=='3'">
+              <tr>
+                <td colspan="2">
+                  <span style="font-weight: bold;">WAN</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="fun-left" style="width: 20%">{{ lang_t('smart_flow.up') }}</td>
+                <td>
+                  <input type="text" :maxlength="maxLen" v-model="qosSetData[index]['totalUp']" style="float: left">
+                  <span style="float:left;margin-top:6px;"><small>&nbsp;({{ lang_t('smart_flow.range') }}: 1~{{ speedMax }}Mb/s)</small></span>
+                </td>
+              </tr>
+              <tr>
+                <td class="fun-left">{{ lang_t('smart_flow.down') }}</td>
+                <td>
+                  <input type="text" :maxlength="maxLen" v-model="qosSetData[index]['totalDown']" style="float: left">
+                  <span style="float:left;margin-top:6px;"><small>&nbsp;({{ lang_t('smart_flow.range') }}: 1~{{ speedMax }}Mb/s)</small></span>
+                </td>
+              </tr>
+           </table>
+           <table class="table table-striped" v-show="enable&&qosMode=='3'">
+             <tr v-if="globalConfig.specialIotBanApply!='1'">
+               <td colspan="2">
+                 <button type="submit" class="btn btn-primary all-but" @click.prevent="qosSetSubmit()">{{ lang_t('smart_flow.apply') }}</button>
+               </td>
+             </tr>
+           </table>
+           <!--IP流控-->
+           <table class="table table-striped table-bordered table-hover" v-show="enable && qosMode == 2">
+              <thead>
+                <tr><td colspan="5">{{ lang_t('smart_flow.table_list') }}</td></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>{{ lang_t('network.ip') }}</th>
+                  <th>{{ lang_t('smart_flow.upbandwidth') }}(Mbps)</th>
+                  <th>{{ lang_t('smart_flow.dwbandwidth') }}(Mbps)</th>
+                  <th>{{ lang_t('ipf.comment') }}</th>
+                  <th>{{ lang_t('common.operation') }}</th>
+                </tr>
+              </thead>
+             <tbody>
+              <tr v-for="(val,index) in ipData" :key="index" @click="editItem(index,val)">
+                <td>{{index+1}}</td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.ip"/>
+                  <span v-else>{{val.ip}}</span>
+                </td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.up" oninput="if(value.length>4) value=value.slice(0,4)"/>
+                  <span v-else>{{val.up}}</span>
+                </td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.down" oninput="if(value.length>4) value=value.slice(0,4)"/>
+                  <span v-else>{{val.down}}</span>
+                </td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.desc" maxlength="32"/>
+                  <span v-else>{{val.desc}}</span>
+                </td>
+                <td class="operation">
+                  <a v-show="editIdx == index" @click.stop="modifyRule(index,editItemInfo)">{{ lang_t('common.modify') }}</a>
+                  <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                  <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>
+                  <input type="text" v-model="ipStart"/>
+                </td>
+                <td>
+                  <input type="text" v-model="upBandwidth" oninput="if(value.length>4) value=value.slice(0,4)"/>
+                </td>
+                <td>
+                  <input type="text" v-model="dwBandwidth" oninput="if(value.length>4) value=value.slice(0,4)"/>
+                </td>
+                <td>
+                  <input type="text" v-model="comment" maxlength="32" :placeholder="lang_t('ipf.comment')"/>
+                </td>
+                <td class="operation">
+                  <a @click.stop="addRule">{{ lang_t('common.add') }}</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <table class="table table-striped table-bordered table-hover" v-show="enable && qosMode == 2">
+            <tr v-if="globalConfig.specialIotBanApply!='1'">
+              <td colspan="2">
+                <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+              </td>
+            </tr>
+          </table>
+          <table class="table table-striped">
+            <tr v-show="enable && qosMode == 2">
+              <td colspan="2" >
+                <button  class="btn btn-primary all-but" data-toggle="modal" @click="qosMode='3'">{{lang_t('common.back')}}</button>
+              </td>
+            </tr>
+          </table>
+         </div>
+        </div>
+      </section>      
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t:lang_t,
+      enable: false,
+      qosMode:"3",
+      //IP流控
+      lanIp:'',
+      lanNetmask:'',
+      ipStart:'',
+      ipEnd:'',
+      upBandwidth:'',
+      dwBandwidth:'',
+      comment:'',
+      modalTable:{
+        modalTitle:"",
+        table:{
+          th:[],
+          td:[]
+        }
+      },
+      ipData:[],
+      qosSetData:[],
+      speedMax: 100,
+	  maxLen: 3,
+      upPercent: '',
+      downPercent: '',
+      wanNum: globalConfig.wanNum,
+      editIdx: '-1',
+      editItemInfo: {},
+      enableTmp:false
+    }
+  },
+  computed: {
+    helpshow: function(){
+      var _this = this;
+      if(_this.qosMode == "2"){
+        return lang_t('smart_flow.ip_help');
+      }else{
+        return lang_t('smart_flow.help');
+      }
+    },
+    levels:function () {
+      return[
+        lang_t('smart_flow.L0'),
+        lang_t('smart_flow.L1'),
+        lang_t('smart_flow.L2'),
+        lang_t('smart_flow.L3'),
+        lang_t('smart_flow.L4')
+      ]
+    }
+  },
+  created:function() {
+    var _this = this;
+    var index = location.search.match(/page=(\d+)/);
+    if (index != null) {
+      this.qosMode = index[1];
+    }
+    //ip流控
+    uiPost.getIpQosLimitCfg(function(data) {
+      if(data){
+        _this.lanIp = data.ip;
+        _this.lanNetmask = data.mask;
+      }
+      _this.enableTmp = _this.enable = data.enable == "1";
+      _this.setState && _this.setState(_this.enable);
+      _this.ipData = data.rule;
+    });
+    //设置模式内容
+    uiPost.getQosSetCfg(function(data){
+      _this.qosSetData = [
+        {
+          totalUp: data.totalUp,
+          totalDown: data.totalDown
+        }
+      ];
+      _this.upPercent = data.upPercent;
+      _this.downPercent = data.downPercent;
+      _this.speedMax = data.speedMax;
+	  if(data.speedMax == '1000'){
+	  	_this.maxLen = 4;
+	  }
+    });
+  },
+  mounted:function(){
+    var _this = this;
+    this.setState = addSwitch('#switch_status', function(data) {
+
+      if(_this.enable != data){
+         _this.enable = data;
+         if(!data)
+          _this.submit_status();
+      }
+    });
+  },
+  methods:{
+    saveInfo:function () {
+        var _this = this;
+        this.editIdx = '-1';
+        var postVar = {};
+        var arr = [];
+        arr = arr.concat( this.ipData );
+        postVar.subnet = arr;
+        postVar.addEffect = "1";
+        postVar.enable = this.enable ? "1" : "0";
+        postVar.mode = "1";
+        uiPost.setIpQosLimitCfg(postVar, function(data){
+          apply_callback(data, function() {
+            location.search = "page=2&timestamp=" + Date.now();
+          })
+        });
+    },
+    cancelAll:function () {
+      if(this.enableTmp){
+        location.search = "page=2&timestamp=" + Date.now();
+      }else{
+        location.search = "timestamp=" + Date.now();
+      }
+
+    },
+    submit_status:function(){
+      if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar = {};
+      postVar.enable = this.enable ? "1" : "0";
+      postVar.addEffect = "0";
+      uiPost.setQosSetCfg(postVar, apply_callback);
+    },
+    parseIp:function(ip){
+      ip = ip.split(".");
+      return Number(ip[0]) * 256 * 256 * 256 + Number(ip[1]) * 256 * 256 + Number(ip[2]) * 256 + Number(ip[3]);
+    },
+    modifyRule:function (idx,obj) {
+	  var _this = this;
+	  var lanMsg = function(ip, name){
+        if (!_this.isEqualIPAddress(_this.lanIp, ip, _this.lanNetmask)){
+          errorAlert(name+lang_t('alert.msg13'));
+          return false;
+        }
+        if (_this.lanIp == ip){
+          errorAlert(name+lang_t('alert.msg12'));
+          return false;
+        }
+        return true;
+      };
+
+      if (!_this.editItemInfo.ip){
+        errorAlert(lang_t('network.ip')+lang_t('alert.msg5'));
+        return false;
+      }else{
+        if (cs.ip(_this.editItemInfo.ip) != 99){
+          errorAlert(lang_t('network.ip')+lang_t('alert.msg31'));
+          return false;
+        }
+		if(!lanMsg(_this.editItemInfo.ip, lang_t('network.ip'))) return;
+      }
+      
+	  _s = cs.num_range(_this.editItemInfo.up,1,_this.speedMax);
+	  if(0 == _s){
+		errorAlert(lang_t('smart_flow.upbandwidth')+lang_t('alert.msg5'));
+        return false;
+	  }else if(99 != _s){
+        errorAlert(lang_t('smart_flow.upbandwidth')+lang_t('alert.msg15',[1, _this.speedMax]));
+        return false;
+      }
+	  
+	  _s = cs.num_range(_this.editItemInfo.down,1,_this.speedMax);
+	  if(0 == _s){
+		errorAlert(lang_t('smart_flow.dwbandwidth')+lang_t('alert.msg5'));
+        return false;
+	  }else if(99 != _s){
+        errorAlert(lang_t('smart_flow.dwbandwidth')+lang_t('alert.msg15',[1, _this.speedMax]));
+        return false;
+      }
+		
+      if(cs.byteLenght(this.editItemInfo.desc,32) == 1){
+        errorAlert(lang_t('ipf.comment') + lang_t('alert.msg28'));
+        return false;
+      }
+
+      var ret = cs.commentstr(this.editItemInfo.desc);
+      if(ret == 1){
+        Cstools.msg({
+          content: _this.lang_t('macf.comment')+_this.lang_t('alert.msg49'),
+          type: 'error'
+        });
+        return false;
+      }else if(ret == 2){
+        Cstools.msg({
+          content: _this.lang_t('macf.msg11'),
+          type: 'error'
+        });
+        return false;
+      }
+	
+      $.extend(this.ipData[idx], obj);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.ipData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    addRule:function(){
+      var _this = this;
+      var lanMsg = function(ip, name){
+        if (!_this.isEqualIPAddress(_this.lanIp, ip, _this.lanNetmask)){
+          errorAlert(name+lang_t('alert.msg13'));
+          return false;
+        }
+        if (_this.lanIp == ip){
+          errorAlert(name+lang_t('alert.msg12'));
+          return false;
+        }
+        return true;
+      };
+      if (_this.ipData.length == 10){
+        errorAlert(lang_t('alert.msg1', [10]));
+        return false;
+      }
+      if (!_this.ipStart){
+        errorAlert(lang_t('network.ip')+lang_t('alert.msg5'));
+        return false;
+      }else{
+        if (cs.ip(_this.ipStart) != 99){
+          errorAlert(lang_t('network.ip')+lang_t('alert.msg31'));
+          return false;
+        }
+        if(!lanMsg(this.ipStart, lang_t('network.ip'))) return;
+      }
+      
+      for(i=0; i<_this.ipData.length; i++){
+        if(_this.ipData[i].ip == _this.ipStart){
+          errorAlert(lang_t('smart_flow.msg17'));
+          return false;
+        }
+      }
+	  
+	  _s = cs.num_range(_this.upBandwidth,1,_this.speedMax);
+	  if(0 == _s){
+		errorAlert(lang_t('smart_flow.upbandwidth')+lang_t('alert.msg5'));
+        return false;
+	  }else if(99 != _s){
+        errorAlert(lang_t('smart_flow.upbandwidth')+lang_t('alert.msg15',[1, _this.speedMax]));
+        return false;
+      }
+	  
+	  _s = cs.num_range(_this.dwBandwidth,1,_this.speedMax);
+	  if(0 == _s){
+		errorAlert(lang_t('smart_flow.dwbandwidth')+lang_t('alert.msg5'));
+        return false;
+	  }else if(99 != _s){
+        errorAlert(lang_t('smart_flow.dwbandwidth')+lang_t('alert.msg15',[1, _this.speedMax]));
+        return false;
+      }
+	  
+
+      if(cs.byteLenght(this.comment,32) == 1){
+        errorAlert(lang_t('ipf.comment') + lang_t('alert.msg28'));
+        return false;
+      }
+       var ret = cs.commentstr(this.comment);
+      if(ret == 1){
+        Cstools.msg({
+          content: _this.lang_t('macf.comment')+_this.lang_t('alert.msg49'),
+          type: 'error'
+        });
+        return false;
+      }else if(ret == 2){
+        Cstools.msg({
+          content: _this.lang_t('macf.msg11'),
+          type: 'error'
+        });
+        return false;
+      }
+
+      this.ipData.push({
+        ip: this.ipStart,
+        up: this.upBandwidth,
+        down: this.dwBandwidth,
+        desc: this.comment
+      });
+      this.ipStart = "";
+      this.upBandwidth = "";
+      this.dwBandwidth = "";
+      this.comment = "";
+    },
+    qosSetSubmit:function () {
+      var _this = this;
+      var postVar = {};
+      var f = function(msg){
+        errorAlert(msg);
+      };
+      if(cs.num_range(this.upPercent, 1, 100) != 99){
+        errorAlert(lang_t('smart_flow.limit')+lang_t('smart_flow.up')+lang_t('alert.msg15',[1,100]));
+        return;
+      }
+      if(cs.num_range(this.downPercent, 1, 100) != 99){
+        errorAlert(lang_t('smart_flow.limit')+lang_t('smart_flow.down')+lang_t('alert.msg15',[1,100]));
+        return;
+      }
+      for(var i=0;i<this.qosSetData.length;i++){
+        var _u = cs.num_range(this.qosSetData[i]['totalUp'], 1, this.speedMax);
+        if(_u == 0){
+          f("WAN"+lang_t('smart_flow.up')+lang_t('alert.msg5'));
+          return false;
+        }else if(_u != 99) {
+          f("WAN"+lang_t('smart_flow.up')+lang_t('alert.msg15',[1,this.speedMax]));
+          return false;
+        }
+        var _d = cs.num_range(this.qosSetData[i]['totalDown'], 1, this.speedMax);
+        if(_d == 0){
+          f("WAN"+lang_t('smart_flow.down')+lang_t('alert.msg5'));
+          return false;
+        }else if(_d != 99) {
+          f("WAN"+lang_t('smart_flow.down')+lang_t('alert.msg15', [1, this.speedMax]));
+          return false;
+        }
+        postVar['totalUp'] = this.qosSetData[i]['totalUp'];
+        postVar['totalDown'] = this.qosSetData[i]['totalDown'];
+      }
+      postVar.upPercent = this.upPercent;
+      postVar.downPercent = this.downPercent;
+      postVar.enable = "1";
+      postVar.addEffect = "1";
+      uiPost.setQosSetCfg(postVar,function (data) {
+        apply_callback(data, function() {
+          location.search = "timestamp=" + Date.now();
+        })
+      });
+    },
+    isEqualIPAddress:function (ip1,ip2,mask1) {
+      var res1 = [], res2 = [];
+      var addr1 = ip1.split(".");
+      var addr2 = ip2.split(".");
+      var mask  = mask1.split(".");
+      for(var i = 0,ilen = addr1.length; i < ilen ; i += 1){
+        res1.push(parseInt(addr1[i]) & parseInt(mask[i]));
+        res2.push(parseInt(addr2[i]) & parseInt(mask[i]));
+      }
+      if(res1.join(".") == res2.join(".")){
+        return true;
+      }else{
+        return false;
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{  lang_t('onenet_mqtt.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td style="width: 25%;">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+
+             <tbody>
+              <tr v-show="enabled">
+                <td style="width: 25%;">{{ lang_t('index.server_addr') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.onenet_server" maxlength="32">
+                  <span>({{lang_t('index.domain_ip')}})</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('onenet_mqtt.port') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.onenet_port" maxlength="5">
+                  <span>(1-65535)</span>
+               </td>
+              </tr>
+            </tbody>
+             <tr v-show="enabled">
+              <td>{{ lang_t('onenet_mqtt.device_id') }}</td>
+              <td>
+                <input type="text" v-model="formValidate.onenet_client_id" maxlength="64">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('onenet_mqtt.username') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.onenet_username" maxlength="32">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('onenet_mqtt.password') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.onenet_key" maxlength="64" v-pass>
+                </td>
+              </tr>
+
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.status') }}</td>
+                <td>
+                  <!--<span  v-if="connStatus == 0"><span style="color:#fff;background-color:#4682B4;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_crpc_error') }}</span></span>
+                  <span  v-if="connStatus == 1"><span style="color:#fff;background-color:#6495ED;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_port_net_error') }}</span></span>
+                  <span  v-if="connStatus == 2"><span style="color:#fff;background-color:#778899;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_code_error') }}</span></span>
+                  <span  v-if="connStatus == 3"><span style="color:#fff;background-color:#4169E1;">{{ lang_t('iot.no_bind') }}</span><span>{{ lang_t('iot.bind_ready') }}</span></span>
+                  <span  v-if="connStatus == 4"><span style="color:#fff;background-color:#035e1e;">{{ lang_t('index.connected') }}</span></span>
+                  -->
+                 <span  v-if="connStatus == 0"><span style="color:#fff;background-color:#e19641;">{{ lang_t('iot.no_conn') }}</span></span>
+                  <span  v-if="connStatus == 1"><span style="color:#fff;background-color:#e14141;">{{ lang_t('iot.conn_fail') }}</span></span>
+                  <span  v-if="connStatus == 2"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('iot.conn_success') }}</span></span>
+                  <span  v-if="connStatus == 3"><span style="color:#fff;background-color:#00ad34;">{{ lang_t('iot.conn_ing') }}</span></span>
+                  <span  v-if="bindStatus == 0"><span style="color:#fff;background-color:#e19641;">({{ lang_t('iot.no_bind') }})</span></span>
+                  <span  v-if="bindStatus == 1"><span style="color:#fff;background-color:#e14141;">({{ lang_t('iot.bind_fail') }})</span></span>
+                  <span  v-if="bindStatus == 2"><span style="color:#fff;background-color:#00ad34;">({{ lang_t('iot.bind_success') }})</span></span>
+                  <span  v-if="bindStatus == 3"><span style="color:#fff;background-color:#e19641;">({{ lang_t('iot.no_bind') }})</span></span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      enabled:false,
+      formValidate: {
+        pubHostPath: '',
+        pubPort: '',
+        priHostPath: '',
+        bindCode: '',
+        priPort: '',
+        onenet_server:'',
+        keepaLive : '',
+        onenet_username:'',
+        onenet_key:'',
+      },
+	    connStatus:'0',
+      bindStatus:'0',
+      longitude: '',
+      latitude: '',
+      gpsReportTime: '',
+      interval: '',
+      warningInterval: '',
+      warnRecoverInterval: '',
+      gpsInterval: '',
+      lteInterval: '',
+      percentTimer: '',
+      gpsModule: '',
+      onenet_client_id: ''
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getOnenetIotMCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.onenet_server = data.onenet_server;
+	    _this.formValidate.onenet_port = data.onenet_port;
+      _this.formValidate.onenet_client_id = data.onenet_client_id;
+	    _this.formValidate.onenet_username = data.onenet_username;
+	    _this.formValidate.onenet_key = data.onenet_key;
+    });
+      _this.getOneIotMStatus();
+      _this.percentTimer = setInterval(function(){
+        if(_this.enabled == false)
+          clearInterval(_this.percentTimer);
+        _this.getOneIotMStatus();
+      },5000);
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";
+        uiPost.setOnenetIotMCfg (postVar, apply_callback);
+      }
+    },
+    getOneIotMStatus:function(){
+      var _this = this;
+      uiPost.getOnenetIotMStateCfg(function(data){
+        _this.connStatus = data.connStatus;
+        _this.bindStatus = data.bindStatus;
+      });
+    },
+    /*submitgps: function() {
+      if(99 != cs.num_range(this.gpsReportTime, 1, 86400)){
+        errorAlert(lang_t('iot.gps_report') + lang_t('alert.msg15', [1, 86400]));
+        return false;
+      }
+      uiPost.setGpsReportTimeCfg({gpsReportTime: this.gpsReportTime}, apply_callback)
+    },*/
+    handleSubmit: function(){
+      var _this = this;
+      var postVar = {};
+        if(_this.formValidate.onenet_server == ""){
+          errorAlert(lang_t('index.server_addr') + lang_t('alert.msg5'));
+          return false;
+        }else if (99 != cs.ip_domain(_this.formValidate.onenet_server)){
+          errorAlert(lang_t('index.server_addr') + lang_t('alert.msg19'));
+          return false;
+        }
+
+        if(99 != cs.num_range(_this.formValidate.onenet_port,1,65535)){
+          errorAlert(lang_t('index.port') + lang_t('alert.msg15',[1,65535]));
+          return false;
+        }
+      postVar.enabled = "1";
+			postVar.onenet_server = _this.formValidate.onenet_server;
+			postVar.onenet_port = _this.formValidate.onenet_port;
+      postVar.onenet_client_id = _this.formValidate.onenet_client_id;
+			postVar.onenet_username = _this.formValidate.onenet_username;
+			postVar.onenet_key = _this.formValidate.onenet_key;
+      uiPost.setOnenetIotMCfg (postVar, apply_callback)
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

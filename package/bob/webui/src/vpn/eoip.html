@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('eoip.help') }}</strong></td>
+              </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover">
+              <thead>
+                  <th>ID</th>
+                  <th>{{ lang_t('index.name') }}</th>
+                  <th>{{ lang_t('eoip.eoip_id') }}</th>
+                  <th>{{ lang_t('vpn.dest_address') }}</th>
+                  <th>{{lang_t('common.operation')}}</th>
+              </thead>
+              <tbody>
+                <tr v-for="(val,index) in eoipData" :key="index" @click="editItem(index,val)">
+                  <td>{{ index+1 }}</td> 
+                  <td>
+                    <input type="text" v-model="editItemInfo.eoipName" maxlength="8" v-if="editIdx == index" />
+                    <span v-else>{{ val.eoipName }}</span>
+                  </td>
+                  <td>
+                    <input type="number" v-model="editItemInfo.eoipId" maxlength="5" v-if="editIdx == index" />
+                    <span v-else>{{ val.eoipId }}</span>
+                  </td>
+                  <td>
+                    <input type="text" v-model="editItemInfo.dstAddress" maxlength="15" v-if="editIdx == index"/>
+                    <span v-else>{{ val.dstAddress }}</span>
+                  </td>
+                  <td class="operation">
+                    <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                    <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                    <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td></td> 
+                  <td>
+                    <input type="text" v-model="eoipName" maxlength="8"  />
+                  </td>
+                  <td>
+                    <input type="number" v-model="eoipId" maxlength="5"  />
+                  </td>
+                  <td>
+                    <input type="text" v-model="dstAddress" maxlength="15" />
+                  </td>
+                  <td class="operation">
+                    <a @click="addRule">{{ lang_t('common.add') }}</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover">
+               <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+	    rule_num:"",
+      eoipName:"",
+      eoipId:"",
+      dstAddress:"",
+      eoipData:[],
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  computed:{
+
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getEoipCfg(function(data){
+      if(data.rule){
+        _this.eoipData = data.rule;
+      }
+    })
+  },
+  methods:{
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.rule = [].concat( this.eoipData );
+      postVar.addEffect = "1";
+      uiPost.setEoipCfg(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.eoipData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.eoipData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    veriyfun:function(val, flag) {
+      var _this = this;
+      for(var i = 0;i < _this.eoipData.length;i++){
+        if(flag != undefined && i == flag) continue;
+        if(val.eoipName == _this.eoipData[i].eoipName){
+          errorAlert(lang_t('alert.msg22'));
+          return false;
+        }
+      }
+
+      var _s = cs.string(val.eoipName);
+      if(0 == _s){
+        errorAlert(lang_t('index.name') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('index.name') + lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(99 != cs.num_range(val.eoipId, 1, 65535)){
+        errorAlert(lang_t('eoip.eoip_id') + lang_t('alert.msg15', [1, 65535]));
+        return false;
+      }
+
+      _s = cs.ip(val.dstAddress);
+      if(0 == _s){
+        errorAlert(lang_t('vpn.dest_address') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('vpn.dest_address') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.eoipData.length >= 10){
+        errorAlert(lang_t('alert.msg1',[10]));
+        return false;
+      }
+      var temp = {
+        eoipName: this.eoipName,
+        eoipId: this.eoipId,
+        dstAddress: this.dstAddress
+      };
+      if(!this.veriyfun(temp)) return;
+      this.eoipData.push(temp);      
+      this.eoipName = "";
+      this.eoipId = "";
+      this.dstAddress = "";
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+config rule firewall
+	option drop         1
+	option hnat_enable  1
+	option nat_enable   1
+
+config rule ipport
+	option enable     0
+	option num   '0'
+	option policy     'Drop'
+	
+config rule mac
+	option enable    0
+	option drop      1
+	option num  '0'
+
+config rule iptoip
+	option enable    0
+	option num  '0'
+
+config rule url
+	option enable    0
+	option num  '0'
+
+config rule portfw
+	option enable    0
+	option num  '0'
+	
+config rule dmz
+	option enable    0
+	option host      ''
+	option wanIdx     1
+
+config rule vpn
+	option wanping    0
+	option l2tp       1
+	option pptp       1
+	option ipsec      1
+	option wanIdx     1
+	
+config rule dos
+	option spi        0
+	option portscan   0
+	option synflood   0
+
+config rule remote
+	option enable     0
+	option port       8081
+	option wanIdx     1
+
+config rule 'accesslist'
+
+config rule 'dynamic'
+	option rip_enable '0'
+	option nat_enable '0'
+	option rip_send '0'
+	option rip_recv '0'
+
+config rule 'staticroute'
+	option enable '0'
+
+config rule 'rnat'
+	option enable '0'

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+           <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{lang_t('ipsec.help_l2tpxauth')}}</strong></td>
+            </tr>         
+           </table>
+            <table class="table table-striped">
+              <!-- <tr>
+                <td style="width: 20%">{{ lang_t('ipsec.l2tp_status') }}</td>
+                <td>
+                  <input type="checkbox" id="l2tp_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr> -->
+              <tr>
+                <td>{{ lang_t('ipsec.xauth_status') }}</td>
+                <td>
+                  <input type="checkbox" id="xauth_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('ipsec.key')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecPsk" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="xauth_status">
+                <td>{{lang_t('ipsec.client_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.sourceIp" style="float: left;width: 79%;" maxlength="15"/>
+                  <span style="float: left;margin-top:6px">/</span>
+                  <input type="text" v-model="forms.mark" style="width: 50px;" maxlength="3"/>
+                </td>
+              </tr>
+              <tr v-show="xauth_status">
+                <td>{{lang_t('ipsec.pass')}}</td>
+                <td>
+                  <input type="text" v-model="forms.ipsecXauthPasswd" maxlength="32" />
+                </td>
+              </tr>
+              <!-- <tr v-show="xauth_status">
+                <td>{{ lang_t('ipsec.xauth_l2tp_status') }}</td>
+                <td>
+                  <input type="checkbox" id="l2tp_userpass" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>   -->
+              <tr>
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit()">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>   
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      l2tp_status:false,
+      xauth_status:false,
+      l2tp_userpass:false,
+      forms: {
+        sourceIp:'',
+        mark:'32',
+        ipsecXauthPasswd:'0',
+        ipsecPsk:''
+      }
+    }
+  },
+  computed:{
+    toggle_status:function(){
+      $('#l2tp_status').bootstrapSwitch('state',this.l2tp_status);
+      $('#xauth_status').bootstrapSwitch('state',this.xauth_status);
+      $('#l2tp_userpass').bootstrapSwitch('state',this.l2tp_userpass);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getIpsecL2tpXauthCfg(function(data){
+      _this.l2tp_status = data.ipsecL2tpEnable == "1" ? true : false;
+      _this.xauth_status = data.ipsecXauthEnable == "1" ? true : false;
+      _this.l2tp_userpass = data.ipsecL2tpUserPasswdEnable == "1" ? true : false;
+      _this.forms.sourceIp = data.ipsecXauthRightsourceip.split("/")[0];
+      _this.forms.mark = data.ipsecXauthRightsourceip.split("/")[1];
+      _this.forms.ipsecXauthPasswd = data.ipsecXauthPasswd;
+      _this.forms.ipsecPsk = data.ipsecPsk;
+    })
+  },
+  methods:{
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+
+      _s = cs.string(_this.forms.ipsecPsk);
+      if(0 == _s){
+        errorAlert(lang_t('ipsec.key') + lang_t('ipsec.msg1'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('ipsec.key') + lang_t('ipsec.msg2'));
+        return false;
+      }
+
+      if(true == _this.xauth_status){
+        _s = cs.ip_mark(_this.forms.sourceIp + '/' + _this.forms.mark);
+        if(0 == _s){
+          errorAlert(lang_t('ipsec.client_ip') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.client_ip') + lang_t('ipsec.msg6'));
+          return false;
+        }
+
+        if(99 != cs.num_range(_this.forms.mark,1,32)){
+          errorAlert(lang_t('ipsec.client_mark') + lang_t('ipsec.msg5',[1,32]));
+          return false;
+        } 
+
+        _s = cs.string(_this.forms.ipsecXauthPasswd);
+        if(0 == _s){
+          errorAlert(lang_t('ipsec.key') + lang_t('ipsec.msg1'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(lang_t('ipsec.key') + lang_t('ipsec.msg2'));
+          return false;
+        }
+      }
+
+      postVar.ipsecL2tpEnable = _this.l2tp_status ? "1" : "0";
+      postVar.ipsecL2tpUserPasswdEnable = _this.l2tp_userpass ? "1" : "0";
+      postVar.ipsecXauthEnable = _this.xauth_status ? "1" : "0";   
+      if(true == _this.xauth_status){   
+        postVar.ipsecXauthRightsourceip = _this.forms.sourceIp + "/" + _this.forms.mark;
+        postVar.ipsecXauthPasswd = _this.forms.ipsecXauthPasswd;
+      }
+      postVar.ipsecPsk = _this.forms.ipsecPsk;
+      uiPost.setIpsecL2tpXauthCfg(postVar, apply_callback);
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#l2tp_status', function(data) {
+      _this.l2tp_status = data;
+    });
+    addSwitch('#xauth_status', function(data) {
+      _this.xauth_status = data;
+    });
+    addSwitch('#l2tp_userpass', function(data) {
+      _this.l2tp_userpass = data;
+    });
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

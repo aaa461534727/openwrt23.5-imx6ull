@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style type="text/css">
+    .tips{
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background-color: rgb(252, 148, 3);
+      color: #fff;
+      line-height: 15px;
+      text-align: center;
+      font-weight: bold;
+      margin-left: 5px;
+      margin-top: 5px;
+      cursor: pointer;
+      display: inline-block;
+    }
+    input[type="text"],
+    select{
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('portfwd.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td style="width: 20%;">{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" data-on-color="warning">
+                </td>
+              </tr> 
+            </table>
+            <div class="table-phone-width">
+              <table class="table table-striped table-bordered table-hover" v-show="enable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th style="width: 9%;">{{lang_t('index.type')}}</th>
+                    <th style="width: 9%;">{{lang_t('filter.protocol')}}</th>
+                    <th style="width: 9%;">{{lang_t('portfwd.address_type')}}</th>              
+                    <th style="width: 15%;">{{lang_t('portfwd.source_address')}}</th>
+                    <th style="width: 9%;">{{lang_t('portfwd.source_port')}}</th>
+                    <th style="width: 15%;">{{lang_t('portfwd.map_address')}}</th>
+                    <th style="width: 9%;">{{lang_t('portfwd.map_interface')}}</th>
+                    <th style="width: 9%;">{{lang_t('portfwd.map_port')}}</th>
+                    <th>{{ lang_t('common.operation') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in natData" :key="index" @click="editItem(index,val)">
+                    <td>{{ index+1 }}</td>
+                    <td>
+                      <select v-model="editItemInfo.natType" data-style="btn-default" @change="hideShow()" v-if="editIdx == index">
+                        <option value="0">DNAT</option>
+                        <option value="1">SNAT</option>
+                      </select>
+                      <span v-else>{{ '1' == val.natType ? "SNAT" : "DNAT" }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.protocol" data-style="btn-default" v-if="editIdx == index">
+                        <option value="all">ALL</option>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                      </select>
+                      <span v-else>{{ val.protocol.toUpperCase() }}</span>
+                    </td> 
+                    <td>
+                      <select v-model="editItemInfo.addressType" data-style="btn-default" @change="hideShow()" v-if="editIdx == index">
+                        <option value="interface">{{lang_t('index.interface')}}</option>
+                        <option value="staticIp">IP</option>
+                      </select>
+                      <span v-else>{{ 'interface' == val.addressType ? lang_t('index.interface') : "IP" }}</span>
+                    </td>                 
+                    <td>
+                      <div v-if="editIdx == index">
+                        <div ref="oaddr">
+                          <input style="width: 80%;" type="text" v-model="editItemInfo.oAddress" maxlength="15" />
+                          <div class="tips" @click="tipsFun()" ref="oaddr_t">!</div>
+                        </div>
+                        <div ref="oaddr_d">--</div>
+                      </div>
+                      <span v-else>{{ ((val.natType == '0' && val.addressType == 'staticIp') || val.natType == '1') ? val.oAddress : '--' }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input style="width: 70%;" type="text" v-model="editItemInfo.oPort" maxlength="11" />
+                        <div class="tips" @click="tipsFun('portfwd.port_desc')">!</div>
+                      </div>
+                      <span v-else>{{ val.oPort }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <div ref="maddr">
+                          <input type="text" v-model="editItemInfo.mAddress" maxlength="15" />
+                        </div>
+                        <div ref="maddr_d">--</div>
+                      </div>
+                      <span v-else>{{ ((val.natType == '1' && val.addressType == 'staticIp') || val.natType == '0') ? val.mAddress : '--' }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <div ref="interface">
+                          <select v-model="editItemInfo.interface" data-style="btn-default">
+                            <!-- <option value="LAN">LAN</option> -->
+                            <option value="WAN">WAN</option>
+                            <option value="modem">modem</option>
+							<option v-if="vpn_iface" value="vpn">vpn</option>
+                          </select>
+                        </div>
+                        <div ref="interface_d">--</div>
+                      </div>
+                      <span v-else>{{ val.addressType == 'interface' ? (val.interface || (val.natType == '1' ? val.mAddress : val.oAddress)) : '--' }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input style="width: 70%;" type="text" v-model="editItemInfo.mPort" maxlength="11" />
+                      </div>
+                      <span v-else>{{ val.mPort }}</span>
+                    </td>
+                    <td class="operation">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td>
+                      <select v-model="natType" data-style="btn-default">
+                        <option value="0">DNAT</option>
+                        <option value="1">SNAT</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select v-model="protocol" data-style="btn-default">
+                        <option value="all">ALL</option>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                      </select>
+                    </td> 
+                    <td>
+                      <select v-model="addressType" data-style="btn-default">
+                        <option value="interface">{{lang_t('index.interface')}}</option>
+                        <option value="staticIp">IP</option>
+                      </select>
+                    </td>                 
+                    <td>
+                      <div v-if="(natType == '0' && addressType == 'staticIp') || natType == '1'">
+                        <input style="width: 80%;" type="text" v-model="oAddress" maxlength="15" />
+                        <div class="tips" v-show="'1' == natType" @click="tipsFun()">!</div>
+                      </div>
+                      <div v-else>--</div>
+                    </td>
+                    <td>
+                      <input style="width: 70%;" type="text" v-model="oPort" maxlength="11" />
+                      <div class="tips" @click="tipsFun('portfwd.port_desc')">!</div>
+                    </td>
+                    <td>
+                      <div v-if="(natType == '1' && addressType == 'staticIp') || natType == '0'">
+                        <input type="text" v-model="mAddress" maxlength="15" />
+                      </div>
+                      <div v-else>--</div>
+                    </td>
+                    <td>
+                      <div v-if="addressType == 'interface'">
+                        <select v-model="interface" data-style="btn-default">
+                          <!-- <option value="LAN">LAN</option> -->
+                          <option value="WAN">WAN</option>
+                          <option value="modem">modem</option>
+						  <option v-if="vpn_iface" value="vpn">vpn</option>
+                        </select>
+                      </div>
+                      <div v-else>--</div>
+                    </td>
+                    <td>
+                      <input style="width: 70%;" type="text" v-model="mPort" maxlength="11"/>
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <table class="table table-striped table-bordered table-hover" v-show="enable">
+               <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var vpn_iface;
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      enable: false,
+      natType:'0',
+      protocol: 'all',
+	    addressType: 'staticIp',
+      interface: "modem",
+      oAddress: '',
+      oPort: '',
+      mAddress:'',
+      mPort:'',
+      natData:[],
+      ifaceOption: [],
+      editIdx: '-1',
+      editItemInfo: {}
+    }
+  },
+  computed:{
+    
+  },
+  created:function() {
+    var _this = this;
+    uiPost.getNatRules(function(data){
+      _this.enable = data.enable == "1";
+      _this.setState && _this.setState(_this.enable);
+      _this.ifaceOption = (data.interface || "").split(",");
+	  if(_this.ifaceOption[0] == 'VPN'){
+		vpn_iface=true;
+	  }
+	  
+      if(data.rule){
+        _this.natData = data.rule;
+      }
+    });
+  },
+  mounted: function() {
+    var _this = this;
+    this.setState = addSwitch("#switch_status", function(data) {
+       if(globalConfig.specialIotBanApply ==1 ) return;
+      if (data != _this.enable) {
+        _this.post({
+          enable: data ? "1" : "0",
+          addEffect: "0"
+        });
+      }
+    })
+  },
+  methods:{
+    tipsFun: function(text) {
+      Cstools.msg({
+        type: 'warn',
+        messgetype: 'alert',
+        content: lang_t(text || 'index.net_addr_any')
+      })
+    },
+    hideShow: function(flag) {
+      var info = this.editItemInfo, ref = this.$refs;
+      var f_show = function(t) {
+        $(ref[t]).show();
+        $(ref[t + "_d"]).hide();
+      };
+       var f_hide = function(t) {
+        $(ref[t]).hide();
+        $(ref[t + "_d"]).show();
+      };
+      if ((info.natType == '0' && info.addressType == 'staticIp') || info.natType == '1') {
+        if (info.natType == "1") {
+          $(ref.oaddr_t).show();
+        } else {
+          $(ref.oaddr_t).hide();
+        }
+        if ((info.natType == '0' && cs.ip(info.oAddress) != 99) || (info.natType == '1' && cs.ip_mark_any(info.oAddress) != 99)) {
+          $(ref["oaddr"]).find("input").val("");
+          this.$set(info, "oAddress", "");
+        }
+        f_show("oaddr");
+      } else {
+        f_hide("oaddr");
+      }
+      if ((info.natType == '1' && info.addressType == 'staticIp') || info.natType == '0') {
+        if (cs.ip(info.mAddress) != 99) {
+          $(ref["maddr"]).find("input").val("");
+          this.$set(info, "mAddress", "");
+        }
+        f_show("maddr");
+      } else {
+        f_hide("maddr");
+      }
+      if (info.addressType == 'interface') {
+        if (flag == 'edit') {
+          this.$set(info, "interface", info.natType == '1' ? info.mAddress : info.oAddress);
+        } else {
+          this.$set(info, "interface", "modem");
+        }
+        f_show("interface");
+      } else {
+        f_hide("interface");
+      }
+    },
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.subnet = [].concat( this.natData );
+      postVar.addEffect = "1";
+      this.post(postVar);
+    },
+    post: function(postVar) {
+      uiPost.setNatRules(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      var edit = this.editItemInfo;
+      if (edit.natType == '0' && edit.addressType == 'interface') edit.oAddress = edit.interface;
+      if (edit.natType == '1' && edit.addressType == 'interface') edit.mAddress = edit.interface;
+      if(!this.veriyfun(edit, idx)) return;
+      $.extend(this.natData[idx], edit);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.natData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+      this.$nextTick(function() {
+        this.hideShow('edit');
+      })
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    addRule:function () {
+      var _this = this;
+      if(_this.natData.length >= 32){
+        errorAlert(lang_t('alert.msg1', [32]));
+        return false;
+      }
+      var temp = {
+        natType: this.natType,
+        protocol: this.protocol,
+        oAddress: (this.natType == '0' && this.addressType == 'interface') ? this.interface : this.oAddress,
+        addressType: this.addressType,
+        mAddress: (this.natType == '1' && this.addressType == 'interface') ? this.interface : this.mAddress,
+        oPort: this.oPort,
+        mPort: this.mPort
+      };
+      if(!this.veriyfun(temp)) return;
+      this.natData.push(temp);      
+      this.natType = "0";
+      this.protocol = "all";
+      this.oAddress = "";
+      this.addressType = "staticIp";
+      this.mAddress = "";
+      this.oPort = "";
+      this.mPort = "";
+    },
+    veriyfun:function(val, flag) {
+      var _this = this, _s;
+      if (('staticIp' == val.addressType && '0' == val.natType) || '1' == val.natType) {
+        if ('1' == val.natType) {
+          _s = cs.ip_mark_any(val.oAddress);
+          if (0 == _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('alert.msg5'));
+            return false;
+          } else if(1 == _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('alert.msg17'));
+            return false;
+          } else if(2 == _s || 3 == _s || 4 == _s || 5 == _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('alert.msg14'));
+            return false;
+          } else if(6 == _s || 7 == _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('network.mark') + lang_t('alert.msg15',[1,32]));
+            return false;
+          } else if(8 == _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('alert.msg24'));
+            return false;
+          }
+        } else {
+          _s = cs.ip(val.oAddress);
+          if (0 == _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('alert.msg5'));
+            return false;
+          } else if(99 != _s) {
+            errorAlert(lang_t('portfwd.source_address') + lang_t('alert.msg11'));
+            return false;
+          }
+        }
+      }
+
+      if (val.oPort) {
+        var port = val.oPort.split('-');
+        if (1 != port.length && 2 != port.length) {
+          errorAlert(lang_t('portfwd.source_port') + lang_t('filter.msg7'));
+          return false;
+        }
+        for (var i = 0;i < port.length;i++) {
+          if (99 != cs.num_range(port[i], 1, 65535)) {
+            errorAlert(lang_t('portfwd.source_port') + lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+        }
+        if (2 == port.length && Number(port[0]) > Number(port[1])) {
+          errorAlert(lang_t('portfwd.source_port') + lang_t('filter.msg8'));
+          return false;
+        }
+      } else {
+        errorAlert(lang_t('portfwd.source_port') + lang_t('alert.msg5'));
+        return false;
+      }
+
+      if (('staticIp' == val.addressType && '1' == val.natType) || '0' == val.natType) {
+        _s = cs.ip(val.mAddress);
+        if (0 == _s) {
+          errorAlert(lang_t('portfwd.map_address') + lang_t('alert.msg5'));
+          return false;
+        } else if(99 != _s) {
+          errorAlert(lang_t('portfwd.map_address') + lang_t('alert.msg11'));
+          return false;
+        }
+      }
+    
+      if (val.mPort) {
+        range = cs.num_range(val.mPort, 1, 65535);
+        if(range == 0){
+          errorAlert(lang_t('portfwd.map_port') + lang_t('alert.msg15', [1, 65535]));
+          return false;
+        }else if(range == 1){
+           errorAlert(lang_t('portfwd.map_port') + lang_t('alert.msg15', [1, 65535]));
+          return false;
+        }else if(range != 99){
+          errorAlert(lang_t('portfwd.map_port') + lang_t('alert.msg15', [1, 65535]));
+          return false;
+        }
+
+
+        var port = val.mPort.split('-');
+        if (1 != port.length && 2 != port.length) {
+          errorAlert(lang_t('portfwd.map_port') + lang_t('filter.msg7'));
+          return false;
+        }
+        for (var i = 0;i < port.length;i++) {
+          if (99 != cs.num_range(port[i], 1, 65535)) {
+            errorAlert(lang_t('portfwd.map_port') + lang_t('alert.msg15', [1, 65535]));
+            return false;
+          }
+        }
+        if (2 == port.length && Number(port[0]) > Number(port[1])) {
+          errorAlert(lang_t('portfwd.map_port') + lang_t('filter.msg8'));
+          return false;
+        }
+      } else {
+        errorAlert(lang_t('portfwd.map_port') + lang_t('alert.msg5'));
+        return false;
+      }
+
+
+      for(var i=0; i<_this.natData.length; i++){
+        if(flag != undefined && flag == i) continue;
+
+        if(val.oAddress == _this.natData[i].oAddress){
+          if(val.oPort == _this.natData[i].oPort){
+            errorAlert(lang_t('portfwd.msg3'));
+            return false;
+          }   
+        }
+
+        if(val.mAddress == _this.natData[i].mAddress){
+          if(val.mPort == _this.natData[i].mPort){
+             errorAlert(lang_t('portfwd.msg4'));
+            return false;
+          }
+        }
+      }
+      if(val.mAddress == val.oAddress ){
+        errorAlert(lang_t('portfwd.msg5'));
+        return false;    
+      }
+      
+      return true;
+    }  
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

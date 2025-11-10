@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+        <section class="col-xs-12">                
+          <div class="content-box">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('ddns.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('ddns.service') }}</td>
+                <td>
+                  <select data-style="btn-default" v-model="formValidate.ddnsProvider" @change="servicechange">
+                    <option value="dyndns.org">DynDNS</option>
+                    <option value="no-ip.com">No-IP</option>
+                    <option value="3322.org">www.3322.org</option>
+                    <!-- <option v-show="this.flag" value="oray.com">www.oray.com</option>
+                    <option value="ddns.crabox-sys.com">ddns.crabox-sys.com</option> -->
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td></td>
+                <td>
+                  <a v-show="formValidate.ddnsProvider == 'dyndns.org'" href="http://dyn.com/dns/" target="_blank">{{ lang_t('ddns.gotoapply') }}</a>
+                  <a v-show="formValidate.ddnsProvider == 'no-ip.com'" href="http://www.no-ip.com/newUser.php/" target="_blank">{{ lang_t('ddns.gotoapply') }}</a>
+                  <a v-show="formValidate.ddnsProvider == '3322.org'" href="http://www.pubyun.com/accounts/signup/" target="_blank">{{ lang_t('ddns.gotoapply') }}</a>
+                  <!-- <a v-show="formValidate.ddnsProvider == 'oray.com'" href="https://console.oray.com/passport/register.html" target="_blank">{{ lang_t('ddns.gotoapply') }}</a>
+                  <a v-show="formValidate.ddnsProvider == 'ddns.crabox-sys.com'" href="http://ddns.crabox-sys.com" target="_blank">{{ lang_t('ddns.gotoapply') }}</a> -->
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.ddnsProvider == 'ddns.crabox-sys.com'">
+                <td>{{ lang_t('internet.wanmode') }}</td>
+                <td>
+                  <select v-model="ddnsMode" data-style="btn-default">
+                    <option value="0">{{ lang_t('internet.auto') }}</option>
+                    <option value="1">{{ lang_t('internet.manual') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.ddnsProvider == 'no-ip.com' && ddnsDomainList.length != 0">
+                <td>{{ lang_t('ddns.domainname_s') }}</td>
+                <td>
+                  <input type="checkbox" v-model="is_noip" checked="checked"/>
+                </td>
+              </tr>
+              <tr v-if="enabled && ((formValidate.ddnsProvider != 'oray.com' && is_noip==true && formValidate.ddnsProvider != 'ddns.crabox-sys.com') || (formValidate.ddnsProvider=='ddns.crabox-sys.com' && ddnsMode  ==1))">
+                <td>{{ lang_t('ddns.domainname') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.ddnsDomain" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-if="enabled && (formValidate.ddnsProvider=='ddns.crabox-sys.com' && ddnsMode == 1)">
+                <td>{{ lang_t('ddns.opcode') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.ddnsOpcode" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.ddnsProvider != 'oray.com' && is_noip==false">
+                <td>{{ lang_t('ddns.domainname') }}</td>
+                <td>
+                  <select v-model="formValidate.ddnsDomain_noip">
+                    <option v-for="i in ddnsDomainList">{{i}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.ddnsProvider != 'ddns.crabox-sys.com'">
+                <td>{{ lang_t('index.username') }}</td>
+                <td>
+                  <input type="text" v-model="formValidate.ddnsAccount" :maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="enabled && formValidate.ddnsProvider != 'ddns.crabox-sys.com'">
+                <td>{{ lang_t('index.password') }}</td>
+                <td>
+                  <input v-model="formValidate.ddnsPassword" :maxlength="32" v-pass/>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('index.status') }}</td>
+                <td>
+                  <span v-if="ddnsStatus =='1'">{{ lang_t('ddns.ddnssuccess') }}</span>
+                  <span v-else-if="ddnsStatus =='2'">{{ lang_t('ddns.ddnsnoupdate') }}</span>
+                  <span v-else>{{ lang_t('ddns.ddnsfail') }}</span>
+                </td>
+              </tr>
+              <tr v-show="enabled && (formValidate.ddnsProvider == 'oray.com' || (formValidate.ddnsProvider=='ddns.crabox-sys.com' && ddnsMode ==0))">
+                <td>{{ lang_t('ddns.domainname') }}</td>
+                <td>
+                  <span>{{ orayDomainName }}</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td>{{ lang_t('ddns.ddnsinfo') }}</td>
+                <td>
+                  <span>{{ ddnsIpMsg }}</span>
+                </td>
+              </tr>
+              <tr v-show="enabled">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      enabled:'',
+      formValidate:{
+        ddnsProvider:'',
+        ddnsDomain:'',
+        ddnsDomain_noip:'',
+        ddnsAccount:'',
+        ddnsPassword:'',
+        ddnsOpcode:''
+      },
+      ddnsStatus:'',
+      ddnsIp:'',
+      flag:true,
+      is_noip:true,
+      ddnsDomainList:[],
+      ddnsMode:'0'
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getDdnsCfg(function(data){
+      _this.enabled = data.ddnsEnabled == "1" ? true : false;
+      _this.formValidate.ddnsProvider = data.ddnsProvider;
+      _this.formValidate.ddnsDomain = data.ddnsDomain;
+      _this.formValidate.ddnsAccount = data.ddnsAccount;
+      _this.formValidate.ddnsPassword = data.ddnsPassword;
+      _this.formValidate.ddnsDomain_noip = data.ddnsDomain;
+      _this.formValidate.ddnsOpcode = data.ddnsOpcode;
+      _this.ddnsMode  = data.ddnsMode ;
+      /* if(data.flag != undefined && data.flag == "1"){
+        _this.flag = false;
+      }else{
+        _this.flag = true;
+        if(data.ddnsDomainList){
+          _this.ddnsDomainList = data.ddnsDomainList.split(';');
+        }
+      } */
+      if(_this.enabled) {
+        uiPost.getDdnsStatus(function(data){
+          _this.ddnsStatus = data.ddnsStatus;
+          _this.ddnsIp = data.ddnsIPAddr;
+        });
+      }
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    },
+    ddnsIpMsg:function(){
+  	  if(this.ddnsIp != ""){
+  		  return this.lang_t("ddns.ipaddr")+this.ddnsIp;
+  	  }else{
+  		  return this.lang_t("ddns.ipaddr")+"0.0.0.0";
+  	  }
+    },
+    orayDomainName:function(){
+      return this.formValidate.ddnsDomain;
+    }
+  },
+  created:function(){
+    
+  },
+  methods:{
+    servicechange:function(){
+      if(this.formValidate.ddnsProvider != 'no-ip.com'){
+        this.is_noip = true;
+      }
+    },
+    submit_status:function(){
+      if(globalConfig.specialIotBanApply ==1 ) return;
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.ddnsEnabled = "0";
+        postVar.addEffect = "0";//on/off
+        uiPost.setDdnsCfg(postVar, apply_callback);
+      }      
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if((_this.formValidate.ddnsProvider == 'ddns.crabox-sys.com' && _this.ddnsMode == 1) || (_this.formValidate.ddnsProvider != 'oray.com' && _this.formValidate.ddnsProvider != 'ddns.crabox-sys.com')){
+        if(_this.formValidate.ddnsDomain == ''){
+          _this.errorAlert(_this.lang_t('ddns.domainname') + _this.lang_t('alert.msg5'));
+          return false;
+        }
+        if(1 == cs.string(_this.formValidate.ddnsDomain)){
+          _this.errorAlert(_this.lang_t('ddns.domainname') + _this.lang_t('alert.msg6'));
+          return false;
+        }
+      }
+      
+      if(_this.formValidate.ddnsProvider != 'ddns.crabox-sys.com'){
+        if(_this.formValidate.ddnsAccount == ''){
+          _this.errorAlert(_this.lang_t('index.username') + _this.lang_t('alert.msg5'));
+          return false;
+        }
+
+        if(_this.formValidate.ddnsPassword == ''){
+          _this.errorAlert(_this.lang_t('index.password') + _this.lang_t('alert.msg5'));
+         return false;
+        }
+      }
+
+      if(1 == cs.string(_this.formValidate.ddnsAccount)){
+        _this.errorAlert(_this.lang_t('index.username') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(1 == cs.string(_this.formValidate.ddnsPassword)){
+        _this.errorAlert(_this.lang_t('index.password') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+          
+      if(_this.is_noip == false){
+        postVar.ddnsDomain = _this.formValidate.ddnsDomain_noip;
+      }else{
+        postVar.ddnsDomain = _this.formValidate.ddnsDomain;
+      }
+
+      postVar.ddnsEnabled = "1";
+      postVar.ddnsProvider = _this.formValidate.ddnsProvider;
+      postVar.ddnsAccount = _this.formValidate.ddnsAccount;
+      postVar.ddnsPassword = _this.formValidate.ddnsPassword;
+      postVar.ddnsOpcode = _this.formValidate.ddnsOpcode;
+      postVar.ddnsMode = _this.ddnsMode;
+      postVar.addEffect = "1";//on/off
+      uiPost.setDdnsCfg(postVar, apply_callback);
+    },
+    errorAlert:function(data){
+      var _this = this;
+      Cstools.msg({
+        type: 'error',
+        messgetype: 'alert',
+        title: _this.lang_t('common.tips'),
+        content: data
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

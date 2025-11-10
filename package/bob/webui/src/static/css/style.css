@@ -1,0 +1,228 @@
+.menusub{
+	color: #b85904;
+}
+.app-style-1 .menusub{
+	color: #67b9b7;
+}
+
+.app-style-green .menusub{
+	color: #67b9b7;
+}
+
+.app-style-green-382c .menusub{
+	color: #67b9b7;
+}
+
+.app-style-blue .menusub{
+	color: #31708f;
+}
+
+.csui-table-cell {
+    white-space: normal;
+    word-break: break-all;
+    position:relative;
+}
+.csui-table-sort {
+    margin-left: 4px;
+    display: inline-block;
+    bottom: -5px;
+    position: absolute;
+}
+.csui-table-sort ul {
+    overflow: hidden;
+    padding-bottom: 6px;
+    padding-left: 0;
+    box-sizing:border-box;
+}
+.csui-table-sort li {
+    height: 2px;
+    list-style-type:none;
+}
+.csui-table-sort i {
+    margin: 2px 0;
+    cursor:pointer;
+}
+.csui-table-sort .fa-sort-asc{
+    color: #474747;
+}
+ .csui-table-sort .fa-sort-asc:hover{
+    color: #EA7105;
+} 
+
+.app-style-1 .csui-table-sort .fa-sort-asc:hover{
+    color: #A6F5F2;
+} 
+
+.app-style-green .csui-table-sort .fa-sort-asc:hover{
+    color: #A6F5F2;
+} 
+
+.app-style-green-382c .csui-table-sort .fa-sort-asc:hover{
+    color: #A6F5F2;
+}
+
+.app-style-blue .csui-table-sort .fa-sort-asc:hover{
+    color: #31708f;
+}
+
+.csui-table-sort .fa-sort-desc{
+	color: #474747;
+}
+ .csui-table-sort .fa-sort-desc:hover{
+    color: #EA7105;
+} 
+
+.app-style-1 .csui-table-sort .fa-sort-desc:hover{
+    color: #A6F5F2;
+} 
+
+.app-style-green .csui-table-sort .fa-sort-desc:hover{
+    color: #A6F5F2;
+} 
+
+.app-style-green-382c .csui-table-sort .fa-sort-desc:hover{
+    color: #A6F5F2;
+} 
+
+.app-style-blue .csui-table-sort .fa-sort-desc:hover{
+    color: #31708f;
+}
+
+.csui-vpn-bread{
+    background-color: #BEBEBE;
+}
+
+.logo{
+    width: auto;
+}
+
+@media (max-width: 767px){
+    .logo{
+        width: 80%;
+    }
+}
+
+.operation a{cursor: pointer;}
+
+.port-range-group {
+    display: flex;
+}
+.port-range-group input {
+    width: 45%;
+}
+.port-range-group span {
+    line-height: 34px;
+    margin: 0 3px;
+}
+
+#lang_select_phone {
+    width: 100px;
+}
+.model-phone-show {display: inline;}
+.table-phone-width {overflow-x: auto;}
+
+@media (max-width: 768px){
+    .table-phone-width table{width: 1030px;}
+    .table-phone-width.low table{width: 515px;}
+}
+@media (max-width: 375px){
+    #lang_select_phone {width: 70px;}
+}
+@media (max-width: 320px){
+    .model-phone-show {display: none;}
+}
+
+.tips{
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: rgb(252, 148, 3);
+    color: #fff;
+    line-height: 15px;
+    text-align: center;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+    display: inline-block;
+  }
+  
+  .app-style-1 .tips{
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #67b9b7;
+    color: #fff;
+    line-height: 15px;
+    text-align: center;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+ .app-style-green .tips{
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #67b9b7;
+    color: #fff;
+    line-height: 15px;
+    text-align: center;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+ .app-style-green-382c .tips{
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #67b9b7;
+    color: #fff;
+    line-height: 15px;
+    text-align: center;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  .app-style-blue .tips{
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #31708f;
+    color: #fff;
+    line-height: 15px;
+    text-align: center;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+.lable-title{
+  color: #EA7105;font-weight: bold;
+}
+
+.app-style-1 .lable-title{
+  color: #00665f;font-weight: bold;
+}
+
+.app-style-green .lable-title{
+  color: #00665f;font-weight: bold;
+}
+
+.app-style-green-382c .lable-title{
+  color: #00665f;font-weight: bold;
+}
+
+.app-style-blue .lable-title{
+  color: #31708f;font-weight: bold;
+}

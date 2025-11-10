@@ -1,0 +1,10 @@
+{
+   "vpncheckEnable":"1",
+   "checkInterval":"120",
+   "reconnectThreshold":"5",
+   "networkThreshold":"0",
+   "rebootThreshold":"0",
+   "flowEnable":"0",
+   "flowUprate":"1024",
+   "flowDownrate":"1024"
+}

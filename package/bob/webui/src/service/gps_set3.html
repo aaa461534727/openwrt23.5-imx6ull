@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{lang_t('gps.help')}}</strong></td>
+            </tr>
+			<tr>
+			  <td style="width: 25%;">{{lang_t('gps.mode')}}</td>
+			  <td>
+				<select v-model="mode">
+				  <option value="0">{{ lang_t('common.off') }}</option>
+				  <option value="1">{{ lang_t('gps.client') }}</option>
+				</select>
+			  </td>
+			</tr>
+            <tr v-show="mode == '1'">
+              <td>{{lang_t('gps.bind_port')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.bindPort" :maxlength="5">
+                <span>(1~65535)</span>
+              </td>
+            </tr>
+            <tr v-show="mode == '1'">
+              <td>{{lang_t('index.server_addr')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.server" :maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="mode == '1'">
+              <td>{{lang_t('gps.server_port')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.serverPort" :maxlength="5">
+                <span>(1~65535)</span>
+              </td>
+            </tr>
+            <tr v-show="mode == '1'">
+              <td>{{ lang_t('filter.protocol') }}</td>
+              <td>
+                <span>
+                  <input type="radio" value="tcp" name="protocol" v-model="formValidate.protocol">TCP
+                </span>&nbsp;&nbsp;
+                <span>
+                  <input type="radio" value="udp" name="protocol" v-model="formValidate.protocol">UDP
+                </span>
+              </td>
+            </tr>
+			<tr v-show="mode == '1'">
+              <td>{{ lang_t('gps.socket_timeout') }}</td>
+              <td>
+                <input type="text" v-model="formValidate.socketTimeout" :maxlength="5">
+              </td>
+            </tr>
+			<tr v-show="mode == '1'">
+              <td>{{ lang_t('gps.serial_timeout') }}</td>
+              <td>
+                <input type="text" v-model="formValidate.serialTimeout" :maxlength="5">
+              </td>
+            </tr>
+			<tr v-show="mode == '1'">
+              <td>{{ lang_t('gps.packet_payload') }}</td>
+              <td>
+                <input type="text" v-model="formValidate.packetPayload" :maxlength="5">
+              </td>
+            </tr>
+            <tr v-show="mode == '1'">
+              <td>{{lang_t('gps.heart_best_content')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.heartBestContent" :maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="mode == '1'">
+              <td>{{lang_t('gps.heart_best_interval')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.heartBestInterval" :maxlength="5">
+              </td>
+            </tr>
+            <tr v-show="mode == '1'">
+              <td>{{lang_t('gps.gps_report_interval')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.gpsReportInterval">(s)
+              </td>
+            </tr>
+			<tr v-show="mode == '1'">
+			  <td>{{ lang_t('gps.band_rate') }}</td>
+			  <td>
+				<select v-model="formValidate.bandRate">
+				  <option value="9600">9600</option>
+				  <option value="38400">38400</option>
+				  <option value="57600">57600</option>
+				</select>
+			  </td>
+			</tr>
+			<tr v-show="mode == '1'">
+			  <td>{{ lang_t('gps.parity_bit') }}</td>
+			  <td>
+				<select v-model="formValidate.parityBit">
+				  <option value="none">none</option>
+				</select>
+			  </td>
+			</tr>
+			<tr v-show="mode == '1'">
+			  <td>{{ lang_t('gps.data_bit') }}</td>
+			  <td>
+				<select v-model="formValidate.dataBit">
+				  <option value="0">0</option>
+				  <option value="1">1</option>
+				  <option value="2">2</option>
+				  <option value="3">3</option>
+				  <option value="4">4</option>
+				  <option value="5">5</option>
+				  <option value="6">6</option>
+				  <option value="7">7</option>
+				  <option value="8">8</option>
+				</select>
+			  </td>
+			</tr>
+			<tr v-show="mode == '1'">
+			  <td>{{ lang_t('gps.stop_bit') }}</td>
+			  <td>
+				<select v-model="formValidate.stopBit">
+				  <option value="0">0</option>
+				  <option value="1">1</option>
+				  <option value="2">2</option>
+				  <option value="3">3</option>
+				  <option value="4">4</option>
+				  <option value="5">5</option>
+				  <option value="6">6</option>
+				  <option value="7">7</option>
+				  <option value="8">8</option>
+				</select>
+			  </td>
+			</tr>
+            <tr>
+              <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                <button class="btn btn-primary" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script src="/static/js/qrcode.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	  lang:$.lang,
+      lang_t:lang_t,
+      mode:'0',
+      formValidate:{
+        protocol:'udp',
+        bindPort:'',
+		socketTimeout:'0',
+		serialTimeout:'0',
+		packetPayload:'0',
+		bandRate:'',
+		parityBit:'',
+		dataBit:'',
+		stopBit:'',
+        server:'',
+        serverPort:'',
+        heartBestContent:'',
+        heartBestInterval:'',
+        gpsReportInterval:''
+      }
+    }
+  },
+  mounted:function(){
+
+  },
+  computed:{
+
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getGps3Cfg(function(data){
+      _this.mode = data.mode;
+      _this.formValidate.server = data.server;
+      _this.formValidate.serverPort = data.serverPort;
+      _this.formValidate.heartBestContent = data.heartBestContent;
+      _this.formValidate.heartBestInterval = data.heartBestInterval;
+      _this.formValidate.gpsReportInterval = data.gpsReportInterval;
+	  _this.formValidate.protocol = data.protocol;
+      _this.formValidate.bindPort = data.bindPort;
+      _this.formValidate.socketTimeout = data.socketTimeout;
+	  _this.formValidate.serialTimeout = data.serialTimeout;
+	  _this.formValidate.packetPayload = data.packetPayload;
+	  _this.formValidate.bandRate = data.bandRate;
+	  _this.formValidate.parityBit = data.parityBit;
+	  _this.formValidate.dataBit = data.dataBit;
+	  _this.formValidate.stopBit = data.stopBit;
+    })
+  },
+  methods:{
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+	  var _s = cs.ip(_this.formValidate.server);
+	  if(0 == _s){
+		errorAlert(_this.lang_t('index.server_addr') + _this.lang_t('alert.msg5'));
+		return false;
+	  }else if(1 == _s){
+		errorAlert(_this.lang_t('index.server_addr') + _this.lang_t('alert.msg14'));
+		return false;
+	  }
+
+      if(99 != cs.num_range(_this.formValidate.serverPort,1,65535)){
+        _this.errorAlert(_this.lang_t('gps.server_port') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+      
+      if(_this.formValidate.heartBestContent){
+        if(99 != cs.string(_this.formValidate.heartBestContent)){
+          _this.errorAlert(_this.lang_t('gps.heart_best_content') + _this.lang_t('alert.msg6'));
+          return false;
+        }
+      }
+
+      if(_this.formValidate.heartBestInterval){
+        if(99 != cs.num(_this.formValidate.heartBestInterval)){
+          _this.errorAlert(_this.lang_t('gps.heart_best_interval') + _this.lang_t('alert.msg18'));
+          return false;
+        }
+      }
+      
+      if(_this.formValidate.gpsReportInterval){
+        if(99 != cs.num(_this.formValidate.gpsReportInterval)){
+          _this.errorAlert(_this.lang_t('gps.gps_report_interval') + _this.lang_t('alert.msg18'));
+          return false;
+        }
+      }
+      
+      postVar.mode = _this.mode;
+      postVar.server = _this.formValidate.server;
+      postVar.serverPort = _this.formValidate.serverPort;
+      postVar.heartBestContent = _this.formValidate.heartBestContent;
+      postVar.heartBestInterval = _this.formValidate.heartBestInterval;
+      postVar.gpsReportInterval = _this.formValidate.gpsReportInterval;
+      postVar.protocol = _this.formValidate.protocol;
+	  postVar.bindPort = _this.formValidate.bindPort;
+      postVar.socketTimeout = _this.formValidate.socketTimeout;      
+	  postVar.serialTimeout = _this.formValidate.serialTimeout;
+	  postVar.packetPayload = _this.formValidate.packetPayload;
+	  postVar.bandRate = _this.formValidate.bandRate;
+	  postVar.parityBit = _this.formValidate.parityBit;
+	  postVar.dataBit = _this.formValidate.dataBit;
+	  postVar.stopBit = _this.formValidate.stopBit;
+      uiPost.setGps3Cfg(postVar, apply_callback);
+    },
+    errorAlert:function(data){
+      var _this = this;
+      Cstools.msg({
+        type: 'error',
+        messgetype: 'alert',
+        title: _this.lang_t('common.tips'),
+        content: data
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

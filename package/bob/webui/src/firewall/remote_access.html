@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('remote_access.help') }}</strong></td>
+              </tr>
+            </table>
+            <table class="table table-striped" v-show="remoteMode == 0">
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td style="width: 20%">{{lang_t('common.state')}}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>            
+              <tr v-show="enable">
+                <td>{{lang_t('vpn.remote_port')}}</td>
+                <td>
+                  <input type="text" v-model="port" :maxlength="5" /><span>(80~65535)</span>
+                </td>
+              </tr>
+              <tr v-show="enable">
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      wechatShow:true,
+      lang: $.lang,
+      lang_t:lang_t,
+      enable:'',
+      remoteMode:'0',
+      port:'',
+      forward:{
+        rule: [],
+        enable: '0'
+      }
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enable);
+    }
+  },
+  created:function() {
+    var _this = this;
+    //this.getPortForward();
+    uiPost.getRemoteCfg(function(data) {
+      _this.enable = data.enable == "1";
+      _this.port = data.port;
+      _this.wanIdx = data.wanIdx;
+    })
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if (data != _this.enable) {
+        _this.enable = data;
+        _this.submit_status();
+      }
+    })
+  },
+  methods:{
+    getPortForward:function(){
+      var _this = this;
+      uiPost.getPortForwardRules(function(data){
+        _this.forward.enable = data.enable;
+        if(data.rule){
+          _this.forward.rule = data.rule;
+        }
+      })
+    },
+    submit_status:function(){
+      var _this = this;
+      if(!_this.enable){
+        var postVar ={};
+        postVar.enable = "0";
+        uiPost.setRemoteCfg(postVar, apply_callback);
+      }
+    },
+    handleSubmit:function(){
+      var _this = this;
+      if(_this.port == ''){
+        errorAlert(lang_t('vpn.remote_port')+lang_t('alert.msg5'));
+        return false;
+      }
+      var ret = cs.num_range(_this.port, 80, 65535);
+      if(ret == 1 || ret == 2){
+        errorAlert(lang_t('vpn.remote_port')+lang_t('alert.msg15', [80, 65535]));
+        return false;
+      }
+      var rule;
+      /*if(_this.forward.enable == '1'){
+        for(var i in _this.forward.rule){
+          rule = _this.forward.rule[i];
+          if(rule.ePort == _this.port){
+            errorAlert(lang_t('remote_access.msg1'));
+            return false;
+          }
+        }
+      }*/
+
+      var postVar = {};
+      if(_this.enable){
+        postVar.port = _this.port;
+        postVar.enable = "1";
+        postVar.wanIdx = _this.wanIdx;        
+        uiPost.setRemoteCfg(postVar, apply_callback);
+      }
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>
+
+  

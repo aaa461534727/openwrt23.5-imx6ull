@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+		    <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('wifi.help_client') }}</strong></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+			            <button class="btn btn-primary" @click="scan" id="scan_ing" :data-loading-text="lang_t('common.scan')" >{{lang_t('common.scan')}}</button>
+                </td>
+              </tr>
+              <tr>
+                <td style="width:30%">{{ lang_t('index.repeat_state') }}</td>
+                <td>
+                  <span style="font-weight:bold">{{ rptSsid }}</span>
+                  <span v-if="rptSwitch == false" style="color: black">{{ lang_t('index.connect_fail') }}</span>
+                  <span v-if="rptSwitch && rptConnected" style="color: green">{{ lang_t('index.connect') }}</span>
+                  <span v-if="rptSwitch && rptConnected == false" style="color: red">{{ lang_t('index.connect_fail') }}</span>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.isclientsetSupport">
+                <td>{{ lang_t('wifi.band') }}</td>
+                <td>
+                  <select v-model="apcliWirelessMode">
+                    <option v-for="modeOption in createMode" :value="modeOption.value" :key="modeOption.value">{{modeOption.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.isclientsetSupport">
+                <td>{{ lang_t('wifi.country') }}</td>
+                <td>
+                  <select v-model="countryCode">
+                    <option v-for="countrycode in createcountryOption " :value="countrycode.value" :key="countrycode.value">{{countrycode.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-if="globalConfig.isclientsetSupport">
+                <td>{{ lang_t('wifi.txpower') }}</td>
+                  <td>
+                    <input type="text" v-model="txpower" :maxlength="2" />
+                    <small class="form-text text-muted">1 ~ 100%</small>
+                  </td>
+              </tr>
+              <tr v-if="globalConfig.isclientsetSupport">
+                <td>{{ lang_t('internet.clone_mac') }}</td>
+                  <td>
+                    <input type="text" v-model="clone_mac" :maxlength="17":disabled="macDisabled" />
+                    <br>
+                    <input type="checkbox"  v-model="macDisabled" checked="checked" />&nbsp;{{ lang_t('wifi.scan_mac') }}
+                  </td>
+              </tr>
+              <tr v-if="globalConfig.isclientsetSupport">
+                <td colspan="2">
+                  <button @click="setSubmit()" class="btn btn-primary all-but" >{{ lang_t('common.apply') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+	  
+      <div class="modal fade" id="scan_ap_list" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" :style="{width: globalConfig.isPhoneDevice ? 'auto' : '800px'}">
+          <div class="modal-content" >
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4>{{ lang_t('wifi.repeat_ap') }}</h4>
+            </div>
+            <div class="modal-body" style="overflow-x: auto;">
+              <table class="table table-striped">
+                <thead>
+                  <th>{{ lang_t('wifi.channel') }}</th>
+                  <th>{{ lang_t('wifi.ssid') }}</th>
+                  <th>{{ lang_t('index.mac') }}</th>
+                  <th>{{ lang_t('wifi.security_mode') }}</th>
+                  <th>{{ lang_t('index.signal') }}</th>
+                </thead>
+                <tbody>
+                  <tr v-for="(data,v) in aplist" data-dismiss="modal" @click="selectTable(data)" style="cursor: pointer;">
+                    <td>{{ data.channel }}</td>
+                    <td style="white-space:pre;">{{ data.ssid }}</td>
+                    <td>{{ data.bssid }}</td>
+                    <td>{{ data.encrypt }}</td>
+                    <td>{{ data.signal }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="12">
+                    <button type="button" class="btn btn-default all-but" data-dismiss="modal">{{ lang_t('common.cancel') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="set_rule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 id="myModalLabel">{{ lang_t('wifi.repeat_set') }}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <tr>
+                  <td>{{ lang_t('wifi.ssid') }}</td>
+                  <td>
+                    <input type="text" v-model="forms.ssid" disabled />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.mac') }}</td>
+                  <td>
+                    <input type="text" v-model="forms.bssid" disabled />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('wifi.security_mode') }}</td>
+                  <td>
+                    <select disabled v-model="forms.encrypt">
+                        <option value="NONE">{{ lang_t('wifi.nosecurity') }}</option>
+                        <option value="OPEN">{{ lang_t('wifi.nosecurity') }}</option>
+                        <option value="WPAPSK">WPA-PSK</option>
+                        <option value="WPA2PSK">WPA2-PSK</option>
+                        <option value="WPA3PSK">WPA3-PSK</option>
+                        <option value="WPAPSKWPA2PSK">WPA/WPA2-PSK</option>
+                        <option value="XWLCERT">XWL-CERT</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="forms.encrypt && (forms.encrypt != 'NONE' && forms.encrypt != 'OPEN')">
+                  <td>{{ lang_t('wifi.encryption_type') }}</td>
+                  <td>
+                    <select disabled v-model="forms.cipher" :placeholder="lang_t('common.select')">
+                        <option value="TKIP">TKIP</option>
+                        <option value="AES">AES</option>
+                        <option value="TKIPAES">TKIP/AES</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="forms.encrypt && (forms.encrypt != 'NONE' && forms.encrypt != 'OPEN')">
+                  <td>{{ lang_t('wifi.pass') }}</td>
+                  <td>
+                    <input type="text" v-model="forms.password" :maxlength="63"/>
+                  </td>
+                </tr>
+                <tr v-if="globalConfig.isclientsetSupport">
+                  <td>{{ lang_t('wifi.band') }}</td>
+                  <td>
+                    <select v-model="apcliWirelessMode">
+                      <option v-for="modeOption in createMode" :value="modeOption.value" :key="modeOption.value">{{modeOption.option}}</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-if="globalConfig.isclientsetSupport">
+                <td>{{ lang_t('wifi.country') }}</td>
+                <td>
+                  <select v-model="countryCode">
+                    <option v-for="countrycode in createcountryOption " :value="countrycode.value" :key="countrycode.value">{{countrycode.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button type="button" class="btn btn-default all-but" data-dismiss="modal" @click="backListFun">{{ lang_t('common.back') }}</button> &nbsp;&nbsp;
+                    <button type="button" class="btn btn-primary all-but" @click="handleSubmit">{{ lang_t('common.connect') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> 
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return{
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      applyLoading: false,
+      tableLoading: false,
+      selectData: null,
+      currentSortDir: 'desc',
+	  enable: true,
+	  enablebak: false,
+      forms:{
+        channel: '',
+        ssid:'',
+        bssid: '',
+        cipher: '',
+        signal: '',
+        password: '',
+        wifimode: ''
+      },
+	  specialChar: globalConfig.specialCharSupport == true ? 'wifichar':'',
+      modalTable:{
+        modalTitle:"",
+        table:{
+          th:[],
+          td:[]
+        }
+      },
+      rptSsid: '',
+      apcliWirelessMode:'',
+      countryCode:'',
+      clone_mac:'',
+      macDisabled:false,
+      txpower:'',
+      wifiIdx:'',
+      rptSwitch: false,
+      rptConnected: false,
+      aplist: []
+    }
+  },
+  computed:{
+	  toggle_status:function(){
+	    $('#switch_status').bootstrapSwitch('state',this.enable);
+    },
+    createMode:function(){
+      var new_option = [];
+      var idx=this.wifiIdx;//0:2.4; 1:5G
+      if(idx==0){
+        new_option=[
+          {option:'11b',value:'1'},
+          {option:'11g',value:'4'},
+          {option:'11n',value:'6'},
+          {option:'11b/g/n',value:'9'},
+          //{option:'ax',value:'16'},
+        ]
+      }else{
+        new_option=[
+          {option:'11a',value:'2'},
+          {option:'11n',value:'11'},
+          {option:'11a/n',value:'8'},
+          {option:'11ac',value:'14'},
+          //{option:'ax',value:'17'},
+        ]
+      }
+      return new_option;
+    },
+    createcountryOption:function(){
+      var new_option = [];
+        new_option=[
+          {option:'CN',value:'1'},
+          {option:'US',value:'2'},
+          {option:'EU',value:'3'},
+          {option:'VN',value:'4'},
+        ]
+      return new_option;
+    },
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getOpMode(function(data) {
+        _this.enable = data.operationMode == "wisp" ? true : false;
+      _this.enablebak = _this.enable;
+    });
+    uiPost.getRptstatus(function(data) {
+      if('On' == data.rptSwitch){
+        _this.rptSwitch=true;
+        _this.rptSsid=data.apcliSsid;
+      }else{
+        _this.rptSwitch=false;
+      }
+
+      if('success' == data.rptConnStatus){
+        _this.rptConnected = true;
+      }else{
+        _this.rptConnected = false;
+      }
+
+      _this.macDisabled = data.macDisabled == 1 ? true : false;
+      _this.clone_mac = data.cloneMac;
+      _this.countryCode = data.countryCode;
+      _this.txpower = data.txPower;
+      _this.apcliWirelessMode = data.wifiMode;
+      _this.wifiIdx = data.wifiIdx_rpt;
+    });
+
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      if(!_this.enable && _this.enablebak != _this.enable){
+	    var postVar = {};
+		    postVar.opmode = "gw";
+        postVar.wifiIdx_rpt = "0";//2.4G
+		    uiPost.setOpModeCfg(postVar,function(data){
+          if(data.wtime != undefined && data.wtime != 0){
+            Cstools.count(data.wtime,'js',function(){
+              cs.localUrl(_this.wifiIdx, 'href');
+            });
+          }else{
+            cs.localUrl(_this.wifiIdx, 'href');
+          }
+        })
+	    }
+    },
+    setSubmit:function(){
+      var _this = this;
+      var time =15;
+      var postVar = {};
+
+      if(_this.clone_mac != ''){
+        if(0 == cs.mac(_this.clone_mac)){
+          _this.errorAlert(_this.lang_t('macf.msg2'));
+          return false;
+        }
+      }
+
+      postVar.wifiMode = _this.apcliWirelessMode;
+      postVar.txPower = _this.txpower;
+      postVar.macDisabled = _this.macDisabled == true ? 1 : 0;
+      postVar.cloneMac = _this.clone_mac;
+      postVar.countryCode = _this.countryCode;
+
+      uiPost.setClientAdvCfg(postVar,function(data) {
+        Cstools.count(time,'js',function(){
+          location.href=location.href;
+        });
+      });
+    },
+
+    handleSubmit:function(){      
+      var _this = this;
+      var time = 30;
+      var postVar = {};	  
+      postVar.channel_rpt = _this.forms.channel;
+      postVar.ssid_rpt = _this.forms.ssid;
+      postVar.bssid_rpt = _this.forms.bssid;
+      postVar.encrypt_rpt = _this.forms.encrypt;
+      postVar.cipher_rpt = _this.forms.cipher;
+      postVar.password_rpt = _this.forms.password;
+      postVar.wifimode_rpt = _this.apcliWirelessMode;
+      postVar.countryCode = _this.countryCode;
+      if(_this.forms.channel > 14)
+        postVar.wifiIdx_rpt = "1";//2.4G
+      else
+        postVar.wifiIdx_rpt = "0";//2.4G
+      if(_this.forms.encrypt && _this.forms.encrypt != 'NONE' && _this.forms.encrypt != 'OPEN'){
+        if (!_this.forms.password || _this.forms.password.length < 8) {
+          Cstools.msg({
+            content: _this.lang_t('wifi.msg4'),
+            type: 'error',
+            messgetype: 'alert'
+          });
+          return false;
+        }
+        if (1 == cs.string(_this.forms.password,_this.specialChar)) {
+          Cstools.msg({
+			content: _this.lang_t( globalConfig.specialCharSupport==true ? 'wifi.msg8' : 'wifi.msg5'),
+			type: 'error',
+			messgetype: 'alert'
+          });
+          return false;
+        }
+      }
+      uiPost.setClientModeCfg(postVar,function(data) {
+        Cstools.count(time,'js',function(){
+          location.href=location.href;
+        });
+      });
+    },
+    scan:function() {
+      $("#scan_ing").button('loading');
+      var postVar = {};
+      this.getAPlist(postVar);
+    },
+    getAPlist:function(postVar){
+      var _this = this;
+      this.tableLoading = true;
+      uiPost.getWiFiApcliScan(postVar,function(data){
+        _this.tableLoading = false;
+        _this.aplist = data;
+        $('#scan_ap_list').modal('show');
+        $("#scan_ing").button('reset');
+      })
+    },
+    rank: function(a,b,type,str){
+      var n=m=k=l=0;
+      if(str == "ip"){
+        n = Number(a.split('.')[2]);
+        m = Number(b.split('.')[2]);
+        k = Number(a.split('.')[3]);
+        l = Number(b.split('.')[3]);
+      }else if(str == "num"){
+        n = Number(a);
+        m = Number(b);
+      }else{
+        n = a;
+        m = b;
+      }
+      if(type == 'asc'){
+        if(n > m){
+          return 1;
+        }else if(n == m && str == "ip"){
+          return k > l ? 1 : -1;
+        }else if(n < m){
+          return -1;
+        }
+      }else{
+        if(n > m){
+          return -1;
+        }else if(n == m && str == "ip"){
+          return k > l ? -1 : 1;
+        }else if(n < m){
+          return 1;
+        }
+      }
+    },
+    selectTable: function(val) {
+      this.wifiIdx = val.wifiIdx;
+      this.selectData = val;
+      this.forms = val;
+      $('#set_rule').modal('show');
+      cs.bodyAction('scan_ap_list','set_rule');
+    },
+    backListFun:function(){
+      $('#scan_ap_list').modal('show');
+      cs.bodyAction('set_rule','scan_ap_list');
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data){
+      if(_this.enable == false && data){
+        _this.enable = data;
+        _this.submit_status();
+      }
+      if(_this.enable && data == false){
+        _this.enable = data;
+        _this.submit_status();
+      }
+    })
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

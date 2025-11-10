@@ -1,0 +1,12 @@
+{
+	"wanPingFilter":"1",
+	"l2tpPassThru":"1",
+	"pptpPassThru":"1",
+	"ipsecPassThru":"1",
+
+	"ftpPassThru":"1",
+	"ftpprotf":"21,15,56,98,552",
+	"h323PassThru":"1",
+	"rtspPassThru":"1",
+	"sipPassThru":"1"
+}

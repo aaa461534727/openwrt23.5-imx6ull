@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('menu.tunnel') }}</strong></td>
+              </tr>
+            </table>
+            <div class="table-phone-width">
+              <table class="table table-striped table-bordered table-hover">
+                <thead>
+                  <th>ID</th>
+                  <th style="width: 8%;">{{ lang_t('common.state') }}</th>
+                  <th style="width: 13%;">{{ lang_t('index.name') }}</th>
+                  <th style="width: 8%;">{{ lang_t('index.mode') }}</th>
+                  <th style="width: 13%;">{{ lang_t('tunnel.local_virtual_ip') }}</th>
+                  <th style="width: 13%;">{{ lang_t('tunnel.peer_virtual_ip') }}</th>
+                  <th style="width: 8%;">{{ lang_t('tunnel.interface_type') }}</th>
+                  <th style="width: 13%;">{{ lang_t('tunnel.local_extern_ip') }}/{{ lang_t('index.interface') }}</th>
+                  <th style="width: 13%;">{{ lang_t('tunnel.peer_extern_ip') }}</th>
+                  <th>{{ lang_t('common.edit') }}</th>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in tunnelData" :key="index" @click="editItem(index,val)">
+                    <td>{{ index+1 }}</td>
+                    <td>
+                      <select v-model="editItemInfo.enabled" v-if="editIdx == index">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                      <span v-else>{{ '1' == val.enabled ? lang_t('common.on') : lang_t('common.off') }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="editItemInfo.name" maxlength="8" v-if="editIdx == index"/>
+                      <span v-else>{{ val.name }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.mode" v-if="editIdx == index">
+                        <option value="ipip">ipip</option>
+                        <option value="gre">gre</option>
+                        <option value="mgre">mgre</option>
+                      </select>
+                      <span v-else>{{ val.mode }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="editItemInfo.localVirtualIp" maxlength="15" v-if="editIdx == index"/>
+                      <span v-else>{{ val.localVirtualIp }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="editItemInfo.peerVirtualIp" maxlength="15" v-if="editIdx == index"/>
+                      <span v-else>{{ val.peerVirtualIp }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.interfaceType" v-if="editIdx == index" @change="ifaceChange">
+                        <option value="staticIp">IP</option>
+                        <option value="interface">{{ lang_t('index.interface') }}</option>
+                      </select>
+                      <span v-else>{{ 'staticIp' == val.interfaceType ? "IP" : lang_t('index.interface') }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <input type="text" v-model="editItemInfo.localExternIp" maxlength="15" v-show="editItemInfo.interfaceType=='staticIp'" ref="editip"/>
+                        <select v-model="editItemInfo.localInterface" ref="editiface" v-show="editItemInfo.interfaceType=='interface'">
+                          <!-- <option value="lan">lan</option> -->
+                          <option value="wan">wan</option>
+                          <option value="modem">modem</option>                  
+                        </select>
+                      </div>
+                      <span v-else>{{ 'staticIp' == val.interfaceType ? val.localExternIp : val.localInterface }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="editItemInfo.peerExternIp" maxlength="15" v-if="editIdx == index"/>
+                      <span v-else>{{ val.peerExternIp }}</span>
+                    </td>
+                    <td class="operation">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td></td>
+                    <td>
+                      <select v-model="enabled">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" v-model="name" maxlength="8" />
+                    </td>
+                    <td>
+                      <select v-model="mode">
+                        <option value="ipip">ipip</option>
+                        <option value="gre">gre</option>
+                        <option value="mgre">mgre</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" v-model="localVirtualIp" maxlength="15"/>
+                    </td>
+                    <td>
+                      <input type="text" v-model="peerVirtualIp" maxlength="15"/>
+                    </td>
+                    <td>
+                      <select v-model="interfaceType">
+                        <option value="staticIp">IP</option>
+                        <option value="interface">{{ lang_t('index.interface') }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <div>
+                        <input type="text" v-model="localExternIp" maxlength="15" v-if="interfaceType=='staticIp'"/>
+                        <select v-model="localInterface" v-else>
+                          <!-- <option value="lan">lan</option> -->
+                          <option value="wan">wan</option>
+                          <option value="modem">modem</option>                  
+                        </select>
+                      </div>
+                    </td>
+                    <td>
+                      <input type="text" v-model="peerExternIp" maxlength="15" />
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+            </table>
+            </div>
+          <table class="table table-striped table-bordered table-hover">
+             <tr>
+              <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+              </td>
+            </tr>
+          </table>
+          </div>
+
+          <br/><br/>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('tunnel.router_setting') }}</strong></td>
+              </tr>
+            </table>
+            <div class="table-phone-width">
+              <table class="table table-striped table-bordered table-hover">
+                <thead>
+                  <th style="width: 2%;">ID</th>
+                  <th style="width: 8%;">{{ lang_t('common.state') }}</th>
+                  <th style="width: 15%;">{{ lang_t('tunnel.serial') }}</th>
+                  <th style="width: 15%;">{{ lang_t('tunnel.peer_virtual_ip') }}</th>
+                  <th style="width: 15%;">{{ lang_t('tunnel.peer_address') }}</th>
+                  <th style="width: 15%;">{{ lang_t('index.mask') }}</th>
+                  <th style="width: 15%;">{{ lang_t('macf.comment') }}</th>
+                  <th style="width: 15%;">{{ lang_t('common.edit') }}</th>
+                </thead>
+                <tbody>
+                  <tr v-for="(val,index) in routeData" :key="index" @click="editRouteItem(index,val)">
+                    <td>{{ index+1 }}</td>
+                    <td>
+                      <select v-model="routeEditItem.routeEnabled" v-if="routeEditIdx == index">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                      <span v-else>{{ '1' == val.routeEnabled ? lang_t('common.on') : lang_t('common.off') }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="routeEditItem.tunnelName" maxlength="32" v-if="routeEditIdx == index"/>
+                      <span v-else>{{ val.tunnelName }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="routeEditItem.virtualIp" maxlength="15" v-if="routeEditIdx == index"/>
+                      <span v-else>{{ val.virtualIp }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="routeEditItem.ip" maxlength="15" v-if="routeEditIdx == index"/>
+                      <span v-else>{{ val.ip }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="routeEditItem.mask" maxlength="15" v-if="routeEditIdx == index"/>
+                      <span v-else>{{ val.mask }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-model="routeEditItem.desc" maxlength="32" v-if="routeEditIdx == index"/>
+                      <span v-else>{{ val.desc }}</span>
+                    </td>
+                    <td class="operation">
+                      <a v-show="routeEditIdx == index" @click.stop="modifyRouteRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="routeEditIdx == index" @click.stop="cancelRouteEdit(val)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRouteRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td></td>
+                    <td>
+                      <select v-model="routeEnabled">
+                        <option value="0">{{ lang_t('common.off') }}</option>
+                        <option value="1">{{ lang_t('common.on') }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" v-model="tunnelName" maxlength="32"/>
+                    </td>
+                    <td>
+                      <input type="text" v-model="virtualIp" maxlength="15"/>
+                    </td>
+                    <td>
+                      <input type="text" v-model="ip" maxlength="15"/>
+                    </td>
+                     <td>
+                      <input type="text" v-model="mask" maxlength="15"/>
+                    </td>
+              
+                    <td>
+                      <input type="text" v-model="desc" maxlength="32" />
+                    </td>
+                    <td class="operation">
+                      <a @click="addRouteRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+            </table>
+            </div>
+          <table class="table table-striped table-bordered table-hover">
+             <tr>
+              <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                <button class="btn btn-primary all-but" @click="saveRouteInfo()">{{ lang_t('common.save') }}</button>
+                <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+              </td>
+            </tr>
+          </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+  		enabled:'1',
+  		name:"",
+  		mode:"ipip",
+  		localVirtualIp:"",
+  		localExternIp:"",
+  		localInterface:"modem",		
+  		interfaceType:"staticIp",
+  		peerVirtualIp:"",
+  		peerExternIp:"",
+  	  tunnelData:[],
+      routeData:[],
+      editIdx: '-1',
+      routeEditIdx : '-1',
+      editItemInfo: {},
+      routeEnabled:"0",
+      tunnelName:"",
+      ip:"",
+      virtualIp:"",
+      mask:"",
+      desc:"",
+      routeEditItem: {}
+  	}
+  },
+  computed:{
+
+  },
+  created:function(){
+  	var _this = this;
+  	uiPost.getTunnelCfg(function(data){
+  	  if(data.rule){
+        _this.tunnelData = data.rule;
+      }
+	  })
+
+    uiPost.getTunnelRouteCfg(function(data){
+      if(data.rule){
+        _this.routeData = data.rule;
+      }
+    })
+
+  },
+  methods:{
+    ifaceChange: function() {
+      if (this.editItemInfo.interfaceType == "staticIp") {
+        $(this.$refs.editip).show();
+        $(this.$refs.editiface).hide();
+      } else {
+        this.$set(this.editItemInfo, "localInterface", "modem");
+        $(this.$refs.editip).hide();
+        $(this.$refs.editiface).show();
+      }
+    },
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.rule = [].concat( this.tunnelData );
+      postVar.addEffect = "1";
+      uiPost.setTunnelCfg(postVar, apply_callback);
+    },
+    saveRouteInfo:function () {
+      var _this = this;
+      this.routeEditIdx = '-1';
+      var postVar = {};
+      postVar.rule = [].concat( this.routeData);
+      postVar.addEffect = "1";
+      uiPost.setTunnelRouteCfg(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.tunnelData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    modifyRouteRule:function (idx) {
+      if(!this.veriyRoutefun(this.routeEditItem, idx)) return;
+      $.extend(this.routeData[idx], this.routeEditItem);
+      this.routeEditIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.tunnelData.splice(idx, 1);
+    },
+    delRouteRuleFun:function (idx,obj) {
+      this.routeEditIdx = "-1";
+      this.routeData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+    },
+    editRouteItem:function (index,obj) {
+      if('-1' != this.routeEditIdx){
+        return false;
+      }
+      this.routeEditItem = {};
+      $.extend(this.routeEditItem, obj);
+      this.routeEditIdx = index;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    cancelRouteEdit:function (obj) {
+      this.routeEditIdx = "-1";
+      this.routeEditItem = obj;
+    },
+    veriyRoutefun:function(val, flag) {
+       var _this = this;
+       /*for(var i = 0;i < _this.routeData.length;i++) {
+        if (flag != undefined && i == flag) continue;
+        if (val.ip == _this.routeData[i].ip) {
+          errorAlert(lang_t('alert.msg22'));
+          return false;
+        }
+      }*/
+
+      var _s = cs.string(val.tunnelName);
+      if(0 == _s){
+        errorAlert(lang_t('tunnel.serial') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('tunnel.serial') + lang_t('alert.msg6'));
+        return false;
+      } 
+
+      _s = cs.ip(val.virtualIp);
+      if (0 == _s) {
+        errorAlert(lang_t('tunnel.peer_virtual_ip') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s) {
+        errorAlert(lang_t('tunnel.peer_virtual_ip') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      _s = cs.ip(val.ip);
+      if (0 == _s) {
+        errorAlert(lang_t('tunnel.peer_address') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s) {
+        errorAlert(lang_t('tunnel.peer_address') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      if (!val.mask){
+        errorAlert(lang_t('index.mask') + lang_t('alert.msg5'));
+        return false;
+      }else{
+        if (99 != cs.mask(val.mask)){
+          errorAlert(lang_t('index.mask') + lang_t('alert.msg14'));
+          return false;
+        }
+      }
+
+      if(cs.byteLenght(val.desc,32) == 1) {
+        errorAlert(lang_t('macf.comment') + lang_t('alert.msg50', [32]));
+        return false;
+      }
+      _s = cs.commentstr(val.desc);
+      if(_s == 1){
+        Cstools.msg({
+          content: _this.lang_t('macf.comment')+_this.lang_t('alert.msg49'),
+          type: 'error'
+        });
+        return false;
+      }else if(_s == 2){
+        Cstools.msg({
+          content: _this.lang_t('macf.msg11'),
+          type: 'error'
+        });
+        return false;
+      }
+      return true;
+
+    },
+    veriyfun:function(val, flag) {
+      var _this = this;
+      for(var i = 0;i < _this.tunnelData.length;i++) {
+        if (flag != undefined && i == flag) continue;
+        if (val.name == _this.tunnelData[i].name) {
+          errorAlert(lang_t('alert.msg22'));
+          return false;
+        }
+      }
+
+      var _s = cs.string(val.name);
+      if(0 == _s){
+        errorAlert(lang_t('index.name') + lang_t('alert.msg5'));
+        return false;
+      }else if(1 == cs.string2(val.name)){
+        errorAlert(_this.lang_t('index.name') + _this.lang_t('ipsec.msg10'));
+        return false;
+      }
+
+      _s = cs.ip(val.localVirtualIp);
+      if (0 == _s) {
+        errorAlert(lang_t('tunnel.local_virtual_ip') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s) {
+        errorAlert(lang_t('tunnel.local_virtual_ip') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      _s = cs.ip(val.peerVirtualIp);
+      if(0 == _s) {
+        errorAlert(lang_t('tunnel.peer_virtual_ip') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s) {
+        errorAlert(lang_t('tunnel.peer_virtual_ip') + lang_t('alert.msg14'));
+        return false;
+      }
+      
+      if('staticIp' == val.interfaceType) {
+        _s = cs.ip(val.localExternIp);
+        if (0 == _s) {
+          errorAlert(lang_t('tunnel.local_extern_ip') + lang_t('alert.msg5'));
+          return false;
+        }else if(99 != _s) {
+          errorAlert(lang_t('tunnel.local_extern_ip') + lang_t('alert.msg14'));
+          return false;
+        }
+      }
+
+      _s = cs.ip(val.peerExternIp);
+      if (0 == _s) {
+        errorAlert(lang_t('tunnel.peer_extern_ip') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s) {
+        errorAlert(lang_t('tunnel.peer_extern_ip') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      if(val.localVirtualIp == val.peerVirtualIp){
+          errorAlert(lang_t('alert.msg21'));
+          return false;
+      }
+      if('staticIp' == val.interfaceType && val.localExternIp == val.peerExternIp){
+          errorAlert(lang_t('alert.msg20'));
+          return false;
+      }
+
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      if (_this.tunnelData.length >= 10) {
+        errorAlert(lang_t('alert.msg1', [10]));
+        return false;
+      }
+      var temp = {
+        enabled: this.enabled,
+        name: this.name,
+        mode: this.mode,
+        localVirtualIp: this.localVirtualIp,
+        peerVirtualIp: this.peerVirtualIp,
+        interfaceType: this.interfaceType,
+        peerExternIp: this.peerExternIp,
+        localExternIp: this.localExternIp,
+        localInterface: this.localInterface,
+      };
+      if(!this.veriyfun(temp)) return;
+      this.tunnelData.push(temp);      
+      this.enabled = "0";
+      this.name = "";
+      this.mode = "ipip";
+      this.localVirtualIp = "";
+      this.peerVirtualIp = "";
+      this.interfaceType = "staticIp";
+      this.peerExternIp = "";
+      this.localExternIp = "";
+      this.localInterface = "modem";
+    },
+    addRouteRule:function () {
+      var _this = this;
+      if (_this.routeData.length >= 10) {
+        errorAlert(lang_t('alert.msg1', [10]));
+        return false;
+      }
+      var temp = {
+        routeEnabled: this.routeEnabled,
+        tunnelName: this.tunnelName,
+        ip: this.ip,
+        virtualIp: this.virtualIp,
+        mask: this.mask,
+        desc: this.desc,
+      };
+      if(!this.veriyRoutefun(temp)) return;
+      this.routeData.push(temp);      
+      this.routeEnabled = "0";
+      this.tunnelName = "";
+      this.virtualIp = "";
+      this.ip = "";
+      this.mask= "";
+      this.desc = "";
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

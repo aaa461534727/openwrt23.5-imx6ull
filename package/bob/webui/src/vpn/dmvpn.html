@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta http-equiv="proma" content="no-cache"/>
+<meta http-equiv="cache-control" content="no cache" />
+<meta http-equiv="expires" content="0" />
+<link rel="shortcut icon" href="/favicon.ico">
+<link href="/static/css/main.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+<link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('vpn.help_dmvpn') }}</strong></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" data-toggle="modal" data-target="#set_rule">{{lang_t('common.add_rule')}}</button>
+                </td>
+              </tr>
+            </table>
+
+            <table class="table table-striped table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>ID&nbsp;&nbsp;<input type="checkbox" v-model="allSelect" @change="allChange"></th>
+                  <th>{{ lang_t('common.state') }}</th>
+                  <th>{{ lang_t('index.name') }}</th>
+                  <th>{{ lang_t('vpn.peer_external_ip') }}</th>
+                  <th>{{ lang_t('vpn.local_virtual_ip') }}</th>
+                  <th>{{ lang_t('vpn.peer_virtual_ip') }}</th>
+                  <th>{{ lang_t('common.edit') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(val,index) in dmvpnData">
+                  <th>{{ index+1 }}&nbsp;&nbsp;<input type="checkbox" v-model="delRule[index]"></th>
+                  <th><a @click="sumit_switch(val)" style="cursor: pointer;">{{ '1' == val.enabled ? lang_t('common.on') : lang_t('common.off') }}</a></th>
+                  <th>{{ val.name }}</th>
+                  <th>{{ val.peerExternalIp }}</th>
+                  <th>{{ val.localVirtualIp }}</th>
+                  <th>{{ val.peerVirtualIp }}</th>
+                  <th><a @click="modify_modal(val)" style="cursor: pointer">{{ lang_t('common.edit') }}</a></th>
+                </tr>
+              </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="dmvpnData.length > 0">
+              <tr>
+                <td colspan="2">
+                  <button class="btn btn-danger all-but" @click.prevent="submit_delete">{{lang_t('common.delete')}}</button>&nbsp;&nbsp;
+                  <button class="btn btn-primary all-but" @click.prevent="submit_refresh">{{lang_t('common.refresh')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal fade" id="set_rule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">
+                {{ '0' == setIdx ? lang_t('common.add_rule') : lang_t('common.edit_rule') }}
+              </h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <tr>
+                  <td>{{ lang_t('common.state') }}</td>
+                  <td>
+                    <select v-model="formValidate.enabled">
+                      <option value="0">{{ lang_t('common.off') }}</option>
+                      <option value="1">{{ lang_t('common.on') }}</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.name') }}</td>
+                  <td>
+                    <input type="number" v-model="formValidate.name" :disabled="'0' != setIdx" maxlength="1" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.peer_external_ip') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.peerExternalIp" maxlength="15" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.local_virtual_ip') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.localVirtualIp" maxlength="15" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.peer_virtual_ip') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.peerVirtualIp" maxlength="15" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.tunnel_key') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.tunnelKey" maxlength="10" />
+                    <span>(0-4294967295)</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.mode') }}</td>
+                  <td>
+                    <select v-model="formValidate.mode">
+                      <option value="main">main</option>
+                      <option value="aggr">aggr</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.encryption') }}</td>
+                  <td>
+                    <select v-model="formValidate.encrypt">
+                      <option value="des">des</option>
+                      <option value="3des">3des</option>
+                      <option value="aes256">aes256</option>
+                      <option value="aes192">aes192</option>
+                      <option value="aes128">aes128</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.hash') }}</td>
+                  <td>
+                    <select v-model="formValidate.hash">
+                      <option value="sha1">sha1</option>
+                      <option value="md5">md5</option>
+                      <option value="sha2_256">sha2_256</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.group_name') }}</td>
+                  <td>
+                    <select v-model="formValidate.groupName">
+                      <option value="group768">group768</option>
+                      <option value="group1024">group1024</option>
+                      <option value="group1536">group1536</option>
+                      <option value="group2048">group2048</option>
+                      <option value="group3072">group3072</option>
+                      <option value="group4096">group4096</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.ike_lifetime') }}</td>
+                  <td>
+                    <input type="number" v-model="formValidate.ikeLifetime" maxlength="5" />
+                    <span>(120-86400)s</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.pre_share_key') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.preShareKey" maxlength="32" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.self_identify') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.selfIdentify" maxlength="32" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.match_identify') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.matchIdentify" maxlength="32" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.lifetime') }}</td>
+                  <td>
+                    <input type="number" v-model="formValidate.lifetime" maxlength="5" />
+                    <span>(120-86400)s</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.sa_algorithm') }}</td>
+                  <td>
+                    <select v-model="formValidate.saAlgorithm">
+                      <option value="des-sha1">des-sha1</option>
+                      <option value="des-sha2_256">des-sha2_256</option>
+                      <option value="des-md5">des-md5</option>
+                      <option value="3des-sha1">3des-sha1</option>
+                      <option value="3des-sha2_256">3des-sha2_256</option>
+                      <option value="3des-md5">3des-md5</option>
+                      <option value="aes128-sha1">aes128-sha1</option>
+                      <option value="aes128-sha1_256">aes128-sha1_256</option>
+                      <option value="aes128-md5">aes128-md5</option>
+                      <option value="aes192-sha1">aes192-sha1</option>
+                      <option value="aes192-sha1_256">aes192-sha1_256</option>
+                      <option value="aes192-md5">aes192-md5</option>
+                      <option value="aes256-sha1">aes256-sha1</option>
+                      <option value="aes256-sha1_256">aes256-sha1_256</option>
+                      <option value="aes256-md5">aes256-md5</option> 
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.pfs') }}</td>
+                  <td>
+                    <select v-model="formValidate.pfs">
+                      <option value="close">close</option>
+                      <option value="group768">group768</option>
+                      <option value="group1024">group1024</option>
+                      <option value="group1536">group1536</option>
+                      <option value="group2048">group2048</option>
+                      <option value="group3072">group3072</option>
+                      <option value="group4096">group4096</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.interface') }}</td>
+                  <td>
+                    <select v-model="formValidate.encryptInterface">
+                      <option value="br0">br0</option>
+                      <option value="eth2.2">eth2.2</option>
+                      <option value="modem">modem</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.nhrp_cisco_secrets') }}</td>
+                  <td>
+                    <input type="text" v-model="formValidate.nhrpCiscoSecrets" maxlength="32" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('vpn.nhrp_hold_time') }}</td>
+                  <td>
+                    <input type="number" v-model="formValidate.nhrpHoldtime" maxlength="5" />
+                    <span>(1-65535)</span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button @click="closeFrame" class="btn btn-default all-but">{{ lang_t('common.cancel') }}</button>&nbsp;&nbsp;
+                    <button @click.prevent="handleSubmit" class="btn btn-primary all-but">{{ '0' == setIdx ? lang_t('common.add') : lang_t('common.modify') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      rule_num:"",
+      delRule:[],
+      formValidate:{   
+        enabled:"1",        
+        name:"",
+        peerExternalIp:"",
+        localVirtualIp:"",
+        peerVirtualIp:"",
+        tunnelKey:"",
+        mode:"main",
+        encrypt:"des",
+        hash:"sha1",
+        groupName:"group768",
+        ikeLifetime:"",
+        preShareKey:"",
+        selfIdentify:"",
+        matchIdentify:"",
+        lifetime:'',
+        saAlgorithm:"des-sha1",
+        pfs:"close",
+        encryptInterface:"eth2.2",
+        nhrpCiscoSecrets:"",
+        nhrpHoldtime:""
+      },
+      dmvpnData:[],
+      setIdx:"0",
+      allSelect:false
+    }
+  },
+  watch:{
+    delRule:function(){
+      var num=0;
+      for(var i=0;i<this.dmvpnData.length;i++){
+        if(this.delRule[i]) num++;
+      }
+      if(num == this.dmvpnData.length)
+        this.allSelect = true;
+      else
+        this.allSelect = false;
+    }
+  },
+  computed:{
+    
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getDmvpnCfg(function(data){
+      _this.rule_num = data.length;
+      if(_this.rule_num >= 1){
+        _this.dmvpnData = data;
+      }
+    });
+  },
+  methods:{
+    allChange:function(){
+      var i;
+      if(this.allSelect){
+        for(i=0;i<this.dmvpnData.length;i++){
+          this.delRule[i] = true;
+        }
+      }else{
+        for(i=0;i<this.dmvpnData.length;i++){
+          this.delRule[i] = false;
+        }
+      }
+    }, 
+    closeFrame:function(){
+      $('#set_rule').modal('hide');
+    },
+    modify_modal:function(obj){
+      var _this = this;
+      _this.setIdx = obj.idx;
+      _this.formValidate.enabled = obj.enabled;
+      _this.formValidate.name = obj.name;      
+      _this.formValidate.peerExternalIp = obj.peerExternalIp;
+      _this.formValidate.localVirtualIp = obj.localVirtualIp;
+      _this.formValidate.peerVirtualIp = obj.peerVirtualIp;
+      _this.formValidate.tunnelKey = obj.tunnelKey;
+      _this.formValidate.mode = obj.mode;
+      _this.formValidate.encrypt = obj.encrypt;
+      _this.formValidate.hash = obj.hash;
+      _this.formValidate.groupName = obj.groupName;
+      _this.formValidate.ikeLifetime = obj.ikeLifetime;
+      _this.formValidate.preShareKey = obj.preShareKey;
+      _this.formValidate.selfIdentify = obj.selfIdentify;
+      _this.formValidate.matchIdentify = obj.matchIdentify;
+      _this.formValidate.lifetime = obj.lifetime;
+      _this.formValidate.saAlgorithm = obj.saAlgorithm;
+      _this.formValidate.pfs = obj.pfs;
+      _this.formValidate.encryptInterface = obj.encryptInterface;
+      _this.formValidate.nhrpCiscoSecrets = obj.nhrpCiscoSecrets;
+      _this.formValidate.nhrpHoldtime = obj.nhrpHoldtime;
+      $('#set_rule').modal('show');
+    },    
+    sumit_switch:function(obj){
+      var _this = this;
+      _this.setIdx = obj.idx;
+      _this.formValidate.enabled = '1' == obj.enabled ? '0' : '1';
+      _this.formValidate.name = obj.name;      
+      _this.formValidate.peerExternalIp = obj.peerExternalIp;
+      _this.formValidate.localVirtualIp = obj.localVirtualIp;
+      _this.formValidate.peerVirtualIp = obj.peerVirtualIp;
+      _this.formValidate.tunnelKey = obj.tunnelKey;
+      _this.formValidate.mode = obj.mode;
+      _this.formValidate.encrypt = obj.encrypt;
+      _this.formValidate.hash = obj.hash;
+      _this.formValidate.groupName = obj.groupName;
+      _this.formValidate.ikeLifetime = obj.ikeLifetime;
+      _this.formValidate.preShareKey = obj.preShareKey;
+      _this.formValidate.selfIdentify = obj.selfIdentify;
+      _this.formValidate.matchIdentify = obj.matchIdentify;
+      _this.formValidate.lifetime = obj.lifetime;
+      _this.formValidate.saAlgorithm = obj.saAlgorithm;
+      _this.formValidate.pfs = obj.pfs;
+      _this.formValidate.encryptInterface = obj.encryptInterface;
+      _this.formValidate.nhrpCiscoSecrets = obj.nhrpCiscoSecrets;
+      _this.formValidate.nhrpHoldtime = obj.nhrpHoldtime;
+      var actState = '1' == obj.enabled ? _this.lang_t('common.off') : _this.lang_t('common.on');
+      Cstools.msg({
+        content: _this.lang_t('common.warn1') + actState + _this.lang_t('common.warn2') ,
+        type: 'warn',
+        messgetype: 'confirm',
+        ok:function(){
+          _this.handleSubmit();
+        }
+      });
+    },
+    submit_refresh:function(){
+      location.href = location.href;
+    },
+    submit_delete:function(){
+      var _this = this;
+      var postVar = {};
+      var delnum = 0;
+      for(var i in _this.delRule){
+        if(_this.delRule[i]){
+          postVar[delnum] = _this.dmvpnData[i];
+          delnum++;
+        }
+      }
+      if(delnum == 0){
+        errorAlert(_this.lang_t('alert.msg2'));
+        return false;
+      }
+      Cstools.msg({
+        content: _this.lang_t('alert.msg3'),
+        type: 'warn',
+        messgetype: 'confirm',
+        ok:function(){
+          uiPost.delDmvpnCfg(postVar, apply_callback);
+        }
+      });
+    },    
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      var _s;
+
+      if('0' != _this.setIdx){
+        postVar.idx = _this.setIdx;
+        postVar.addEffect = "2";
+      }else{
+        if(_this.rule_num >= 4){
+          errorAlert(_this.lang_t('alert.msg1',[4]));
+          return false;
+        }
+
+        for(var i in _this.dmvpnData){
+          if(_this.formValidate.name == _this.dmvpnData[i].name){
+            errorAlert(_this.lang_t('alert.msg22'));
+            return false;
+          }
+        }
+        postVar.addEffect = "1";
+      } 
+
+      if(99 != cs.num_range(_this.formValidate.name,0,3)){
+        errorAlert(_this.lang_t('index.name') + _this.lang_t('alert.msg15',[0,3]));
+        return false;
+      } 
+
+      _s = cs.ip(_this.formValidate.peerExternalIp);
+      if(0 == _s){
+        errorAlert(_this.lang_t('vpn.peer_external_ip') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('vpn.peer_external_ip') + _this.lang_t('alert.msg14'));
+        return false;
+      }
+
+      _s = cs.ip(_this.formValidate.peerExternalIp);
+      if(0 == _s){
+        errorAlert(_this.lang_t('vpn.local_virtual_ip') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('vpn.local_virtual_ip') + _this.lang_t('alert.msg14'));
+        return false;
+      }
+
+      _s = cs.ip(_this.formValidate.peerVirtualIp);
+      if(0 == _s){
+        errorAlert(_this.lang_t('vpn.peer_virtual_ip') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('vpn.peer_virtual_ip') + _this.lang_t('alert.msg14'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.tunnelKey,0,4294967295)){
+        errorAlert(_this.lang_t('vpn.tunnel_key') + _this.lang_t('alert.msg15',[0,4294967295]));
+        return false;
+      } 
+	  
+	    if(99 != cs.num_range(_this.formValidate.ikeLifetime,120,86400)){
+        errorAlert(_this.lang_t('vpn.ike_lifetime') + _this.lang_t('alert.msg15',[120,86400]));
+        return false;
+      } 
+
+      if(_this.formValidate.preShareKey == ''){
+        errorAlert(_this.lang_t('vpn.pre_share_key') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(1 == cs.string(_this.formValidate.preShareKey)){
+        errorAlert(_this.lang_t('vpn.pre_share_key') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(1 == cs.string(_this.formValidate.selfIdentify)){
+        errorAlert(_this.lang_t('vpn.self_identify') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(1 == cs.string(_this.formValidate.matchIdentify)){
+        errorAlert(_this.lang_t('vpn.match_identify') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+	  
+	    if(99 != cs.num_range(_this.formValidate.lifetime,120,86400)){
+        errorAlert(_this.lang_t('vpn.lifetime') + _this.lang_t('alert.msg15',[120,86400]));
+        return false;
+      }  
+
+      if(1 == cs.string(_this.formValidate.matchIdentify)){
+        errorAlert(_this.lang_t('vpn.match_identify') + _this.lang_t('alert.msg6'));
+        return false;
+      }
+
+      if(0 != _this.formValidate.nhrpHoldtime.length){
+        if(99 != cs.num_range(_this.formValidate.nhrpHoldtime,1,65535)){
+          errorAlert(_this.lang_t('vpn.nhrp_hold_time') + _this.lang_t('alert.msg15',[1,65535]));
+          return false;
+        }
+      }
+
+      postVar.enabled = _this.formValidate.enabled;
+      postVar.name = _this.formValidate.name;
+      postVar.peerExternalIp = _this.formValidate.peerExternalIp;
+      postVar.localVirtualIp = _this.formValidate.localVirtualIp;
+      postVar.peerVirtualIp = _this.formValidate.peerVirtualIp;
+      postVar.tunnelKey = _this.formValidate.tunnelKey;
+      postVar.mode = _this.formValidate.mode;
+      postVar.encrypt = _this.formValidate.encrypt;
+      postVar.hash = _this.formValidate.hash;
+      postVar.groupName = _this.formValidate.groupName;
+      postVar.ikeLifetime = _this.formValidate.ikeLifetime;
+      postVar.preShareKey = _this.formValidate.preShareKey;
+      postVar.selfIdentify = _this.formValidate.selfIdentify;
+      postVar.matchIdentify = _this.formValidate.matchIdentify;
+      postVar.lifetime = _this.formValidate.lifetime;
+      postVar.saAlgorithm = _this.formValidate.saAlgorithm;
+      postVar.pfs = _this.formValidate.pfs;
+      postVar.encryptInterface = _this.formValidate.encryptInterface;
+      postVar.nhrpCiscoSecrets = _this.formValidate.nhrpCiscoSecrets;
+      postVar.nhrpHoldtime = _this.formValidate.nhrpHoldtime;      
+      uiPost.setDmvpnCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box tab-content table-responsive __mb">
+          <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{ lang_t('third.help') }}</strong></td>
+            </tr>
+            <tr>
+              <td>{{lang_t('common.state')}}</td>
+              <td>
+                <input type="checkbox" id="switch_enable" :checked="toggle_status" data-on-color="warning">
+              </td>
+            </tr>
+            <tbody v-if ="enabled == '1'">
+              <tr>
+                <td>{{lang_t('third.serverHost')}}</td>
+                <td>
+                  <input type="text" v-model="serverHost" maxlength="64">
+                </td>
+              </tr>
+              <tr>
+              </tr>
+              <tr >
+                <td>{{lang_t('third.statName')}}</td>
+                <td>
+                  <input type="text" v-model="statName" maxlength="32">
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('third.businessName')}}</td>
+                <td>
+                  <select v-model="businessName" data-style="btn-default">
+                    <option value="配电自动化-DTU">{{lang_t('third.businessName_1')}}</option>
+                    <option value="配电自动化-FTU">{{lang_t('third.businessName_2')}}</option>
+          				  <option value="TTU业务">{{lang_t('third.businessName_3')}}</option>
+          				  <option value="用采业务">{{lang_t('third.businessName_4')}}</option>
+          				  <option value="智辅业务">{{lang_t('third.businessName_5')}}</option>
+                    <option value="光伏监测">{{lang_t('third.businessName_6')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr >
+                <td style="width: 25%;">{{lang_t('gps.report')}}</td>
+                <td>
+                  <select v-model="gpsReport">
+                    <option value="0">{{ lang_t('internet.auto') }}</option>
+                    <option value="1">{{ lang_t('internet.manual') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('gps.longitude')}}</td>
+                <td>
+                  <input type="text" v-model="longitude" :disabled="gpsReport == '0'">
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('gps.latitude')}}</td>
+                <td>
+                  <input type="text" v-model="latitude" :disabled="gpsReport == '0'">
+                </td>
+              </tr>
+              <tr >
+                <td>{{lang_t('third.businessIP')}}</td>
+                <td>
+                  <input type="text" v-model="businessIP" maxlength="15">
+                </td>
+              </tr>
+              <tr >
+                <td>{{lang_t('third.signal')}}</td>
+                <td>{{signal}} dbm</td>
+              </tr>
+              <tr >
+                <td>{{lang_t('third.sinr')}}</td>
+                <td>{{sinr}} dB</td>
+              </tr>
+              <!-- <tr >
+                <td>{{lang_t('third.latitude_longitude')}}</td>
+                  <td>{{latitude_longitude}}</td>
+              </tr> -->
+              <tr >
+                <td>{{lang_t('third.date')}}</td>
+                <td>{{currentTime}}</td>
+              </tr>
+              <tr>
+                <td>ECI</td>
+                <td>{{eci}}</td>
+              </tr>
+              <tr>
+                <td>PCI</td>
+                <td>{{pci}}</td>
+              </tr>
+              <tr>
+                <td>{{lang_t('third.autoUpdate')}}</td>
+                <td>
+                  <!-- <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning"> -->
+                  <select v-model="autoUpdate">
+                    <option value="0">{{ lang_t('common.off') }}</option>
+                    <option value="1">{{ lang_t('common.on') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="autoUpdate == '1'">
+                <td>{{lang_t('third.autoUpdateTime')}}</td>
+                <td>
+                  <input type="text" v-model="autoUpdateTime" maxlength="16">{{lang_t('third.min')}}
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('third.result')}}</td>
+                <td>
+                  <span style="color:#fff;background-color:#EA7105" v-if="result == '0'">{{ lang_t('third.report_0') }}</span>
+                  <span style="color:#fff;background-color:#33fd00cc;" v-if="result == '1'">{{ lang_t('third.report_1') }}</span>
+                  <span style="color:#fff;background-color:#ea0505" v-if="result == '2'">{{ lang_t('third.report_2') }}</span>
+                  <span style="color:#fff;background-color:#098cf8;" v-if="result == '3'">{{ lang_t('third.report_3') }}</span>
+                </td>
+              </tr>
+              </tbody>
+              <tr>
+                <td></td>
+                <td colspan="2">
+                  <button  v-if ="enabled == '1'" type="button" class="btn btn-primary all-but" @click="getThirdSys">{{lang_t('third.gain')}}</button>&nbsp;&nbsp;
+                  <button type="button" class="btn btn-primary all-but" @click="handleSubmit">{{lang_t('third.report')}}</button>
+                </td>
+              </tr>
+            
+         </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+  	return {
+  	  globalConfig:globalConfig,
+  	  lang:$.lang,
+  	  lang_t:lang_t,
+  	  serverHost:"",
+      statName: "",
+      businessName: "配电自动化-DTU",
+      businessIP: "",
+      signal: "",
+      sinr: "",
+      latitude_longitude: "",
+      date: "",
+      currentTime: "",
+      autoUpdate: "",
+      enabled: false,
+      autoUpdateTime: "",
+      longitude:'',
+      latitude:'',
+      eci:'',
+      pci:'',
+      gpsReport:'0',
+      result:"0"
+  	}
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getThirdSystem(function(data){
+      _this.serverHost = data.serverHost;
+      _this.statName = data.statName;
+      _this.businessName = data.businessName;
+      _this.businessIP = data.businessIP;
+      _this.signal = data.signal;
+      _this.sinr = data.sinr;
+      _this.latitude_longitude = data.latitude_longitude;
+      _this.currentTime = _this.timestampToTime(Number(data.date));
+      _this.date = data.date;
+      _this.autoUpdate = data.autoUpdate;
+      _this.enabled = data.enable == "1" ? true : false;
+      _this.autoUpdateTime = data.autoUpdateTime;
+      _this.longitude = data.longitude;
+      _this.latitude = data.latitude;
+      _this.gpsReport = data.gpsReport;
+      _this.eci = data.eci;
+      _this.pci = data.pci;
+    });
+    uiPost.getThirdUpdateState(function(data){
+      _this.result = data.result;
+      });
+    /*addSwitch('#switch_status', function(data){
+      if(data != _this.autoUpdate) _this.autoUpdate = data;
+    });*/
+    addSwitch('#switch_enable', function(data){
+      if(data != _this.enabled){
+        _this.enabled = data;
+        _this.submit_status();
+      }   
+    });
+  },
+  computed:{
+    /*toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.autoUpdate);
+    },*/
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_enable').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    setInterval(function(){
+      uiPost.getThirdUpdateState(function(data){
+      _this.result = data.result;
+      });
+    },5000);
+  },
+  methods:{
+    timestampToTime:function(timestamp){
+      var date = new Date(timestamp * 1000);
+      var Y = date.getFullYear() + '-';
+      var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+      var D = date.getDate() + ' ';
+      var h = date.getHours() + ':';
+      var m = date.getMinutes() + ':';
+      var s = date.getSeconds();
+      return Y+M+D+h+m+s;
+    },
+    getThirdSys:function(){
+        location.reload();
+    },
+    submit_status:function(){
+      var _this = this;
+      var postVar ={};
+      postVar.enable = this.enabled ? "1" : "0";
+      postVar.addEffect = "1"; 
+      uiPost.setThirdSystem(postVar, apply_callback);
+    },
+  	handleSubmit:function(){
+  	  var _this = this;
+  	  var postVar = {};
+  	  var _s;
+      _s = cs.ip(_this.businessIP);
+      if(0 == _s){
+        errorAlert(_this.lang_t('third.businessIP') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(_this.lang_t('third.businessIP') + _this.lang_t('alert.msg14'));
+        return false;
+      }
+      if(_this.statName == ""){
+            errorAlert(_this.lang_t('third.statName') + _this.lang_t('alert.msg5'));
+            return false;
+      }
+      if(_this.serverHost == ""){
+            errorAlert(_this.lang_t('third.serverHost') + _this.lang_t('alert.msg5'));
+            return false;
+      }
+  	  postVar.serverHost = _this.serverHost;
+  	  postVar.statName = _this.statName;
+  	  postVar.businessName = _this.businessName;
+  	  postVar.businessIP = _this.businessIP;
+  	  postVar.signal = _this.signal;
+  	  postVar.sinr = _this.sinr;
+  	  postVar.date = _this.date;
+      postVar.autoUpdate = _this.autoUpdate;
+      postVar.enable = _this.enabled == true? "1":"0";
+      postVar.gpsReport = _this.gpsReport;
+      if(_this.gpsReport){
+        if (this.longitude != ''){
+          if(cs.num_ponit(this.longitude) != 99){
+            errorAlert(_this.lang_t('gps.longitude') + _this.lang_t('vpn_detection.msg5'));
+            return false;
+          }
+        }
+
+        if (this.latitude != ''){
+          if(cs.num_ponit(this.latitude) != 99){
+            errorAlert(_this.lang_t('gps.latitude') + _this.lang_t('vpn_detection.msg5'));
+            return false;
+          }
+        }
+        postVar.longitude = _this.longitude;
+        postVar.latitude = _this.latitude;
+      }
+      postVar.latitude_longitude = _this.longitude+','+_this.latitude; 
+      postVar.addEffect = "0";
+      if(_this.autoUpdate == '1'){
+        _s = cs.num_range(_this.autoUpdateTime);
+        if(0 == _s){
+          errorAlert(_this.lang_t('third.autoUpdateTime') + _this.lang_t('alert.msg5'));
+          return false;
+        }else if(1 == _s){
+          errorAlert(_this.lang_t('third.autoUpdateTime') + _this.lang_t('alert.msg18'));
+          return false;
+        }else if(_this.autoUpdateTime == 0 || _this.autoUpdateTime == "0"){
+          errorAlert(_this.lang_t('third.autoUpdateTime') + _this.lang_t('third.msg'));
+          return false;
+        }
+    	  postVar.autoUpdateTime = _this.autoUpdateTime;
+      } 
+
+  	  uiPost.setThirdSystem(postVar, apply_callback);
+  	}
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<title>Error</title>
+<style>
+  .cs-center { text-align: center;display: none;}
+  a{ text-decoration: none; }
+</style>
+</head>
+<script type="text/javascript" src="/plugin/json2.js"></script>
+<script type="text/javascript" src="/static/js/kr.js"></script>
+<script type="text/javascript" src="/static/js/config_ie.js"></script>
+<body class="cs-center" id="myui">
+  <div style="float: right">
+    <div id="lang_select"></div>
+  </div>
+  <br>
+  <div id="text">
+    <h1>{{w('error.msg1')}}</h1>
+    <p>{{w('error.msg2')}}</p>
+    <p>{{w('error.msg3')}}"<b>{{w('error.online')}}"</b>{{w('error.msg4')}}<a href="https://chrome.google.com/">{{w('error.google')}}</a>{{w('error.or')}}<a href="http://www.firefox.com.cn/">{{w('error.firefox')}}</a></p>
+  </div>
+  <div style="margin-top: 200px;">
+    <a href="login_ie.html"><h2>{{w('error.online')}}</h2></a>
+  </div>
+</body>
+<script type="text/javascript">
+  (function() {
+    kr.html('lang_select', lang_select);
+    new kr$1({});
+  })();
+</script>
+</html>

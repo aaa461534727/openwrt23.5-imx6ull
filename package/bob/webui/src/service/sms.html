@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{lang_t('sms.help')}}</strong></td>
+              </tr>         
+            </table>
+            <table class="table table-striped">
+              <tr>
+               <td>{{ lang_t('sms.online_note') }}</td>
+               <td>
+                 <input type="checkbox" id="online_status" :checked="online_status" data-on-color="warning">
+               </td>
+              </tr>
+              <tr v-show="onlineEnable">
+                <td>{{lang_t('sms.online_content')}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.onlineText" :maxlength="30" />
+                </td>
+              </tr>
+              <!-- <tr>
+               <td>{{ lang_t('sms.offline_note') }}</td>
+               <td>
+                 <input type="checkbox" id="offline_status" :checked="offline_status" data-on-color="warning">
+               </td>
+              </tr>
+              <tr v-show="offlineEnable">
+                <td>{{lang_t('sms.offline_content')}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.offlineText" :maxlength="30" />
+                </td>
+              </tr> -->
+              <tr>
+               <td>{{ lang_t('sms.sms_reboot') }}</td>
+               <td>
+                 <input type="checkbox" id="reboot_status" :checked="reboot_status" data-on-color="warning">
+               </td>
+              </tr>
+              <tr v-show="rebootEnable">
+                <td>{{lang_t('sms.restart_cmd')}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.rebootText" :maxlength="30"/>
+                </td>
+              </tr>
+              <tr v-for="(i,v) in 6">
+                <td>{{lang_t('sms.phone')+i}}</td>
+                <td>
+                  <input type="text" v-model="formValidate.phone[v]" :maxlength="20" />
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button type="button" class="btn btn-primary all-but" @click.prevent="handleSubmit()">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>   
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+	    onlineEnable:false,
+	    offlineEnable:false,
+	    rebootEnable:false,
+      formValidate:{        
+		    onlineText:'',        
+        offlineText:'',
+        rebootText:'',
+        phone:[]
+      }
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getSmsCfg(function(data){
+      _this.onlineEnable = data.onlineEnable == '1' ? true : false;
+	    _this.offlineEnable = data.offlineEnable == '1' ? true : false;
+	    _this.rebootEnable = data.rebootEnable == '1' ? true : false;
+      _this.formValidate.onlineText = data.onlineText;      
+      //_this.formValidate.offlineText = data.offlineText;      
+      _this.formValidate.rebootText = data.rebootText;
+      for(var i=0;i<6;i++){
+        _this.formValidate.phone[i] = data['phone'+i];
+      }
+    });
+	  addSwitch('#online_status', function(data){
+      if(data != _this.onlineEnable) _this.onlineEnable = data;
+    });
+	  addSwitch('#offline_status', function(data){
+      if(data != _this.offlineEnable) _this.offlineEnable = data;
+    });
+	  addSwitch('#reboot_status', function(data){
+      if(data != _this.rebootEnable) _this.rebootEnable = data;
+    });
+  },
+  computed: {
+	  online_status:function(){
+      var _this = this;
+      $('#online_status').bootstrapSwitch('state',_this.onlineEnable);
+    },
+	  offline_status:function(){
+      var _this = this;
+      $('#offline_status').bootstrapSwitch('state',_this.offlineEnable);
+    },
+	  reboot_status:function(){
+      var _this = this;
+      $('#reboot_status').bootstrapSwitch('state',_this.rebootEnable);
+    },
+    maskOption:function(){
+      return cs.maskOption();
+    }
+  },  
+  created:function(){
+    
+  },
+  methods:{
+    handleSubmit: function(){
+      var _this = this;
+      var postVar = {};
+	  
+	    postVar.onlineEnable = _this.onlineEnable ? "1" : "0";
+      if(_this.onlineEnable){
+  		  if(_this.formValidate.onlineText == ''){
+  			  errorAlert(_this.lang_t('sms.online_content') + _this.lang_t('alert.msg5'));
+  			  return false;
+  		  }
+  		  if(1 == cs.string(_this.formValidate.onlineText)){
+  			  errorAlert(_this.lang_t('sms.online_content') + _this.lang_t('alert.msg6'));
+  			  return false;
+  		  }
+        postVar.onlineText = _this.formValidate.onlineText;
+      }
+	  
+      /*postVar.offlineEnable = _this.offlineEnable ? "1" : "0";
+      if(_this.offlineEnable){
+    	  if(_this.formValidate.offlineText == ''){
+      		errorAlert(_this.lang_t('sms.offline_content') + _this.lang_t('alert.msg5'));
+      		return false;
+    	  }
+    	  if(1 == cs.string(_this.formValidate.offlineText)){
+      		errorAlert(_this.lang_t('sms.offline_content') + _this.lang_t('alert.msg6'));
+      		return false;
+    	  }
+        postVar.offlineText = _this.formValidate.offlineText;
+      }*/
+	  
+      postVar.rebootEnable = _this.rebootEnable ? "1" : "0";
+      if(_this.rebootEnable){
+    	  if(_this.formValidate.rebootText == ''){
+      		errorAlert(_this.lang_t('sms.restart_cmd') + _this.lang_t('alert.msg5'));
+      		return false;
+    	  }
+    	  if(1 == cs.string(_this.formValidate.rebootText)){
+      		errorAlert(_this.lang_t('sms.restart_cmd') + _this.lang_t('alert.msg6'));
+      		return false;
+    	  }
+        postVar.rebootText = _this.formValidate.rebootText;
+      } 
+	  
+      var _s = '';
+      for(var i=0;i<6;i++){
+        _s = _this.formValidate.phone[i];
+        if((cs.num(_s) == 1 || _s.length <3 || _s.length > 20) && _s != ''){
+		      errorAlert(_this.lang_t('sms.phone') + (i+1) + _this.lang_t('sms.msg1',[3,20]));
+          return false;
+        }
+        for(var j=0;j<6;j++){
+          if (i==j || _this.formValidate.phone[i] =='' || _this.formValidate.phone[j]==''){
+            continue;
+          }else{
+            if (_this.formValidate.phone[j] == _this.formValidate.phone[i]) {
+			        errorAlert(_this.lang_t('sms.msg2'));
+              return false;
+            }
+          }
+        }
+        postVar['phone'+i] = _this.formValidate.phone[i];
+      }
+      uiPost.setSmsCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('vpninfo.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <button type="submit" class="btn btn-primary all-but" @click.stop="modify_modal('-1','-1')" >{{lang_t('common.add_rule')}}</button>
+				      </td>
+              </tr>  
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="ipsecData.length >= 0">
+              <thead>
+                <tr>
+                  <th>{{ lang_t('vpn.swtich_status') }}</th>
+                  <th>{{ lang_t('vpn.link_type') }}</th>
+                  <th>{{ lang_t('vpninfo.server_ip') }}</th>
+                  <th>{{ lang_t('index.username') }}</th>
+                  <th>{{ lang_t('vpn.vpn_subnet') }}</th>
+                  <th>{{ lang_t('modem.ip') }}</th>
+                  <th>{{ lang_t('node_info.status') }}</th>
+                  <th>{{ lang_t('common.operation') }}</th>
+                </tr>
+              </thead>
+              <tr v-for="(val,index) in ipsecData">
+                <td>{{val.enable=='1' ? lang_t('index.open'):lang_t('index.close')}}</td>
+                <td>{{val.type=='0' ? 'pptp':'l2tp'}}</td>
+                <td>{{val.serverIp}}</td>
+                <td>{{val.user}}</td>
+                <td style="text-align:center;">
+                  <a @click="checkDetail(val)" style="cursor: pointer;" v-if="val.netMask.length !='0'">
+                    <span >{{ lang_t('vpn.details') }}</span> 
+                  </a>
+                  <span v-if="val.netMask.length =='0'" style="text-align:center;" > ---- </span> 
+                </td>
+                <td>{{val.addr}}</td>
+                <td> <span :style="{color:val.state == '1' ?'green':'red'}">{{val.state=='1'?lang_t('node_info.online'):lang_t('node_info.offline')}}</span></td>
+                <td>
+                  <a @click.stop="modify_modal(index,val)" style="cursor: pointer">{{ lang_t('common.modify') }}</a>
+                  <a @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>  
+            </table>
+                 
+          </div>
+        </div>
+      </section>
+      
+      <div class="modal fade" id="modal_info" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">{{ '99' == setIdx ? lang_t('common.add_rule') : lang_t('common.edit_rule') }}</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <tr>
+                <td>{{ lang_t('vpn.link_type') }}</td>
+                <td>
+                  <select v-model="forms.type" @change="mppeChange">
+                    <option value="0">pptp</option>
+                    <option value="1">l2tp</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('vpn.swtich_status') }}</td>
+                <td>
+                  <select v-model="forms.enable">
+                    <option value="0">{{lang_t('index.close')}}</option>
+                    <option value="1">{{lang_t('index.open')}}</option>
+                  </select>
+                </td>
+              </tr>
+
+                <tr>
+                <td>{{lang_t('vpninfo.server_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.serverIp" maxlength="32" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('index.username')}}</td>
+                <td>
+                  <input type="text" v-model="forms.user" maxlength="32" />
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('index.password')}}</td>
+                <td>
+                  <input type="text" v-model="forms.pass" maxlength="32" v-pass/>
+                </td>
+              </tr>
+
+              <tr id="localIp_show">
+                <td>{{lang_t('vpninfo.local_ip')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localIp" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr id="tunnelSecret_show">
+                <td>{{lang_t('vpninfo.tunnel_secret')}}</td>
+                <td>
+                  <input type="text" v-model="forms.tunnelSecret" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr id="localHostname_show">
+                <td>{{lang_t('vpninfo.local_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.localHostname" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+              <tr id="remoteHostname_show">
+                <td>{{lang_t('vpninfo.remote_hostname')}}</td>
+                <td>
+                  <input type="text" v-model="forms.remoteHostname" maxlength="32" />
+                  <span>({{ lang_t('vpninfo.can_be_null') }})</span>
+                </td>
+              </tr>
+
+              <tr >
+                <td>{{ lang_t('vpninfo.ip_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="ipMasq">
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('vpninfo.lan_mask') }}</td>
+                <td>
+                    <input type="checkbox" v-model="lanMasq">
+                </td>
+              </tr>
+              <tr id="mppe_show">
+                <td>{{lang_t('vpninfo.mppe_encryption')}}</td>
+                <td>
+                  <select v-model="forms.mppe">
+                    <option value="0">{{lang_t('vpninfo.optional_encryp')}}</option>
+                    <option value="1">{{lang_t('vpninfo.unencryption')}}</option>
+                    <option value="2">{{lang_t('vpninfo.encryption')}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>{{ lang_t('vpninfo.df_router') }}</td>
+                <td>
+                    <select v-model="forms.default">
+                      <option value="0">{{ lang_t('common.off') }}</option>
+                      <option value="1">{{ lang_t('common.on') }}</option>
+                    </select>
+                </td>
+              </tr>
+              <tr>
+                  <td style="width: 100px">{{ lang_t('vpninfo.custo_route') }}</td>
+                  <td>
+                    <ul class="list-inline" >
+                      <li style="margin-right: 0;padding-right: 0;max-width: 165px;"><input type="text"  v-model="vpnlan[0]" /></li>
+                      <li style="margin: 0;padding: 5px 0 5px 0;">/</li>
+                      <li style="margin: auto 0 auto 0;padding-right: 0;max-width: 165px;">
+                        <select v-model="vpnmask[0]">
+                          <option v-for="mask in maskOption" :value="mask.value">{{mask.option}}</option>
+                        </select>
+                      </li>
+                      <li style="line-height: 35px;margin-left: 5px;padding-left: 2px;"><i class="fa fa-minus-square-o" aria-hidden="true" style="font-size: 20px;cursor: pointer;margin-right:5px;" @click="addmask(0,'jian')" v-if="0 == vpnmaskNum && vpnlan[0] != ''"></i><i :class="actionIcon[0]" aria-hidden="true" style="font-size: 20px;cursor: pointer;" @click="addmask(0)"></i></li>
+                    </ul>
+                    <div class="col-lg-12 col-xs-12" style="padding-left: 0" v-if="vpnmaskNum == 0">
+                    <span>({{ lang_t('modem.eg') }}:192.168.0.0 / 255.255.255.0)</span>
+                  </div>
+                  </td>
+              </tr>
+              <tr v-for="idx in vpnmaskNum">
+                  <td></td>
+                  <td>
+                    <ul class="list-inline" >
+                      <li style="margin-right: 0;padding-right: 0;max-width: 165px;"><input type="text" v-model="vpnlan[idx]"/></li>
+                      <li style="margin: 0;padding: 5px 0 5px 0;">/</li>
+                      <li style="margin: auto 0 auto 0;padding-right: 0;max-width: 165px;">
+                        <select v-model="vpnmask[idx]">
+                          <option v-for="mask in maskOption" :value="mask.value">{{mask.option}}</option>
+                        </select>
+                      </li>
+                      <li style="line-height: 35px;margin-left: 5px;padding-left: 2px;"><i class="fa fa-minus-square-o" aria-hidden="true" style="font-size: 20px;cursor: pointer;margin-right:5px;" @click="addmask(idx,'jian')" v-if="idx == vpnmaskNum"></i><i :class="actionIcon[idx]" aria-hidden="true" style="font-size: 20px;cursor: pointer;" @click="addmask(idx)"></i></li>
+                    </ul>
+                    <div class="col-lg-12 col-xs-12" style="padding-left: 0" v-if="idx == vpnmaskNum">
+                    <span>({{ lang_t('modem.eg') }}:192.168.0.0 / 255.255.255.0)</span>
+                  </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('modem.ip')}}</td>
+                <td>
+                   <span>{{ addr }}</span>
+                </td>
+              </tr>
+              <tr v-show="globalConfig.vpncDmzSupport">
+                <td>{{lang_t('vpninfo.mapping')}}</td>
+                <td>
+                  <input type="text" v-model="forms.dmzIp">
+                </td>
+              </tr>            
+              </table>  
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button @click="closeFrame" class="btn btn-default all-but">{{ lang_t('common.cancel') }}</button>&nbsp;&nbsp;
+                    <button @click.prevent="addRule" class="btn btn-primary all-but">{{ '99' == setIdx ? lang_t('common.add') : lang_t('common.modify') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div> 
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal fade" id="modal_details" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">{{ lang_t('vpn.details')}}</h4>
+                </div>
+                <div class="modal-body" >
+                  <table class="table table-striped">
+                    
+                    <tr v-for="(data,v) in detail_mask">
+                      <td>{{ lang_t('vpn.vpn_subnet') }}</td>
+                      <td>{{ data.ip+'/'+data.mask }}</td>
+                    </tr>
+                  </table>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-primary" data-dismiss="modal">{{ lang_t('common.ok') }}</button>
+                </div>
+            </div>
+        </div>
+      </div>
+	  
+	  
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      ipMasq:false,
+      lanMasq:false,
+      forms: {
+        serverIp:'',
+        user:'',
+        pass:'',
+        dmzIp:'',
+        state:'',
+        enable:'',
+        mppe: '0',
+        localIp:'',
+        tunnelSecret:'',
+        localHostname:'',
+        remoteHostname:'',
+        default: '0'
+      },
+      
+      vpnlan: [''],
+      vpnmask: [''],
+      vpnmaskNum: 0,
+      first_vpnmaskNum:0,
+      maskOption: cs.maskOption(),
+      actionIcon: ['fa fa-plus-square-o'],
+      setIdx:"0",
+      rule_num:"",
+      addr:'',
+      editIdx: '-1',
+      detail_staticIp:'',
+      intervalTimeout:'',
+      detail_mask:[{ip:'',mask:''}],
+      detail_permission:'',
+      ipsecData:[]
+    }
+  },
+  watch:{
+   
+  },
+  computed:{    
+    
+  },
+  created:function(){
+    var _this = this;
+    _this.getVpn();
+    _this.intervalTimeout=setInterval(function(){
+      _this.getVpn();
+    },3000);
+
+  },
+  methods:{
+    mppeChange:function(){
+      var _this = this;
+      if(_this.forms.type == '0'){
+        $("#mppe_show").show();
+        $("#localIp_show").hide();
+        $("#tunnelSecret_show").hide();
+        $("#localHostname_show").hide();
+        $("#remoteHostname_show").hide();
+      }else{
+        $("#mppe_show").hide();
+        $("#localIp_show").show();
+        $("#tunnelSecret_show").show();
+        $("#localHostname_show").show();
+        $("#remoteHostname_show").show();
+      }
+        
+    },
+    getVpn:function(){
+        var _this = this;
+
+        uiPost.getVpnMultiClientCfg(function(data){
+        _this.rule_num = data.subnet.length;
+        if(_this.rule_num >= 1){
+          _this.ipsecData = data.subnet;
+
+          for(var j = 0;j < _this.rule_num;j++){
+            _this.first_vpnmaskNum = data.subnet[j].netMask.length-1;
+   
+            /*for(var i = 0;i <= _this.vpnmaskNum;i++){
+              _this.vpnlan[i] = data.subnet[j].netMask[i].net;
+              _this.vpnmask[i]= data.subnet[j].netMask[i].mask;
+              _this.actionIcon[i] = (i == _this.vpnmaskNum ? 'fa fa-plus-square-o' : 'fa fa-minus-square-o');
+            }*/
+          }
+
+        }
+
+      });
+  },  
+  addmask:function(idx,type){
+    if(this.actionIcon[idx] == 'fa fa-minus-square-o' || type == 'jian'){
+      this.actionIcon.splice(idx,1);
+      this.vpnlan.splice(idx,1);
+      this.vpnmask.splice(idx,1);
+      if(type == 'jian' && idx == 0){
+        this.vpnlan[0] = '';
+        this.vpnmask[0] = '';
+      }else
+        this.vpnmaskNum--;
+    }else{
+      this.vpnmaskNum = idx + 1;
+      this.vpnlan.splice(idx+1,0,'');
+      this.vpnmask.splice(idx+1,0,'');
+    }
+    for(var i=0;i<=this.vpnmaskNum;i++){
+      this.actionIcon[i] = (i == this.vpnmaskNum ? 'fa fa-plus-square-o' : 'fa fa-minus-square-o');
+    }
+  },
+  delRuleFun:function (idx,obj) {
+    var _this = this;
+    this.editIdx = "-1";
+    clearInterval(_this.intervalTimeout);
+    this.ipsecData.splice(idx, 1);
+      
+  },
+
+    closeFrame:function(id){
+	    $('#modal_info').modal('hide');
+    },
+    
+    checkDetail:function(data){
+      this.detail_mask = [{ip:'',mask:''}];
+      if(data.netMask){
+        this.detail_mask = [];
+        for(var i in data.netMask){
+          this.detail_mask.push(
+              {ip:data.netMask[i].net, mask:data.netMask[i].mask}
+            );
+        }
+      }
+      $('#modal_details').modal('show');
+    },
+    modify_modal:function(idx,obj){
+      var _this = this;
+      clearInterval(_this.intervalTimeout); 
+      if(idx =='-1'){
+        _this.setIdx = '99';
+        _this.forms.type = '0';
+        _this.forms.enable = '1';
+        _this.forms.serverIp = '';
+        _this.forms.localIp = '';
+        _this.forms.tunnelSecret = '';
+        _this.forms.localHostname = '';
+        _this.forms.remoteHostname = '';
+        _this.forms.user = '';      
+        _this.forms.pass = '';
+        _this.forms.mppe = '0';
+        _this.forms.state  = '';
+        _this.forms.state  = '';
+        _this.default = '';
+        _this.ipMasq = obj.ipMasq = true;
+        _this.lanMasq = obj.lanMasq = false;
+        _this.vpnlan[0] = '';
+        _this.vpnmask[0] = '';
+        _this.actionIcon[0]= 'fa fa-plus-square-o';
+        _this.vpnmaskNum=0;
+        _this.addr  = ''; 
+        _this.forms.dmzIp = '';
+      }else{
+        //console.log(obj)
+        _this.setIdx = idx;
+        _this.forms.type = obj.type;
+        _this.forms.enable = obj.enable;
+        _this.forms.serverIp = obj.serverIp;
+
+        _this.forms.localIp = obj.localIp;
+        _this.forms.tunnelSecret = obj.tunnelSecret;
+        _this.forms.localHostname = obj.localHostname;
+        _this.forms.remoteHostname = obj.remoteHostname;
+
+        _this.forms.user = obj.user;      
+        _this.forms.pass = obj.pass;
+        _this.forms.dmzIp= obj.dmzIp;
+        _this.forms.default = obj.default;
+        _this.forms.mppe = obj.mppe;
+        _this.ipMasq = obj.ipMasq == '1'?true:false;
+        _this.lanMasq = obj.lanMasq == '1'?true:false;    
+        //console.log(_this.vpnmaskNum)
+        _this.vpnmaskNum=obj.netMask.length-1;
+        for(var i = 0;i <= _this.vpnmaskNum;i++){
+          _this.vpnlan[i] = obj.netMask[i].net;
+          _this.vpnmask[i]= obj.netMask[i].mask;
+          _this.actionIcon[i] = (i == _this.vpnmaskNum ? 'fa fa-plus-square-o' : 'fa fa-minus-square-o');
+        }
+        _this.addr  = obj.addr;
+        _this.forms.state  = obj.state;    
+      }
+      _this.mppeChange();
+      $('#modal_info').modal('show');
+    },
+   
+    addRule:function(idx){
+      var _this = this;
+      if(_this.ipsecData.length){
+        if (_this.ipsecData.length >=10) {
+          errorAlert(lang_t('alert.msg1', [10]));
+          return false;
+        }
+        for(var i = 0;i < _this.ipsecData.length;i++){
+          if ( i == _this.setIdx) continue;
+          if(_this.forms.user == _this.ipsecData[i].user && _this.forms.pass == _this.ipsecData[i].pass && _this.forms.serverIp == _this.ipsecData[i].serverIp && _this.forms.type == _this.ipsecData[i].type){
+            errorAlert(lang_t('alert.msg4'));
+            return false;
+          }
+          
+        }
+      }
+      var postVar = {};
+      var _s = cs.string(_this.forms.user);
+      if(0 == _s){
+        errorAlert(lang_t('index.username')+lang_t('alert.msg5'));
+        return false;
+      }else if (1 == _s) {
+        errorAlert(lang_t('index.username')+lang_t('alert.msg6'));
+        return false;
+      }
+
+      _s = cs.string(_this.forms.pass);
+      if (0 == _s) {
+        errorAlert(lang_t('index.password')+lang_t('alert.msg5'));
+        return false;
+      }else if (1 == _s) {
+        errorAlert(lang_t('index.password')+lang_t('alert.msg6'));
+        return false;
+      }
+
+      _s = cs.ip(_this.forms.serverIp);
+      if(0 == _s){
+        errorAlert(lang_t('vpninfo.server_ip') + lang_t('alert.msg5'));
+        return false;
+      }
+      if (_this.forms.type == 1){
+
+       if (99 != cs.ip(_this.forms.localIp) && 0 != cs.ip(_this.forms.localIp)){
+          errorAlert(lang_t('vpninfo.local_ip') + lang_t('alert.msg14'));
+          return false;
+        }
+
+        var _s = cs.string(_this.forms.tunnelSecret);
+        if (1 == _s) {
+          errorAlert(lang_t('vpninfo.tunnel_secret')+lang_t('alert.msg6'));
+          return false;
+        }
+        var _s = cs.string(_this.forms.localHostname);
+        if (1 == _s) {
+          errorAlert(lang_t('vpninfo.local_hostname')+lang_t('alert.msg6'));
+          return false;
+        }
+        var _s = cs.string(_this.forms.remote_hostname);
+        if (1 == _s) {
+          errorAlert(lang_t('vpninfo.remoteHostname')+lang_t('alert.msg6'));
+          return false;
+        }
+        
+      }
+
+      if (!cs.isUrl(_this.forms.serverIp)){
+        errorAlert( this.lang_t('vpninfo.server_ip')+this.lang_t('alert.msg42') );
+        return false;
+      }
+
+      var arr = [];
+      for(var i=0;i<=this.vpnmaskNum;i++){
+        arr[i] = {}; 
+        arr[i].net = this.vpnlan[i];
+        arr[i].mask   = this.vpnmask[i];
+          if('' != arr[i].net && undefined != arr[i].net){
+              var reg=/^(?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))$/;
+              if(!reg.test(arr[i].net)){
+                errorAlert(lang_t('vpninfo.msg1'));
+                  return false;
+              }
+          }
+      }
+
+      if (99 != cs.ip(_this.forms.mapping) && 0 != cs.ip(_this.forms.mapping)){
+        errorAlert(lang_t('vpninfo.mapping') + lang_t('alert.msg14'));
+        return false;
+      }
+
+      set_obj_value(this.forms, this.forms, function(key, value) {
+        postVar[key] = value;
+      })
+
+      postVar.netMask = arr;
+      postVar.addEffect = "1";
+      postVar.ipMasq = _this.ipMasq ? "1":"0";
+      postVar.lanMasq = _this.lanMasq ? "1":"0";
+      postVar.addr = _this.addr;
+      //clearInterval(_this.intervalTimeout); 
+      if(_this.setIdx == '99'){
+        this.ipsecData.push(postVar); 
+      }else{
+       $.extend(this.ipsecData[_this.setIdx], postVar);
+      }
+       
+      $('#modal_info').modal('hide');
+      set_obj_value(this.forms, this.forms, function(key, value) {
+        postVar[key] = value;
+      })
+
+      //console.log(postVar)
+    },
+    handleSubmit:function(){
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.subnet = [].concat( this.ipsecData);
+      postVar.addEffect = "1";
+      //console.log(postVar)
+      uiPost.setVpnMultiClientCfg(postVar, apply_callback);
+    }
+
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

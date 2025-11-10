@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <table class="table table-striped">
+            <tr>
+              <td colspan="2"><strong>{{lang_t('gps.help')}}</strong></td>
+            </tr>
+            <tr>
+              <td>{{lang_t('common.state')}}</td>
+              <td>
+                <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{ lang_t('index.type') }}</td>
+              <td>
+                <span>
+                  <input type="radio" value="0" name="type" v-model="formValidate.type">GPS
+                </span>
+                <span>
+                  <input type="radio" value="1" name="type" v-model="formValidate.type">GPS+BeiDou
+                </span>
+              </td>
+            </tr> 
+            <tr v-show="enabled">
+              <td>{{lang_t('gps.local_port')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.localPort" :maxlength="5">
+                <span>(1~65535)</span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{ lang_t('filter.protocol') }}</td>
+              <td>
+                <span>
+                  <input type="radio" value="tcp" name="protocol" v-model="formValidate.protocol">TCP
+                </span>
+                <span>
+                  <input type="radio" value="udp" name="protocol" v-model="formValidate.protocol">UDP
+                </span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('index.server_addr')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.server" :maxlength="32">
+                <span>({{lang_t('index.domain_ip')}})</span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('gps.server_port')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.serverPort" :maxlength="5">
+                <span>(1~65535)</span>
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('gps.packet_header')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.packetHeader" :maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('gps.packet_tailer')}}</td>
+              <td>
+                <input type="text" v-model="formValidate.packetTailer" :maxlength="32">
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td>{{lang_t('gps.gps_report_interval')}}</td>
+              <td>
+                <input type="number" v-model="formValidate.gpsReportInterval">(s)
+              </td>
+            </tr>
+            <tr v-show="enabled">
+              <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                <button class="btn btn-primary" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script src="/static/js/qrcode.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      enabled:'',
+      formValidate:{
+        type:'0',
+        localPort:'',
+        protocol:'0',
+        server:'',
+        serverPort:'',
+        packetHeader:'',
+        packetTailer:'',
+        gpsReportInterval:''
+      }
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getGpsReportTimeCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.type = data.type;
+      _this.formValidate.localPort = data.localPort;
+      _this.formValidate.protocol = data.protocol;
+      _this.formValidate.server = data.server;
+      _this.formValidate.serverPort = data.serverPort;
+      _this.formValidate.packetHeader = data.packetHeader;
+      _this.formValidate.packetTailer = data.packetTailer;
+      _this.formValidate.gpsReportInterval = data.gpsReportInterval;
+    });
+    addSwitch('#switch_status', function(data){
+      if(data != _this.enabled) _this.enabled = data;
+      _this.submit_status();
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enabled);
+    }
+  },
+  created:function(){
+    var _this = this;
+    uiPost.getGpsReportTimeCfg(function(data){
+      _this.enabled = data.enabled == "1" ? true : false;
+      _this.formValidate.type = data.type;
+      _this.formValidate.localPort = data.localPort;
+      _this.formValidate.protocol = data.protocol;
+      _this.formValidate.server = data.server;
+      _this.formValidate.serverPort = data.serverPort;
+      _this.formValidate.packetHeader = data.packetHeader;
+      _this.formValidate.packetTailer = data.packetTailer;
+      _this.formValidate.gpsReportInterval = data.gpsReportInterval;
+    })
+  },
+  methods:{
+    submit_status:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.enabled){
+        postVar.enabled = "0";
+        uiPost.setGpsReportTimeCfg(postVar, apply_callback);
+      }      
+    },
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+
+      if(_this.formValidate.localPort){
+        if(99 != cs.num_range(_this.formValidate.localPort,1,65535)){
+          _this.errorAlert(_this.lang_t('gps.local_port') + _this.lang_t('alert.msg15',[1,65535]));
+          return false;
+        }
+      }
+
+      if("" == _this.formValidate.server){
+        _this.errorAlert(_this.lang_t('index.server_addr') + _this.lang_t('alert.msg5'));
+        return false;
+      }else if(99 != cs.ip_domain(_this.formValidate.server)){
+        _this.errorAlert(_this.lang_t('index.server_addr') + _this.lang_t('alert.msg19'));
+        return false;
+      }
+
+      if(99 != cs.num_range(_this.formValidate.serverPort,1,65535)){
+        _this.errorAlert(_this.lang_t('gps.server_port') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      }
+      
+      if(_this.formValidate.packetHeader){
+        if(99 != cs.string(_this.formValidate.packetHeader)){
+          _this.errorAlert(_this.lang_t('gps.packet_header') + _this.lang_t('alert.msg6'));
+          return false;
+        }
+      }
+
+      if(_this.formValidate.packetTailer){
+        if(99 != cs.string(_this.formValidate.packetTailer)){
+          _this.errorAlert(_this.lang_t('gps.packet_tailer') + _this.lang_t('alert.msg6'));
+          return false;
+        }
+      }
+      
+      if(_this.formValidate.gpsReportInterval){
+        if(99 != cs.num(_this.formValidate.gpsReportInterval)){
+          _this.errorAlert(_this.lang_t('gps.gps_report_interval') + _this.lang_t('alert.msg18'));
+          return false;
+        }
+      }
+      
+      postVar.enabled = "1";
+      postVar.type = _this.formValidate.type;
+      postVar.localPort = _this.formValidate.localPort;
+      postVar.protocol = _this.formValidate.protocol;      
+      postVar.server = _this.formValidate.server;
+      postVar.serverPort = _this.formValidate.serverPort;
+      postVar.packetHeader = _this.formValidate.packetHeader;
+      postVar.packetTailer = _this.formValidate.packetTailer;
+      postVar.gpsReportInterval = _this.formValidate.gpsReportInterval;
+      uiPost.setGpsReportTimeCfg(postVar, apply_callback);
+    },
+    errorAlert:function(data){
+      var _this = this;
+      Cstools.msg({
+        type: 'error',
+        messgetype: 'alert',
+        title: _this.lang_t('common.tips'),
+        content: data
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

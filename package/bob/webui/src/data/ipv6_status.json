@@ -1,0 +1,12 @@
+{ 
+    "ipv6WanLinkType": "on",
+    "ipv6WanOriginType": "off",
+    "ipv6WanGlobalAddree": "1111:2222:1111:3333:1111:4444:1111:5555/64",
+    "ipv6WanLinkAddree": "1111:2222:1111:3333:1111:4444::6666/64",
+    "ipv6WanGw": "1111:2222:1111:3333:1111:::6666/64",
+    "ipv6WanDns": "f020:2222:1111::1111:::6666/64",
+    "ipv6LanGlobalAddree": "",
+    "ipv6LanLinkAddree": "",
+    "ipv6LanGw": "",
+    "ipv6Enabled": 0
+}

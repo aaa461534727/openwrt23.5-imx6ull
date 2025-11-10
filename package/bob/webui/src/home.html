@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="robots" content="noindex, nofollow, noodp, noydir" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <title></title>
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .mycol{padding-right: 15px;padding-left: 15px; margin-bottom: 15px;}
+    .f9{font-size:9px;}
+    .ivu-tooltip-inner{max-width:310px;}
+    .shut{display: none;}
+    .show{display: block;}
+    .want{color:#000000; text-decoration:underline;}
+    .line-list{float: left;}
+    .line-list:focus,.line-list:active{background-color: #EA7105;color:#fff;    border-color: #EA7105;}
+    .back-color{background-color: #fff;color:#EA7105;}
+    .img-hover{width: 18px;height: 15px;}
+    .img-hover:hover{transform:scale(1.4,1.4); -ms-transform:scale(1.4,1.4); -moz-transform:scale(1.4,1.4); -webkit-transform:scale(1.4,1.4); -o-transform:scale(1.4,1.4); }
+    table{cursor: pointer;}
+    .net-icon{margin: 11px 0;}
+    .net-icon *{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .net-icon div{display: inline-block;margin: 0 12px;}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <div>
+ 		    <!-- 系统信息 -->
+        <div :class="[classA, classB, 'mycol']">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" @click="onModule('sys')">
+                  <tr>
+                    <td colspan="2">{{ lang_t('index.sys_info') }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.mode') }}</td>
+                    <td>{{ operationModeMsg }}</td>
+                  </tr>
+                  <tr v-show="globalConfig.operationMode == '2'">
+                    <td>{{ lang_t('wifi.relay_status') }}</td>
+                    <td>{{ repeaterMsg }}</td>
+                  </tr>
+                  <tr>
+                    <td style="width: 32%">{{ lang_t('index.up_time') }}</td>
+                    <td>{{ upTimeMsg }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.version') }}</td>
+                    <td>{{ fmVersion }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.build_time') }}</td>
+                    <td>{{ buildTimeMsg }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+		    <!-- 内网信息 -->
+        <div :class="[classA, classB, 'mycol']" v-show="globalConfig.csid != 'C7335R'">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" @click="onModule('lan')">
+                  <tr>
+                    <td colspan="2">{{ lang_t('index.lan_info') }}</td>
+                  </tr>
+                  <tr>
+                    <td style="width: 32%">{{ lang_t('index.lan_addr') }}</td>
+                    <td>{{ lanIp }}</td>
+                  </tr>
+                  <tr v-show="globalConfig.operationMode != '0' && globalConfig.operationMode != '2'">
+                    <td>{{ lang_t('index.user_num') }}</td>
+                    <td>{{ lanUserNum }}&nbsp;&nbsp;<i class="fa fa-search" aria-hidden="true" style="cursor: pointer;" @click="lanuserCheak"></i></td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" align="center">
+                      <div class="net-icon">
+                        <div v-for="(img,v) in wanImg">
+                          <img :src="img.src">
+                          <p>{{ img.name }}</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-show="globalConfig.operationMode != '1' && globalConfig.operationMode != '3'">
+                    <td colspan="2">&nbsp;
+                    </td>
+                  </tr>
+                  <tr v-show="globalConfig.operationMode != '1' && globalConfig.operationMode != '3'">
+                    <td colspan="2">&nbsp;
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+        <!-- 外网信息 -->
+        <div :class="[classA, classB, 'mycol']" id="wan_module" v-if="globalConfig.operationMode != '0' && globalConfig.operationMode != '2' && globalConfig.wiredWanSupport">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" @click="onModule('wan')">
+                  <tr>
+                    <td colspan="2">{{ lang_t('index.internet_info') }}</td>
+                  </tr>
+                  <tr>
+                    <td style="width: 32%">{{ lang_t('index.wan_addr') }}</td>
+                    <td>
+                      <span style="margin-right: 13px;">{{ wanIp }}</span>
+                      <span style="color: red">↑<b> {{ up }}</b></span>&nbsp;&nbsp;
+                      <span style="color: #A2CD5A"><b>↓ {{ down }}</b></span>
+                    </td>
+                  </tr>
+                  <tr v-show="">
+                    <td>{{ lang_t('index.metric') }}</td>
+                    <td>{{ strategyMsg }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.wan_status') }}</td>
+                    <td>{{ wanModeType(wanMode)+' '+connMsg }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.mac_address') }}</td>
+                    <td>{{ wanmac }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div><!-- 单频无线信息 -->
+        <div :class="[classA, classB, 'mycol']" v-if="globalConfig.wifiSupport">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+              <table class="table table-striped" @click="onModule('wifi2')">
+                <tr>
+                  <td colspan="2"><span v-if="wifiDualband == '1'">2.4G</span>{{ lang_t('index.wireless_info') }}</td>
+                </tr>
+                <tr>
+                  <td style="width: 32%">{{ lang_t('index.wireless_state') }}</td>
+                  <td>{{ wifiOff == "0" ? lang_t('index.open') : lang_t('index.close') }}</td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.ssid') }}</td>
+                  <td style="white-space:pre">
+                    <div style="float:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;" :title="'0' == wifiOff ? ssid2Show : ''">{{ ssid2Show }}</div>
+                  </td>
+                </tr>
+                <tr v-show="globalConfig.operationMode == '2'">
+                  <td>{{ lang_t('wifi.repeater') }}SSID</td>
+                  <td style="white-space:pre">
+                    <div style="float:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;" :title="'0' == wifiOff ? rptSsid2Show : ''">{{ wifiOff == "0" ? rptSsid2Show : lang_t('index.disabled') }}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.passmsg') }}</td>
+                  <!--<td v-if="key1 != ''">{{ pass2gvalue }} <i class="fa fa-eye-slash" aria-hidden="true" @click="passIfShow(2,0,'main')" v-if="pass2gshow == true"></i><i class="fa fa-eye" aria-hidden="true" @click="passIfShow(2,1,'main')" v-else></i></td>-->
+                  <!--<td v-if="key1 == ''">{{ lang_t('index.nopassword') }}</td>-->
+                  <td v-if="key1 != ''">{{ lang_t('index.pass') }}</td>
+                  <td v-if="key1 == ''">{{ lang_t('index.nopass') }}</td>
+                </tr>
+              </table>
+              </div>
+            </div>
+          </section>
+        </div>
+		    <!-- 双频无线信息 -->
+        <div :class="[classA, classB, 'mycol']" v-if="wifiDualband == '1' && globalConfig.wifiSupport">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+              <table class="table table-striped" @click="onModule('wifi5')">
+                <tr>
+                  <td colspan="2">5G{{ lang_t('index.wireless_info') }}</td>
+                </tr>
+                <tr>
+                  <td style="width: 32%">{{ lang_t('index.wireless_state') }}</td>
+                  <td>{{ wifiOff5g == "0" ? lang_t('index.open') : lang_t('index.close') }}</td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.ssid') }}</td>
+                  <td style="white-space:pre">
+                    <div style="float:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;" :title="'0' == wifiOff5g ? ssid5Show : ''">{{ ssid5Show }}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('index.passmsg') }}</td>
+                  <!--<td v-if="key5g1 != ''">{{ pass5gvalue }} <i class="fa fa-eye-slash" aria-hidden="true" @click="passIfShow(5,0,'main')" v-if="pass5gshow == true"></i><i class="fa fa-eye" aria-hidden="true" @click="passIfShow(5,1,'main')" v-else></i></td>-->
+                  <!--<td v-if="key5g1 == ''">{{ lang_t('index.nopassword') }}</td>-->
+                  <td v-if="key5g1 != ''">{{ lang_t('index.pass') }}</td>
+                  <td v-if="key5g1 == ''">{{ lang_t('index.nopass') }}</td>
+                </tr>
+              </table>
+              </div>
+            </div>
+          </section>
+        </div>
+        <!-- 4G信息 -->
+        <div :class="[classA, classB, 'mycol']" v-if="globalConfig.operationMode != '0' && globalConfig.operationMode != '2' && globalConfig.operationMode != '3' && globalConfig.urlNetPage != '2'">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" @click="onModule('4g')">
+                  <tr>
+                    <td colspan="2" v-if="globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode ">{{ lang_t('index.4glte_1',[1]) }}</td>
+                    <td colspan="2" v-else>{{ lang_t('index.4glte') }}</td>
+                  </tr>
+                  <tr>
+                    <td style="width: 32%">{{ lang_t('index.wan_status') }}</td>
+                    <td>
+                      <span v-if="wan4gConnStatus === 'connected'">{{ conn4gMsg }}{{ wan4gIp }}</span>
+                      <span v-else-if="wan4gConnStatus === 'disconnected'">{{ conn4gMsg }} 0.0.0.0</span>
+                      <span v-else>{{ lang_t('index.idle') }}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>SIM{{ lang_t('index.status') }}</td>
+                    <td>{{ registStatusMsg }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.signal') }}</td>
+                    <td><img :src="signalStrengthImg"/></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div :class="[classA, classB, 'mycol']" v-if="globalConfig.operationMode != '0' && globalConfig.operationMode != '2' && globalConfig.operationMode != '3'&&globalConfig.modemDualband&& globalConfig.modemPrioIsDounleMode &&globalConfig.urlNetPage != '1'">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" @click="onModule('4g1')">
+                  <tr>
+                    <td colspan="2">{{ lang_t('index.4glte_1',[2]) }}</td>
+                  </tr>
+                  <tr>
+                    <td style="width: 32%">{{ lang_t('index.wan_status') }}</td>
+                    <td>{{ conn4gMsg_1 }} {{ wan4gConnStatus_1 == "connected"? wan4gIp_1 :'0.0.0.0' }}</td>
+                  </tr>
+                  <tr v-show="">
+                    <td>{{ lang_t('index.model') }}</td>
+                    <td>{{ mode4g_1 }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.status') }}</td>
+                    <td>{{ registStatusMsg_1 }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.signal') }}</td>
+                    <td><img :src="signalStrengthImg_1"/></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+        <!-- 资源信息 -->
+        <div :class="[classA, classB, 'mycol']" id="resources_module" v-if="false">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped tab-content" style="cursor: default;">
+                  <tr>
+                    <td colspan="6">{{ lang_t('index.resources') }}</td>
+                  </tr>
+                  <tr >
+                    <td align="center">
+                      <div dashboard="true" style="width: 100px;height: 100px;">
+                        <svg viewBox="0 0 100 100">
+                          <path d="M 50,50 m 0,-47.5 a 47.5,47.5 0 1 1 0,95 a 47.5,47.5 0 1 1 0,-95" stroke="#eaeef2" stroke-width="4" fill-opacity="0"/>
+                          <path d="M 50,50 m 0,-47.5 a 47.5,47.5 0 1 1 0,95 a 47.5,47.5 0 1 1 0,-95" stroke-linecap="round" stroke="#F4A460" stroke-width="6" fill-opacity="0" :style="ramOccupyPercent"/>
+                        </svg>
+                        <div>
+                          <div style="margin:-100px auto auto auto;">
+                            <h1 style="color: rgb(244,164,96);">{{ ramOccupy }}%</h1>
+                            <p style="color: rgb(244,164,96);">RAM</p>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td align="center">
+                      <div dashboard="true" style="width: 100px;height: 100px;">
+                        <svg viewBox="0 0 100 100">
+                          <path d="M 50,50 m 0,-47.5 a 47.5,47.5 0 1 1 0,95 a 47.5,47.5 0 1 1 0,-95" stroke="#eaeef2" stroke-width="4" fill-opacity="0" />
+                          <path d="M 50,50 m 0,-47.5 a 47.5,47.5 0 1 1 0,95 a 47.5,47.5 0 1 1 0,-95" stroke-linecap="round" stroke="#90EE90" stroke-width="6" fill-opacity="0" :style="cpuOccupyPercent"/>
+                        </svg>
+                        <div>
+                          <div style="margin:-100px auto auto auto;">
+                            <h1 style="color:#A2CD5A;">{{ cpuOccupy }} %</h1>
+                            <p style="color:#A2CD5A;">CPU</p>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+        <!-- 路由信息 -->
+        <div :class="[classA, classB, 'mycol']" v-if="(globalConfig.policyRouteSupport || globalConfig.staticRouteSupport) && (globalConfig.operationMode != '2' && globalConfig.operationMode != '0')">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" >
+                  <tr>
+                    <td colspan="6">{{ lang_t('index.route_info') }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('index.status') }}</td>
+                    <td>{{ routeList.length > 0 ?  lang_t('common.on') :  lang_t('common.off') }}</td>
+                  </tr>
+                  <tr @click="onModule('static_route')" v-if="globalConfig.staticRouteSupport">
+                    <td>{{ lang_t('index.static_route') }}</td>
+                    <td>{{ staticRouteList.length }} {{ lang_t('index.item') }}</td>
+                  </tr>
+                  <tr @click="onModule('policy_route')" v-if="globalConfig.policyRouteSupport">
+                    <td>{{ lang_t('index.policy_route') }}</td>
+                    <td>{{ policyRouteList.length }} {{ lang_t('index.item') }}</td>
+                  </tr>
+                  <tr v-else><td colspan="2">&nbsp;</td></tr>
+                  <tr v-if="!globalConfig.staticRouteSupport"><td colspan="2">&nbsp;</td></tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+		<!-- GPS信息 -->
+        <div :class="[classA, classB, 'mycol']" v-if="globalConfig.gps3Support && (globalConfig.operationMode != '2' && globalConfig.operationMode != '0')">
+          <section>
+            <div class="content-box">
+              <div class="table-responsive">
+                <table class="table table-striped" >
+                  <tr>
+                    <td colspan="6">{{ lang_t('index.gps_info') }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('gps.satellites_number') }}</td>
+                    <td>{{ satellitesNum }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('gps.satellites_clock') }}</td>
+                    <td>{{ satellitesClock }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('gps.longitude') }}</td>
+                    <td>{{ longitude }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ lang_t('gps.latitude') }}</td>
+                    <td>{{ latitude }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+		    <!-- 弹窗 -->
+        <div class="modal fade" id="route_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" >{{  'static' == showRouteType ? lang_t('index.static_route') : lang_t('index.policy_route') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <div class="table-phone-width low">
+                  <table class="table table-striped" v-if="'static' == showRouteType">
+                    <tbody>
+                    <tr>
+                      <th>{{ lang_t('index.network') }}</th>
+                      <th>{{ lang_t('index.subnetmark') }}</th>
+                      <th>{{ lang_t('index.gateway') }}</th>
+                      <th>{{ lang_t('index.interface') }}</th>
+                      <th>{{ lang_t('index.metric_cnt') }}</th>
+                    </tr>
+                    </thead>
+                    <tr v-for="(val,index) in showRouteList">
+                      <td>{{ val.network }}</td>
+                      <td>{{ val.subnetMask }}</td>
+                      <td>{{ val.gateway }}</td>
+                      <td>{{ val.interface }}</td>
+                      <td>{{ val.metric }}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                  <table class="table table-striped" v-else>
+                    <tbody>
+                    <tr>
+                      <th>{{ lang_t('policy_route.proto') }}</th>
+                      <th>{{ lang_t('ipf.ip') }}</th>
+                      <th>{{ lang_t('policy_route.source_port') }}</th>
+                      <th>{{ lang_t('policy_route.destip') }}</th>
+                      <th>{{ lang_t('policy_route.destination_port') }}</th>
+                      <th>{{ lang_t('policy_route.iface') }}</th>
+                    </tr>
+                    </thead>
+                    <tr v-for="(val,index) in showRouteList">
+                      <td>{{ val.proto.toUpperCase() }}</td>
+                      <td>{{ val.sourceIp }}</td>
+                      <td>{{ val.portRange }}</td>
+                      <td>{{ val.destIp }}</td>
+                      <td>{{ val.dPortRange }}</td>
+                      <td>{{ val.interface }}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="wan_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" >{{ lang_t('index.internet_info') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <tr v-for="(i,v) in wandata" v-if="i.status != ''">
+                      <td style="width: 32%">{{ i.msg }}</td>
+                      <td>{{ i.status }}</td>
+                    </tr>
+                    <tr v-for="(i,v) in ipv6wandata">
+                      <td>{{ i.msg }}</td>
+                      <td>{{ i.status }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal fade" id="lan_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" >{{ lang_t('index.lan_info') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <tr v-for="(i,v) in landata">
+                      <td style="width: 32%">{{ i.msg }}</td>
+                      <td>{{ i.status }}</td>
+                    </tr>
+                    <tr v-for="(i,v) in ipv6landata" v-if="globalConfig.ipv6Support">
+                      <td style="width: 32%">{{ i.msg }}</td>
+                      <td>{{ i.status }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="wifi_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                 <h4 class="modal-title" >{{ lang_t('index.wireless_info') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <tr v-for="(i,v) in wifi2gdata">
+                      <td>{{ i.msg }}</td>
+                      <td v-if="(i.msg == lang_t('index.passmsg'))&&(key1 != '')">
+                        <div style="word-wrap:break-word;max-width: 210px;">{{ pass2gvalue }}&nbsp;<i class="fa fa-eye-slash" aria-hidden="true" @click="passIfShow(2,0)" v-if="pass2gshow == true"></i><i class="fa fa-eye" aria-hidden="true" @click="passIfShow(2,1)" v-else></i></div>
+                      </td>
+                      <td v-else-if="(i.msg == lang_t('index.passmsg'))&&(key1 == '')">{{ lang_t('index.nopassword') }}</td>
+                      <td v-else style="white-space: pre-wrap;" ><div style="word-break:break-all;">{{ i.status }}</div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="wifi5_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" >{{ lang_t('index.wireless_info') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <tr v-for="(i,v) in wifi5gdata">
+                      <td>{{ i.msg }}</td>
+                      <td v-if="(i.msg == lang_t('index.passmsg'))&&(key5g1 != '')">
+                        <div style="word-wrap:break-word;max-width: 210px;">{{ pass5gvalue }}&nbsp;<i class="fa fa-eye-slash" aria-hidden="true" @click="passIfShow(5,0)" v-if="pass5gshow == true"></i><i class="fa fa-eye" aria-hidden="true" @click="passIfShow(5,1)" v-else></i>
+                        </div>
+                      </td>
+                      <td  v-else-if="(i.msg == lang_t('index.passmsg'))&&(key5g1 == '')">{{ lang_t('index.nopassword') }}</td>
+                      <td v-else style="white-space: pre-wrap;"><div style="word-break:break-all;">{{ i.status }}</div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="lte_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" v-if="globalConfig.modemDualband&& globalConfig.modemPrioIsDounleMode">{{ lang_t('index.4glte_1',[1]) }}</h4>
+                <h4 class="modal-title" v-else >{{ lang_t('index.4glte') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <tr>
+                      <td style="width: 32%">{{ lang_t('index.wan_status') }}</td>
+                      <td v-if="wan4gConnStatus === 'connected'">{{ conn4gMsg }}{{ wan4gIp }}</td>
+                      <td v-else-if="wan4gConnStatus === 'disconnected'">{{ conn4gMsg }} 0.0.0.0</td>
+                      <td v-else>{{ lang_t('index.idle') }}</td>
+                    </tr>
+					          <tr>
+                      <td>{{ lang_t('index.modem_uptime') }}</td>
+                      <td>{{ wan4gUptimeMsg }}</td>
+                    </tr>
+                    <tr>
+                      <td>IMEI{{ lang_t('index.serial_number') }}</td>
+                      <td>{{ imei }}</td>
+                    </tr>
+                    <tr>
+                      <td>IMSI{{ lang_t('index.mobile_identity') }}</td>
+                      <td>{{ imsi }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.carrier') }}</td>
+                      <td>{{ getOperator }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('ospf.network_type') }}</td>
+                      <td>{{ netType }}</td>
+                    </tr>
+                    <tr v-show="show_rsrp_band">
+                      <td>{{ lang_t('index.band') }}</td>
+                      <td>{{ bandLte }}</td>
+                    </tr>
+                    <tr>
+                    <tr>
+                      <td>{{ lang_t('index.model') }}</td>
+                      <td>{{ mode4g }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.modem_ver') }}</td>
+                      <td>{{ modemVersion }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.status') }}</td>
+                      <td>{{ registStatusMsg }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.signal') }}</td>
+                      <td><img :src="signalStrengthImg"/></td>
+                    </tr>
+                    <tr v-show="pci !=''">
+                      <td>PCI</td>
+                      <td>{{ pci }}</td>
+                    </tr>
+                    <tr v-show="show_pci_sinr">
+                      <td>SINR</td>
+                      <td>{{ sinr }}</td>
+                    </tr>
+                    <tr v-show="mode4g !='' && show_rsrp_band">
+                      <td>RSRP</td>
+                      <td>{{ rsrp }}</td>
+                    </tr>
+                    <tr v-for="data in ipv6ModemData">
+                      <td>{{ data.msg }}</td>
+                      <td>{{ data.status }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="lte_msg_1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" >{{ lang_t('index.4glte_1',['2']) }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <tr>
+                      <td style="width: 32%">{{ lang_t('index.wan_status') }}</td>
+                      <td>{{ conn4gMsg_1 }} {{ wan4gConnStatus_1 == "connected"? wan4gIp_1 :'0.0.0.0' }}</td>
+                    </tr>
+					          <tr>
+                      <td>{{ lang_t('index.modem_uptime') }}</td>
+                      <td>{{ wan4gUptimeMsg_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>IMEI{{ lang_t('index.serial_number') }}</td>
+                      <td>{{ imei_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>IMSI{{ lang_t('index.mobile_identity') }}</td>
+                      <td>{{ imsi_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.carrier') }}</td>
+                      <td>{{ getOperator_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('ospf.network_type') }}</td>
+                      <td>{{ netType_1 }}</td>
+                    </tr>
+                    <tr v-show="show_rsrp_band">
+                      <td>{{ lang_t('index.band') }}</td>
+                      <td>{{ bandLte_1 }}</td>
+                    </tr>
+                    <tr>
+                    <tr>
+                      <td>{{ lang_t('index.model') }}</td>
+                      <td>{{ mode4g_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.modem_ver') }}</td>
+                      <td>{{ modemVersion_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.status') }}</td>
+                      <td>{{ registStatusMsg_1 }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.signal') }}</td>
+                      <td><img :src="signalStrengthImg_1"/></td>
+                    </tr>
+                    <tr v-show="pci !=''">
+                      <td>PCI</td>
+                      <td>{{ pci_1 }}</td>
+                    </tr>
+                    <tr v-show="show_pci_sinr">
+                      <td>SINR</td>
+                      <td>{{ sinr_1 }}</td>
+                    </tr>
+                    <tr v-show="mode4g !='' && show_rsrp_band">
+                      <td>RSRP</td>
+                      <td>{{ rsrp_1 }}</td>
+                    </tr>
+                    <tr v-for="data in ipv6ModemData">
+                      <td>{{ data.msg }}</td>
+                      <td>{{ data.status }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="sys_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" >{{ lang_t('index.sys_info') }}</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table table-striped">
+                  <tbody>
+                    <!-- <tr>
+                      <td colspan="2">{{ lang_t('index.sys_info') }}</td>
+                    </tr> -->
+                    <tr>
+                      <td>{{ lang_t('index.mode') }}</td>
+                      <td>{{ operationModeMsg }}</td>
+                    </tr>
+                    <tr v-show="globalConfig.operationMode == '2'">
+                      <td>{{ lang_t('wifi.relay_status') }}</td>
+                      <td>{{ repeaterMsg }}</td>
+                    </tr>
+                    <tr>
+                      <td style="width: 32%">{{ lang_t('index.up_time') }}</td>
+                      <td>{{ upTimeMsg }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.version') }}</td>
+                      <td>{{ fmVersion }}</td>
+                    </tr>
+                    <tr v-show="bootVersion !=''">
+                      <td>{{ lang_t('index.boot_version') }}</td>
+                      <td>{{ bootVersion }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ lang_t('index.build_time') }}</td>
+                      <td>{{ buildTimeMsg }}</td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal fade" id="lanuser_msg" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">{{ lang_t('index.client_info') }}</h4>
+              </div>
+              <div class="modal-body table-phone-width low">
+                <table class="table table-striped">
+                  <thead>
+                    <th style="width: 31%;">{{ lang_t('index.client_name') }}</th>
+                    <th>IP</th>
+                    <th>MAC</th>
+                    <th v-if="globalConfig.aiotSupport">{{ lang_t('tty_server.client')+lang_t('net_strategy.type') }}</th>
+                    <th v-if="globalConfig.aiotSupport">{{ lang_t('index.onoff') }}</th>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(data,index) in getDhcpCliList">
+                      <td style="white-space:pre-wrap;word-wrap:break-word;word-break:break-all;">{{ data.name }}</td>
+                      <td v-if="globalConfig.operationMode != '0' && globalConfig.operationMode != '2'">{{ data.ip }}</td>
+                      <td v-else>-</td>
+                      <td>{{ data.mac }}</td>
+                       <td v-if="globalConfig.aiotSupport">{{ data.type }}</td>
+                      <td v-if="globalConfig.aiotSupport">
+                        <button data-dismiss="modal" class="btn btn-primary" v-if="data.onoff==0" @click="subOnOff(data,1)">{{ lang_t('common.disabled') }}</button>
+                        <button data-dismiss="modal" class="btn btn-primary" v-else @click="subOnOff(data,0)">{{ lang_t('common.enabled') }}</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button data-dismiss="modal" class="btn btn-primary">{{ lang_t('common.ok') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+     </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template: '#main',
+  data: function() {
+	  var _this = this;
+	  return {
+  		globalConfig: globalConfig,
+  		lang:$.lang,
+  		lang_t:lang_t,
+  		operationMode:'',
+  		classA:'col-lg-6',
+  		classB:'col-xs-12',
+  		upTime:'0;0;0;0',
+  		fmVersion:'',
+  		buildTime:'Jan 9 2018 15:38:13',
+  		wanIp:'',
+  		wanConnStatus:'',
+  		wanMode:'',
+  		lanIp:'',
+  		metric:'',
+      wan4gIp:'',
+      wan4gIp_1:'',
+	  wan4gUptime:'0;0;0;0',
+	  wan4gUptime_1:'0;0;0;0',
+      wan4gConnStatus:'',
+      wan4gConnStatus_1:'',
+  		wan4gNum:'',
+  		wanTx:'',
+  		wanRx:'',
+  		lanUserNum:'0',
+  		ssid1:'',
+  		ssid5g1:'',
+  		wifiOff:'0',
+  		wifiOff5g:'0',
+  		productName:'',
+  		csid:'',
+  		up:'0',
+  		down:'0',
+  		registStatus:'',
+  		registStatus_1:'',
+  		imei:'',
+  		imsi:'',
+  		imei_1:'',
+  		imsi_1:'',
+  		phoneNumber:'',
+  		wanmsg:false,
+  		wifimsg:false,
+  		lanmsg:false,
+  		sysmsg:false,
+  		module:false,
+  		lanuserLoading:false,
+  		wifiDualband:'',
+  		startip:'',
+  		endip:'',
+  		autochannel:'',
+  		channel:'',
+  		autochannel5g:'',
+  		channel5g:'',
+  		band:'',
+  		band5g:'',
+  		key1:'',
+  		key5g1:'',
+  		dhcpserver:'',
+  		lanmask:'',
+  		lanmac:'',
+      bootVersion:'',
+  		wanImg:[],
+  		data:[],
+  		ssid2gtip:false,
+  		ssid5gtip:false,
+  		pass2gshow:false,
+  		pass5gshow:false,
+      rptSsid2gtip:false,
+      rptSsid2g:'',
+  		pass5gvalue:'',
+  		pass2gvalue:'',
+  		cpuOccupy:0,
+  		ramOccupy:0,
+  		wifi2g:'#ccc',
+  		wifi5g:'#ccc',
+  		wifipngStyle:{padding: '0 45px 0 18px'},
+  		currentTime:'',
+  		operationMode:'1',
+  		signalStrengthImg:'static/images/signal_0.png',
+      signalStrengthImg_1:'static/images/signal_0.png',
+  		mode4g:'',
+  		mode4g_1:'',
+      modemVersion:'',
+      pci:'',
+      sinr:'',
+      rsrp:'',
+      modemVersion_1:'',
+      pci_1:'',
+      sinr_1:'',
+      rsrp_1:'',
+  		getDhcpCliList:[],
+  		wanStrategy:'2',
+  		childFlag:false,
+  		pluginStatus:{},
+  		lteIPS:'0',
+  		bandLte:'',
+  		lteIPS_1:'0',
+  		bandLte_1:'',
+  		showwifi: false,
+      show_pci_sinr:false,
+      show_rsrp_band:false,
+  		width_port:'',
+      rptConnStatus:'',
+  		cpuOccupyPercent:{
+  		  'stroke-dasharray':'0px, 0px',
+  		  'stroke-dashoffset':'0px',
+  		  'transition':'stroke-dashoffset 0.6s ease 0s,stroke 0.6s ease 0s'
+  		},
+  		ramOccupyPercent:{
+  		  'stroke-dasharray':'0px, 0px',
+  		  'stroke-dashoffset':'0px',
+  		  'transition':'stroke-dashoffset 0.6s ease 0s,stroke 0.6s ease 0s'
+  		},
+      /*route info*/
+      routeList:[],
+      staticRouteList:[],
+      policyRouteList:[],
+      showRouteList:[],
+      showRouteType:'static',
+	  satellitesNum:'',
+	  satellitesClock:'',
+	  longitude:'',
+	  latitude:'',
+      wanmac:"",
+      netType: '',
+      netType_1: '',
+      ipv6info: {},
+      ipv6_net_type: 0,
+      ipv6Ip: "",
+      wan6gGateway: "",
+      wan6gDns: "",
+      wan4gDns: "",
+      wan4gGateway: ""
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    var moduleHeight = $('#wan_module').height()+'px';
+    $('#resources_module').css('height',moduleHeight);
+  },
+  computed:{
+    getOperator:function(){
+      if (this.wan4gConnStatus != 'connected' || this.rsrp == "") return "--";
+      var reg = /[0-5]/g;
+      var vm = reg.test(this.lteIPS);
+      if(!vm)
+        return this.lang_t('index.operator0');
+      else
+        return this.lang_t('index.operator'+this.lteIPS);
+    },
+    getOperator_1:function(){
+      if (this.wan4gConnStatus_1 != 'connected') return "--";
+      var reg = /[0-5]/g;
+      var vm = reg.test(this.lteIPS_1);
+      if(!vm)
+        return this.lang_t('index.operator0');
+      else
+        return this.lang_t('index.operator'+this.lteIPS_1);
+    },
+    ssid2Show:function(){
+      var tem = "",tem1;
+      tem = this.ssid1;
+      this.ssid2gtip = true;
+      return tem;
+    },
+    rptSsid2Show:function(){
+      var tem = "",tem1;
+      tem = this.rptSsid2g;
+      this.rptSsid2gtip = true;
+      return tem;
+    },
+    ssid5Show:function(){
+      var tem = "", tem1;
+      tem = this.ssid5g1;
+      this.ssid5gtip = true;
+      return tem;
+    },
+    upTimeMsg:function(){
+      var _this = this;
+      var time = "";
+      if (_this.upTime != undefined ) {
+        var v = _this.upTime.split(";");
+        time += v[0] + _this.lang_t('index.day');
+        time += v[1] + _this.lang_t('index.hour');
+        time += v[2] + _this.lang_t('index.min');
+        time += v[3] + _this.lang_t('index.sec');
+      }
+      return time;
+    },
+	wan4gUptimeMsg:function(){
+      var _this = this;
+      var time = "";
+      if (_this.wan4gUptime != undefined ) {
+        var v = _this.wan4gUptime.split(";");
+        time += v[0] + _this.lang_t('index.day');
+        time += v[1] + _this.lang_t('index.hour');
+        time += v[2] + _this.lang_t('index.min');
+        time += v[3] + _this.lang_t('index.sec');
+      }
+      return time;
+    },
+	wan4gUptimeMsg_1:function(){
+      var _this = this;
+      var time = "";
+      if (_this.wan4gUptime_1 != undefined ) {
+        var v = _this.wan4gUptime_1.split(";");
+        time += v[0] + _this.lang_t('index.day');
+        time += v[1] + _this.lang_t('index.hour');
+        time += v[2] + _this.lang_t('index.min');
+        time += v[3] + _this.lang_t('index.sec');
+      }
+      return time;
+    },
+		buildTimeMsg:function(){
+      var _this = this;
+		  if (_this.buildTime.indexOf("-") != -1){
+			  return _this.buildTime;
+		  } else {
+				var buildTime = _this.buildTime.replace(/\s+/g, ' ');
+			  var month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+			  for (var j = 0; j < 12; j++) {
+			    if (buildTime.split(" ")[0] == month[j]) {
+				    var time = j + 1;
+			    }
+			  }
+			  return buildTime.split(" ")[2] + "-" + time + "-" + buildTime.split(" ")[1] + " " + buildTime.split(" ")[3];
+		  }
+		},
+    operationModeMsg:function(){
+      var _this = this;
+      if (_this.operationMode == 0) {
+        return "AP";
+      } else if (_this.operationMode == 1) {
+        return _this.lang_t('wifi.router');
+      } else if (_this.operationMode == 2) {
+        return _this.lang_t('wifi.repeater');
+      } else if (_this.operationMode == 3) {
+        return _this.lang_t('wifi.station');
+      }
+      return 'error';
+    },
+    repeaterMsg:function(){
+      var _this = this;
+      if (_this.rptConnStatus == "success") {
+        return _this.lang_t('common.connect_success');
+      }else{
+        return _this.lang_t('common.connect_fail');
+      }
+    },
+    registStatusMsg:function(){
+      var key = this.registStatus;
+      if (key) {
+        if (key === "connected") key = "connecteding";
+        return lang_t('index.' + key);
+      }
+      return "";
+    },
+    registStatusMsg_1:function(){
+      var key = this.registStatus_1;
+      if (key) {
+        if (key === "connected") key = "connecteding";
+        return lang_t('index.' + key);
+      }
+      return "";
+    },
+    connMsg: function() {
+      return this.wanConnStatus == 'connected' ? this.lang_t('index.connected') : this.lang_t('index.disconnected');
+    },
+    conn4gMsg: function() {
+      return this.wan4gConnStatus == 'connected' ? this.lang_t('index.connected') : this.lang_t('index.disconnected');
+    },
+    conn4gMsg_1: function() {
+      return this.wan4gConnStatus_1 == 'connected' ? this.lang_t('index.connected') : this.lang_t('index.disconnected');
+    },
+    wandata:function(){
+      var _this = this;
+      return [
+        {"msg":this.lang_t('index.wan_status'),"status":_this.wanModeType(String(_this.wanMode))+' '+_this.connMsg},
+  		  //{"msg":_this.lang_t('index.metric'),"status":_this.strategyMsg},
+    	  {"msg":_this.lang_t('index.wan_addr')+"(IPv4)","status": _this.wanIp },
+        {"msg":_this.lang_t('index.mask'),"status":_this.wanmask},
+        {"msg":_this.lang_t('index.gateway'),"status":_this.wangw},
+        {"msg":_this.lang_t('index.pri_dns'),"status":_this.pridns},
+        {"msg":_this.lang_t('index.sec_dns'),"status":_this.secdns},
+        {"msg":_this.lang_t('index.mac_address'),"status":_this.wanmac}
+      ];
+    },
+    ipv6wandata:function() {
+      return this.ipv6InfoBasic();
+    },
+    ipv6ModemData:function() {
+      return this.ipv6InfoBasic("ipv6Wan4gGlobalAddree", "ipv6Wan4gLinkAddree");
+    },
+    wifi5gdata:function(){
+      var _this = this;
+      var channelmsg='', key, band='';
+      var arr = [];
+      arr.push(
+        {"msg":_this.lang_t('index.5GNetwork')},
+        {"msg":_this.lang_t('index.wifistatus'),"status":_this.wifiOff5g == "0" ? _this.lang_t('index.open') : _this.lang_t('index.close')},
+        {"msg":_this.lang_t('index.SSID'),"status":_this.ssid5g1}
+      );
+      if(_this.channel5g == "0"){
+        channelmsg = _this.lang_t('index.auto')+'('+_this.autochannel5g+')';
+      }else{
+        channelmsg = _this.channel5g;
+      }
+      if(_this.key5g1 == ""){
+        key = _this.lang_t('index.nopass');
+      }else{
+        key = _this.lang_t('index.pass');
+      }
+      arr.push(
+        {"msg":_this.lang_t('index.encryption'),"status":key}
+      );
+      if(_this.key5g1 != ""){
+        _this.passIfShow(5,0);
+        arr.push({"msg":_this.lang_t('index.passmsg'),"status":''});
+      }else{
+        //arr.push({"msg":_this.lang_t('index.passmsg'),"status": ''});
+      }
+      switch(String(_this.band5g)){
+        case '2':
+          band = '802.11A';
+          break;
+        case '8':
+          band = '802.11A/N';
+          break;
+        case '14':
+          band = '802.11A/N/AC';
+          break;
+      }
+      if(_this.wifiOff5g == "0"){
+        arr.push({"msg":_this.lang_t('index.channel'),"status": channelmsg});
+      }else{
+        arr.push( { });
+      }
+  	  return arr;
+    },
+    wifi2gdata:function(){
+      var _this = this;
+      var channelmsg='', key, band='';
+      var arr = [];
+      if(_this.wifiDualband == "1"){
+        arr.push({"msg":_this.lang_t('index.2GNetwork')});
+      }
+      if(_this.channel == "0"){
+        channelmsg = _this.lang_t('index.auto')+'('+_this.autochannel+')';
+      }else{
+        channelmsg = _this.channel;
+      }
+      if(_this.key1 == ""){
+        key = _this.lang_t('index.nopass');
+      }else{
+        key = _this.lang_t('index.pass');
+      }
+      arr.push(
+        {"msg":_this.lang_t('index.wifistatus'),"status":_this.wifiOff == "0" ? _this.lang_t('index.open') : _this.lang_t('index.close')},
+        {"msg":_this.lang_t('index.SSID'),"status":_this.ssid1},
+
+        {"msg":_this.lang_t('index.encryption'),"status":key}
+      );
+      if (globalConfig.operationMode == '2')
+          arr.push({"msg":_this.lang_t('wifi.repeater')+'SSID',"status":_this.rptSsid2g});
+      if(_this.key1 != ""){
+        _this.passIfShow(2,0);
+        arr.push({"msg":_this.lang_t('index.passmsg'),"status":''});
+      }else{
+        //arr.push({"msg":_this.lang_t('index.passmsg'),"status":''});
+      }
+      switch(String(_this.band)){
+        case '2':
+          band = '2.4 GHz (B)';
+          break;
+        case '4':
+          band = '2.4 GHz (G)';
+          break;
+        case '6':
+          band = '2.4 GHz (N)';
+          break;
+        case '9':
+          band = '2.4 GHz (B+G+N)';
+          break;
+      }
+      if(_this.wifiOff == "0"){
+    	   arr.push( {"msg":_this.lang_t('index.channel'),"status": channelmsg});
+      }else{
+    	   arr.push( {} );
+      }
+      return arr;
+    },
+    landata:function(){
+      var _this = this;
+      var lanArr = [
+        {"msg":_this.lang_t('index.lan_addr')+"(IPv4)","status":_this.lanIp},
+        {"msg":_this.lang_t('index.mac_address'),"status": _this.lanmac}
+      ];
+      if(_this.operationMode != '2' && _this.operationMode != '0'){
+        var dhcpserver;
+        if(_this.dhcpserver == "0"){
+          dhcpserver = _this.lang_t('index.disabled');
+        }else{
+          dhcpserver = _this.lang_t('index.enabled');
+        }
+        lanArr.splice(2,0, {"msg":_this.lang_t('index.dhcp_server'),"status":dhcpserver});
+      }
+      return lanArr;
+    },
+    ipv6landata:function(){
+      var _this = this, info = this.ipv6info;
+      var arr = [];
+      if (info.ipv6WanLinkType != "off") {
+        arr = [
+        {"msg": lang_t('index.ipv6_global', ["LAN"]), "status": info.ipv6LanGlobalAddree},
+        {"msg": lang_t('index.ipv6_local', ["LAN"]), "status": info.ipv6LanLinkAddree}
+        ];
+      }
+      return arr;
+    },
+    data4g:function(){
+      var _this = this;
+      return [
+        {"msg":_this.lang_t('index.status'),"status":_this.registStatusMsg},
+        {"msg":'IMEI',"status":_this.imei},
+        {"msg":'IMSI',"status":_this.imsi},
+        {"msg":_this.lang_t('index.phoneNumber') ,"status":_this.phoneNumber}
+      ];
+    },
+    strategyMsg:function(){
+      var _this = this;
+      if(_this.metric == '1'){
+        return _this.lang_t('index.wire');
+      }else if('0' == _this.metric){
+	  	if(globalConfig.modelType=='5g')
+          return "5G";
+		else
+		  return "4G";
+      }else{
+        return _this.lang_t('index.modem');
+      }
+    }
+  },
+  created:function(){
+    var _this = this;
+    _this.getlanInfo();
+    _this.getStaticRoute();
+    if(_this.globalConfig.gpsSupport){
+    	_this.getGps3Status();
+    }
+    _this.init();
+    if(_this.globalConfig.ipv6Support){
+      _this.getIPv6Status();
+    }
+    setInterval(function(){
+      _this.getLteAllInfo();
+      if(globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode){
+        _this.getLteAllInfo('1');
+      }
+      _this.getNetInfo();
+    },3000);
+  },
+  methods:{
+    subOnOff(data,flag){
+      var _this = this;
+      var postVar = {};
+      postVar.mac = data.mac;
+      postVar.onoff=flag == "1" ? "1" : "0";
+      uiPost.setSubOnOff(postVar,function(data){
+        if(data){
+          location.href=location.href;
+        }
+      })
+    },
+	getStaticRoute:function(){
+      var _this = this;
+      uiPost.getRouteTableInfo(function(data){
+        if(data){
+          _this.routeList = data;
+          for(var i in _this.routeList){
+            if('0' == _this.routeList[i].routeType){
+              _this.staticRouteList.push(_this.routeList[i]);
+            }else{
+              _this.policyRouteList.push(_this.routeList[i]);
+            }
+          }
+        }
+      });
+    },
+    getGps3Status:function(){
+      var _this = this;
+      uiPost.getGps3Status(function(data){
+        if(data){
+          _this.satellitesNum = data.satellitesNum;
+          _this.satellitesClock = data.satellitesClock;
+		  _this.longitude = data.longitude;
+		  _this.latitude = data.latitude;
+        }
+      });
+    },
+    timestampToTime:function(timestamp){
+      var date = new Date(timestamp * 1000);
+      var Y = date.getFullYear() + '-';
+      var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+      var D = date.getDate() + ' ';
+      var h = date.getHours() + ':';
+      var m = date.getMinutes() + ':';
+      var s = date.getSeconds();
+      return Y+M+D+h+m+s;
+    },
+    passIfShow:function(type,status,flag){
+      var _this = this;
+      if(flag == 'main'){
+        _this.showwifi = true;
+		  }
+		  var pass = '**********';
+		  if(type == 5){
+		    if(status == 0){
+			    _this.pass5gshow = false;
+		    }else{
+			    _this.pass5gshow = true;
+			    pass = _this.key5g1;
+		    }
+		    _this.pass5gvalue = pass;
+		  }else{
+		    if(status == 0){
+			    _this.pass2gshow = false;
+		    }else{
+			    _this.pass2gshow = true;
+			    pass = _this.key1;
+		    }
+		    _this.pass2gvalue = pass;
+		  }
+    },
+	  ifaceFun:function(type){
+  		var _this = this;
+      if(type == 'lan'){
+  		  return _this.lang_t('index.wire');
+  		}else if(type == '2g'){
+  		  return _this.lang_t('index.wlan',['2G']);
+  		}else if(type == '5g'){
+  		  return _this.lang_t('index.wlan',['5G']);
+  		}else{
+  		  return '';
+  		}
+	  },
+    lanuserCheak:function(){
+      var _this = this;
+      _this.childFlag = true;
+      $('#lanuser_msg').modal('show');
+      _this.lanuserLoading = true;
+      uiPost.getOnlineMsg(function(data){
+        if(data.length!=0){
+          if(data[0].enable == 1){
+            data = data.slice(1);
+          }else{
+            data = data.slice(0);
+          }
+        }else{
+          data = data.slice(1);
+        }
+        _this.getDhcpCliList = data;
+        _this.lanuserLoading = false;
+      });
+    },
+    onModule:function(nettype){
+      var _this = this;
+      switch(nettype){
+        case 'sys':
+          $('#sys_msg').modal('show');
+          break;
+        case 'wan':
+          $('#wan_msg').modal('show');
+          break;
+        case 'wifi2':
+          if(_this.showwifi){
+            _this.showwifi = false;
+          }else{
+            _this.passIfShow(2,0);
+            $('#wifi_msg').modal('show');
+          }
+          break;
+        case 'wifi5':
+          if(_this.showwifi){
+            _this.showwifi = false;
+          }else{
+            _this.passIfShow(5,0);
+            $('#wifi5_msg').modal('show');
+          }
+          break;
+        case 'lan':
+          if(_this.childFlag == true){
+            _this.childFlag = false;
+          }else{
+            $('#lan_msg').modal('show');
+          }
+          break;
+        case '4g':
+          $('#lte_msg').modal('show');
+          break;
+        case '4g1':
+          $('#lte_msg_1').modal('show');
+          break;
+        case 'static_route':
+          _this.showRouteType = 'static';
+          _this.showRouteList = _this.staticRouteList;
+          $('#route_msg').modal('show');
+          break;
+        case 'policy_route':
+          _this.showRouteType = 'policy';
+          _this.showRouteList = _this.policyRouteList;
+          $('#route_msg').modal('show');
+          break;
+      }
+    },
+    getNetInfo:function(){
+      var _this = this;
+      uiPost.getNetInfo(function(data){
+        if (data.csid){
+          _this.csid = data.csid;
+        }
+        _this.up = cs.bytesToSize1(Number(data.up));
+        _this.down = cs.bytesToSize1(Number(data.down));
+        _this.upTime = data.upTime;
+        _this.wanImg = [];
+        if(data.portLinkStatus){
+          for(var p in data.portLinkStatus){
+            var portStatus = data.portLinkStatus[p];
+            var img = {};
+            img.src = portStatus.link == 1 ? "/static/images/wan_open.png" : "/static/images/wan_close.png";
+            img.name = portStatus.name.toUpperCase();
+            _this.wanImg.push(img);
+          }
+          if(globalConfig.csid == "C735GR"){
+            var port3 = _this.wanImg[2];
+            _this.wanImg.splice(2, 1);
+            _this.wanImg.splice(3, 0,port3);
+          }
+        }
+        _this.cpuOccupy = Math.round(Number(data.cpuRatio));
+        _this.ramOccupy = Math.round(Number(data.memRatio));
+
+        var len;
+        len =  Math.PI * 2 * 47.5;
+        _this.cpuOccupyPercent = {
+          'stroke-dasharray': String(len)+'px '+String(len)+'px',
+          'stroke-dashoffset': (100 - _this.cpuOccupy) / 100 * len +'px',
+          'transition':'stroke-dashoffset 0.6s ease 0s,stroke 0.6s ease 0s'
+        };
+        _this.ramOccupyPercent = {
+          'stroke-dasharray':String(len)+'px '+String(len)+'px',
+          'stroke-dashoffset': (100 - _this.ramOccupy) / 100 * len + 'px',
+          'transition':'stroke-dashoffset 0.6s ease 0s,stroke 0.6s ease 0s'
+        };
+
+        _this.lanUserNum = data.lanUserNum;
+        _this.wanConnStatus = data.wanConnStatus;
+        _this.wanMode = data.wanMode;
+        _this.wanIp = data.wiredWanIp;
+        _this.wanmask = data.wiredwanMask;
+  	    _this.metric = data.metric;
+  	    _this.wan4gNum = data.wan4gNum;
+        _this.pridns = data.priDns;
+        _this.secdns = data.secDns;
+        _this.wangw = data.wiredwanGw;
+        _this.wanmac = data.wanMac;
+        _this.currentTime	= _this.timestampToTime(Number(data.timestamp));
+        _this.rptConnStatus = data.rptConnStatus;
+      });
+    },
+    init:function(){
+      var _this = this;
+      _this.getNetInfo();
+      _this.getLteAllInfo();
+      if(globalConfig.modemDualband && globalConfig.modemPrioIsDounleMode){
+        _this.getLteAllInfo('1');
+      }
+      uiPost.getSysStatusCfg(function(data){
+        _this.fmVersion = data.fmVersion;
+        _this.buildTime = data.buildTime;
+        _this.operationMode = data.operationMode;
+        _this.wanStrategy = data.wanStrategy;
+			  _this.lanIp = data.lanIp;
+			  _this.productName = data.productName;
+			  _this.ssid1  = data.ssid;
+        _this.rptSsid2g = data.apcliSsid;
+			  _this.wifiOff = data.wifiOff;
+			  _this.channel = data.channel;
+			  _this.autochannel = data.autoChannel;
+			  _this.key1 = data.key;
+			  _this.band = data.band;
+
+			  _this.wifiDualband  = data.wifiDualband;
+			  if(data.wifiDualband == "1"){
+  			  _this.channel5g = data.channel5g;
+  			  _this.autochannel5g = data.autoChannel5g;
+  			  _this.key5g1 = data.key5g1;
+  			  _this.band5g = data.band5g;
+  			  _this.wifiOff5g = data.wifiOff5g;
+  			  _this.ssid5g1 = data.ssid5g1;
+			  }
+  			if(_this.wifiDualband == "0"){
+  			  _this.wifipngStyle = {padding: '30px 45px 0 25px'};
+  			}
+  			if(_this.wifiOff == "0"){
+  			  _this.wifi2g = 'rgb(0, 157, 245)';
+  			}
+  			if(_this.wifiOff5g == "0"){
+  			  _this.wifi5g = 'rgb(0, 157, 245)';
+  			}
+
+			  _this.dhcpserver = data.lanDhcpServer;
+  			_this.lanmask = data.lanMask;
+  			_this.lanmac = data.lanMac;
+        _this.bootVersion  = data.bootVersion;
+      });
+    },
+    getlanInfo:function(){
+      var _this = this;
+      uiPost.getLanCfg(function(data) {
+        _this.startip = data.dhcpStart;
+        _this.endip = data.dhcpEnd;
+      });
+    },
+    wanModeType:function(mode){
+      var _this = this;
+      switch(mode){
+        case '0':
+          return _this.lang_t('index.static_ip');
+          break;
+        case '1':
+          return 'DHCP';
+          break;
+        case '3':
+          return 'PPPOE';
+          break;
+        case '4':
+          return 'PPTP';
+          break;
+        case '6':
+          return 'L2TP';
+          break;
+        case '7':
+          return 'USB-NET';
+          break;
+        default:
+          return '';
+          break;
+      }
+    },
+    getIPv6Status:function(){
+      var _this = this;
+		  uiPost.getIPv6Status(function(data){
+        _this.ipv6info = data;
+      });
+    },
+    ipv6InfoBasic: function(glo, link) {
+      var type = function(t) {
+        switch(t) {
+          case 'static':
+            return 'Native Static';
+          case 'dhcp6':
+            return 'Native DHCPv6';
+          case '6in4':
+            return 'Tunnel 6in4';
+          case '6to4':
+            return 'Tunnel 6to4';
+          case '6rd':
+            return 'Tunnel 6rd';
+          case 0:
+            return "IPv4";
+          case 1:
+            return "IPv6";
+          case 2:
+            return "IPv4v6";
+          default:
+            return lang_t('common.off');
+        }
+      };
+      var info = this.ipv6info, arr = [];
+      if (globalConfig.ipv6Support) {
+        if(globalConfig.C738jrSupport) {
+          arr = [{"msg": lang_t('ipv6.wan_type'), "status": type(this.ipv6_net_type)}];
+          if(this.ipv6_net_type == 0){
+            arr = arr.concat([
+              {"msg": "IPv4"+lang_t('internet.addr'), "status": this.wan4gIp},
+              {"msg": "IPv4 "+lang_t('index.gateway'), "status": this.wan4gGateway},
+              {"msg": "IPv4 DNS1", "status": this.wan4gDns.split(" ")[0]},
+            ])
+            if(this.wan4gDns != "" && this.wan4gDns.split(" ")[1] != "" && this.wan4gDns.split(" ")[1].length > 5){
+              arr = arr.concat([
+                {"msg": "IPv4 DNS2", "status": this.wan4gDns.split(" ")[1]},
+              ])
+            }
+          }else if (this.ipv6_net_type == 1) {
+            arr = arr.concat([
+              {"msg": lang_t('index.ipv6_global', ["WAN"]), "status": this.ipv6Ip},
+              {"msg": "IPv6 "+lang_t('index.gateway'), "status": this.wan6gGateway},
+              {"msg": "IPv6 DNS", "status": this.wan6gDns},
+            ])
+          }else if (this.ipv6_net_type == 2) {
+            arr = arr.concat([
+              {"msg": "IPv4"+lang_t('internet.addr'), "status": this.wan4gIp},
+              {"msg": "IPv4 "+lang_t('index.gateway'), "status": this.wan4gGateway},
+              {"msg": "IPv4 DNS1", "status": this.wan4gDns.split(" ")[0]},
+            ])
+            if(this.wan4gDns != "" && this.wan4gDns.split(" ")[1] != "" && this.wan4gDns.split(" ")[1].length > 5){
+              arr = arr.concat([
+                {"msg": "IPv4 DNS2", "status": this.wan4gDns.split(" ")[1]},
+              ])
+            }
+            arr = arr.concat([
+              {"msg": lang_t('index.ipv6_global', ["WAN"]), "status": this.ipv6Ip},
+              {"msg": "IPv6 "+lang_t('index.gateway'), "status": this.wan6gGateway},
+              {"msg": "IPv6 DNS", "status": this.wan6gDns},
+            ])
+          }
+        }else{
+          arr = [{"msg": lang_t('ipv6.connect_type'), "status": type(info.ipv6WanLinkType)}];
+          if (info.ipv6WanLinkType != "off") {
+            arr = arr.concat([
+              {"msg": lang_t('index.ipv6_global', ["WAN"]), "status": info[glo || "ipv6WanGlobalAddree"]},
+              {"msg": lang_t('index.ipv6_local', ["WAN"]), "status": info[link || "ipv6WanLinkAddree"]},
+              {"msg": lang_t('ipv6.wan_gw'), "status": info.ipv6WanGw},
+              {"msg": lang_t('ipv6.server'), "status": info.ipv6WanDns}
+            ])
+          }
+        }
+      }
+      return arr;
+    },
+    getLteAllInfo:function(idx){
+		  var _this = this;
+      var postVar={};
+      if(idx == '1'){
+        postVar.modemIdx = idx;
+        uiPost.getLteAllInfo(postVar,function(data){
+          _this.wan4gConnStatus_1 = data.wan4gConnStatus;
+          _this.wan4gIp_1 = data.wan4gIp;
+          _this.wan4gUptime_1 = data.wan4gUptime;
+          _this.registStatus_1 = data.registStatus;
+          _this.imei_1 = data.imei;
+          _this.imsi_1 = data.imsi;
+          _this.bandLte_1 = data.bandLte;
+          _this.lteIPS_1 = data.isp;
+          _this.netType_1 = data.netType;
+          _this.phoneNumber_1 = data.phoneNumber;
+          _this.mode4g_1 = data.model;
+          _this.modemVersion_1 = data.modemVersion;
+
+          if (data.model.indexOf("ML3") == -1) {
+            _this.show_pci_sinr_1 =true;
+          }else{
+            _this.show_pci_sinr_1 =false;
+          }
+          if (data.model.indexOf("ML303") == -1) {
+            _this.show_rsrp_band_1 =true;
+          }else{
+            _this.show_rsrp_band_1 =false;
+          }
+          _this.pci_1 = data.pci;
+          _this.sinr_1 = data.sinr;
+          _this.rsrp_1 = data.rsrp;
+          var signalImg_1 = 'static/images/signal_num.png';
+          var signal = Number(data.signal);
+          var tempIdx = 0;
+          if(signal >= 80 ){
+            tempIdx = 5;
+          }else if(signal >= 60 && signal < 80){
+            tempIdx = 4;
+          }else if(signal >= 40 && signal < 60){
+            tempIdx = 3;
+          }else if(signal >= 20 && signal < 40){
+            tempIdx = 2;
+          }else if(signal >= 1 && signal < 20){
+            tempIdx = 1;
+          }
+          _this.signalStrengthImg_1 = signalImg_1.replace('num', tempIdx);
+        });
+      }else{
+        if(globalConfig.modemDualband){
+          postVar.modemIdx = '0';
+        }
+        uiPost.getLteAllInfo(postVar,function(data){
+        _this.wan4gConnStatus = data.wan4gConnStatus;
+        _this.wan4gIp = data.wan4gIp;
+		    _this.wan4gUptime = data.wan4gUptime;
+    		_this.registStatus = data.registStatus;
+    		_this.imei = data.imei;
+    		_this.imsi = data.imsi;
+    		_this.bandLte = data.bandLte;
+        _this.lteIPS = data.isp;
+        _this.netType = data.netType;
+    		_this.phoneNumber = data.phoneNumber;
+    		_this.mode4g = data.model;
+        _this.modemVersion = data.modemVersion;
+
+        if(globalConfig.C738jrSupport) {
+          _this.ipv6_net_type = data.ipv6_net_type;
+          _this.ipv6Ip = data.ipv6Ip;
+          _this.wan6gGateway = data.wan6gGateway;
+          _this.wan6gDns = data.wan6gDns;
+          _this.wan4gDns = data.wan4gDns;
+          _this.wan4gGateway = data.wan4gGateway;
+        }
+
+        if (data.model.indexOf("ML3") == -1) {
+          _this.show_pci_sinr =true;
+        }else{
+          _this.show_pci_sinr =false;
+        }
+        if (data.model.indexOf("ML303") == -1) {
+          _this.show_rsrp_band =true;
+        }else{
+          _this.show_rsrp_band =false;
+        }
+        _this.pci = data.pci;
+        _this.sinr = data.sinr;
+        _this.rsrp = data.rsrp;
+    		var signalImg = 'static/images/signal_num.png';
+    		var signal = Number(data.signal);
+    		var tempIdx = 0;
+    		if(signal >= 80 ){
+    		  tempIdx = 5;
+    		}else if(signal >= 60 && signal < 80){
+    		  tempIdx = 4;
+    		}else if(signal >= 40 && signal < 60){
+    		  tempIdx = 3;
+    		}else if(signal >= 20 && signal < 40){
+    		  tempIdx = 2;
+    		}else if(signal >= 1 && signal < 20){
+    		  tempIdx = 1;
+    		}
+    		_this.signalStrengthImg = signalImg.replace('num', tempIdx);
+      });
+      }
+    },
+    formatSeconds:function(value){
+      var secondTime = parseInt(value);
+      var minuteTime = 0;
+      var hourTime = 0;
+      if(secondTime > 60) {
+  	    minuteTime = parseInt(secondTime / 60);
+  	    secondTime = parseInt(secondTime % 60);
+  	    if(minuteTime > 60) {
+    		  hourTime = parseInt(minuteTime / 60);
+    		  minuteTime = parseInt(minuteTime % 60);
+        }
+      }
+      var result = '00:00:00';
+      secondTime = parseInt(secondTime);
+      if(secondTime < 10){
+        secondTime = '0'+ parseInt(secondTime);
+      }
+      result = "00:00:" + secondTime;
+      if(minuteTime > 0) {
+        minuteTime = parseInt(minuteTime);
+        if(minuteTime < 10){
+          minuteTime = '0'+ parseInt(minuteTime);
+        }
+        result = "00:" + minuteTime + ":" + secondTime;
+      }
+      if(hourTime > 0) {
+        hourTime = parseInt(hourTime);
+        if(hourTime < 10){
+          hourTime = '0'+ parseInt(hourTime);
+        }
+        result = hourTime + ":" + minuteTime + ':' + secondTime;
+      }
+      return result;
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

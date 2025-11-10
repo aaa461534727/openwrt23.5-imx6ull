@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('static_dhcp.helf') }}</strong></td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td style="width: 30%;">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning" style="display: none">
+                </td>
+              </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enable">
+              <thead>
+                <tr><td colspan="4">{{ lang_t('static_dhcp.msg1') }}</td></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>{{ lang_t('static_dhcp.ipaddr') }}</th>
+                  <th>{{ lang_t('static_dhcp.macaddr') }}</th>
+                  <th>{{ lang_t('common.operation') }}</th>
+                </tr>
+              </thead>
+             <tbody>
+              <tr v-for="(val,index) in dhcpData" :key="index" @click="editItem(index,val)">
+                <td>{{index+1}}</td>
+                <td>
+                  <input v-if="editIdx == index" type="text" v-model="editItemInfo.ip" ref="ip"/>
+                  <span v-else>{{val.ip}}</span>
+                </td>
+                <td>
+                  <div v-if="editIdx == index">
+                    <input type="text" v-model="editItemInfo.mac" style="width: 80%;float: left;" ref="mac"/>&nbsp;&nbsp;&nbsp;
+                    <button class="btn btn-default half-but"  @click="showClientList('edit')">{{ lang_t('static_dhcp.scan') }}</button>
+                  </div>
+                  <span v-else>{{val.mac}}</span>
+                </td>
+                <td class="operation">
+                  <a v-show="editIdx == index" @click.stop="modifyRule(index,editItemInfo)">{{ lang_t('common.modify') }}</a>
+                  <a v-show="editIdx == index" @click.stop="delRuleFun(index,val)">{{ lang_t('common.delete') }}</a>
+                  <a v-show="editIdx == index" @click.stop="cancelEdit(val)">{{ lang_t('common.cancel') }}</a>
+                  <a v-show="editIdx != index" @click.stop="editItem(index,val)">{{ lang_t('common.edit') }}</a>
+                </td>
+              </tr>
+              <tr>
+                <td></td>
+                <td>
+                  <input type="text" v-model="ip"/>
+                </td>
+                <td>
+                  <input type="text" v-model="mac" style="width: 80%;float: left;"/>&nbsp;&nbsp;&nbsp;
+                  <button class="btn btn-default half-but"  @click="showClientList('add')">{{ lang_t('static_dhcp.scan') }}</button>
+                </td>
+                <td class="operation">
+                  <a @click.stop="addRule()">{{ lang_t('common.add') }}</a>
+                </td>
+              </tr>
+            </tbody>
+            </table>
+            <table class="table table-striped table-bordered table-hover" v-show="enable">
+              <tr>
+                <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                  <button class="btn btn-primary all-but" :disabled="disApply" @click="saveInfo()">{{ lang_t('common.save') }}</button>&nbsp;
+                  <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+      <modal-table id="show_mac" :modal-title="modalTable.modalTitle" :table="modalTable.table" @oncurrent="current_data" :show-search="false"></modal-table>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+	  lang: $.lang,
+	  lang_t:lang_t,
+      enable:"",
+	  disApply: false,
+      ip:'0.0.0.0',
+      mac:'00:00:00:00:00:00',
+      modalTable:{
+        modalTitle:"",
+        table:{
+          th:[],
+          td:[]
+        }
+      },
+      dhcpData:[],
+      editIdx: '-1',
+      editItemInfo: {},
+      lanIp:'',
+      lanNetmask:'',
+      lanInfo:[]
+    }
+  },
+  computed: {
+    toggle_status:function() {
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.enable);
+    },
+  },
+  created:function() {
+    var _this = this;
+    uiPost.getStaticDhcpRules(function(data){
+      _this.enable = data.enable == "1" ? true : false;
+      _this.lanIp = data.lanIp;
+      _this.lanNetmask= data.lanNetmask;
+      if(data.rule)
+        _this.dhcpData = data.rule;
+    });
+  },
+  mounted:function(){
+    var _this = this;
+    addSwitch('#switch_status', function(data) {
+      if(_this.enable != data){
+        _this.enable = data;
+        _this.submit_status();
+      }
+    });
+  },
+  methods:{
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      var arr = [];
+      arr = arr.concat( this.dhcpData );
+      postVar.subnet = arr;
+      postVar.addEffect = "0";
+      uiPost.setStaticDhcpRules(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.href = location.href;
+    },
+    submit_status:function(){
+      var _this = this;
+      var postVar ={};
+      postVar.enable = this.enable ? "1" : "0";
+      postVar.addEffect = "1";
+      uiPost.setStaticDhcpRules(postVar, apply_callback);
+    },
+    showClientList:function(type){
+      var _this = this;
+      this.showListType = type;
+      uiPost.getOnlineMsg(function(data){
+        _this.modalTable.modalTitle = _this.lang_t('static_dhcp.maclist');
+        _this.modalTable.table.th = [_this.lang_t('index.device_name'),'IP','MAC'];
+        for(let i=0;i<data.length;i++) {
+          if(data[i].type != undefined && data[i].onoff != undefined) {
+            delete data[i].type;
+            delete data[i].onoff;
+          }
+        }
+        _this.modalTable.table.td = data;
+        $('#show_mac').modal();
+      });
+    },
+    current_data:function(data) {
+      if(this.showListType == 'edit'){
+        this.editItemInfo.ip = data.ip;
+        this.editItemInfo.mac = data.mac;
+        this.$refs.ip[0].value = data.ip;
+        this.$refs.mac[0].value = data.mac;
+      }else{
+        this.ip = data.ip;
+        this.mac = data.mac;
+      }
+    },
+    modifyRule:function (idx,obj) {
+      if(!this.veriyfun(obj, idx)) return;
+
+      var flag = false;
+      var _s = cs.ip_subnet(obj.ip,this.lanNetmask,this.lanIp);
+      if(_s){
+        flag = true;
+      }
+
+      if(!flag){
+        this.errorAlert(this.lang_t('static_dhcp.msg12'));
+        return false;
+      }
+
+      this.dhcpData[idx].ip = obj.ip;
+      this.dhcpData[idx].mac = obj.mac;
+      this.editIdx = '-1';
+	    this.disApply = false;
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.dhcpData.splice(idx, 1);
+	  this.disApply = false;
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+	  this.disApply = true;
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+	  this.disApply = false;
+    },
+    veriyfun:function(val, flag){
+      var f = this.errorAlert;
+      if (!val.ip){
+        f(this.lang_t('static_dhcp.msg5'));
+        return false;
+      }else{
+        if (cs.myCheckIp(val.ip) != 99){
+          f(this.lang_t('static_dhcp.msg6'));
+          return false;
+        }
+      }
+      //验证MAC地址
+      var ret = cs.mac(val.mac);
+      if(ret == 0){
+        f(this.lang_t('static_dhcp.msg7'));
+        return false;
+      }else if(ret == 1){
+        f(this.lang_t('static_dhcp.msg8'));
+        return false;
+      }else if(ret == 2){
+        f(this.lang_t('static_dhcp.msg9'));
+        return false;
+      }else if(ret == 3){
+        f(this.lang_t('static_dhcp.msg10'));
+        return false;
+      }
+      for(var j=0; j<this.dhcpData.length; j++){
+        if(flag != undefined && flag == j) continue;
+        if(val.mac.toLowerCase() == this.dhcpData[j].mac.toLowerCase() || val.ip == this.dhcpData[j].ip){
+            f(this.lang_t('static_dhcp.msg11'));
+            return false;
+        }
+      }
+      return true;
+    },
+    addRule:function () {
+      var f = this.errorAlert;
+      if (this.dhcpData.length >= 32){
+        f(this.lang_t('static_dhcp.msg4'));
+        return false;
+      }
+
+      var flag = false;
+
+      var _s = cs.ip_subnet(this.ip,this.lanNetmask,this.lanIp);
+      if(_s){
+        flag = true;
+      }
+
+      if(!flag){
+        f(this.lang_t('static_dhcp.msg12'));
+        return false;
+      }
+
+      var temp = {
+        ip: this.ip,
+        mac: this.mac
+      };
+      if(!this.veriyfun(temp)) return;
+      this.dhcpData.push(temp);
+      this.ip = "";
+      this.mac = "";
+    },
+    errorAlert:function (info) {
+      Cstools.msg({
+        content: info,
+        type: 'error',
+        messgetype: 'alert'
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

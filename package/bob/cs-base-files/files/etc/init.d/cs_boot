@@ -1,0 +1,117 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2013 The Linux Foundation. All rights reserved.
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=12
+
+. /lib/functions/system.sh
+
+start() {
+
+	echo cs_boot start >> /tmp/zdbg
+	local mac_fix lan_hwaddr wan_hwaddr w24g_hwaddr w58g_hwaddr cal_wan_hwaddr
+
+	mac_fix=0
+	lan_device_idx=""
+
+	#Factory: 2G MAC=0x4=4, 5G MAC, 0xa=10, LAN MAC=2G MAC, WAN MAC=0x1a=26
+	w24g_hwaddr=`cs mac r 2g | awk '{print $2}'`
+	w58g_hwaddr=`cs mac r 5g | awk '{print $2}'`
+	lan_hwaddr=`cs mac r lan | awk '{print $2}'`
+	wan_hwaddr=`cs mac r wan | awk '{print $2}'`
+
+	echo factory,w24g_hwaddr=$w24g_hwaddr,w58g_hwaddr=$w58g_hwaddr,lan_hwaddr=$lan_hwaddr,wan_hwaddr=$wan_hwaddr >> /tmp/zdbg
+
+	cal_wan_hwaddr=$(echo $(macaddr_add "$w24g_hwaddr" 1) | tr '[a-z]' '[A-Z]')
+
+	if [ "$cal_wan_hwaddr" != "$wan_hwaddr" ]; then
+		echo "user manual modify mac, from cal tool or eth_mac cmd " >> /tmp/zdbg
+		echo 2890 > /proc/mtd
+		cs mac w $w24g_hwaddr
+		echo 2022 > /proc/mtd
+
+		w24g_hwaddr=`cs mac r 2g | awk '{print $2}'`
+		w58g_hwaddr=`cs mac r 5g | awk '{print $2}'`
+		lan_hwaddr=`cs mac r lan | awk '{print $2}'`
+		wan_hwaddr=`cs mac r wan | awk '{print $2}'`
+
+		echo factory_fix,w24g_hwaddr=$w24g_hwaddr,w58g_hwaddr=$w58g_hwaddr,lan_hwaddr=$lan_hwaddr,wan_hwaddr=$wan_hwaddr >> /tmp/zdbg
+	fi
+
+	for i in $(seq 0 1 10)
+	do
+		name=$(uci -q get network.@device[$i].name)
+		if [ "$name" = "br-lan" ];then
+			lan_device_idx="$i"
+		fi
+	done
+
+	w24g_apcli=$(echo $(macaddr_add "$w24g_hwaddr" 2) | tr '[a-z]' '[A-Z]')
+	w58g_apcli=$(echo $(macaddr_add "$w24g_hwaddr" 3) | tr '[a-z]' '[A-Z]')
+
+	uci_w24g_hwaddr=`uci -q get wireless.radio_2g.macaddr`
+	uci_w58g_hwaddr=`uci -q get wireless.radio_5g.macaddr`
+	uci_lan_hwaddr=`uci -q get network.lan.macaddr`
+	uci_wan_hwaddr=`uci -q get network.wan.defmacaddr`
+	uci_w24g_apcli=`uci -q get wireless.apcli.macaddr`
+	uci_w58g_apcli=`uci -q get wireless.apcli.macaddr1`
+
+	if [ "$uci_lan_hwaddr" != "$lan_hwaddr" ];then
+		uci -q set network.lan.macaddr=$(echo $lan_hwaddr | tr '[a-z]' '[A-Z]')
+		if [ "" != "$lan_device_idx" ];then
+			uci -q set network.@device[$lan_device_idx].macaddr=$(echo $lan_hwaddr | tr '[a-z]' '[A-Z]')
+		fi
+		mac_fix=1
+	fi
+
+	if [ "$uci_w24g_hwaddr" != "$w24g_hwaddr" ];then
+		uci -q set wireless.radio_2g.macaddr=$w24g_hwaddr
+		mac_fix=1
+	fi
+
+	if [ "$uci_w58g_hwaddr" != "$w58g_hwaddr" ];then
+		uci -q set wireless.radio_5g.macaddr=$w58g_hwaddr
+		mac_fix=1
+	fi
+
+	if [ "$uci_wan_hwaddr" != "$wan_hwaddr" ];then
+		uci -q set network.wan.macaddr=$(echo $wan_hwaddr | tr '[a-z]' '[A-Z]')
+		uci -q set network.wan.defmacaddr=$(echo $wan_hwaddr | tr '[a-z]' '[A-Z]')
+		mac_fix=1
+	fi
+
+	if [ "$uci_w24g_apcli" != "$w24g_apcli" ];then
+		uci -q set wireless.apcli.macaddr=$w24g_apcli
+		mac_fix=1
+	fi
+
+	if [ "$uci_w58g_apcli" != "$w58g_apcli" ];then
+		uci -q set wireless.apcli.macaddr1=$w58g_apcli
+		mac_fix=1
+	fi
+
+	#restore default config
+	if [ -f /etc/config/restoredefault ];then
+		echo "- cs_boot is upgrade, donot care -" >> /tmp/zdbg
+		rm -f /etc/config/restoredefault
+	fi
+
+	if [ -f /tmp/sysupgrade.tgz ];then
+		echo "- cs_boot is upgrade, donot care -" >> /tmp/zdbg
+		rm -f /tmp/sysupgrade.tgz
+	fi
+
+	if [ $mac_fix -eq 1 ]; then
+		uci commit
+		echo "- uci mac sync from cs mac -" >> /tmp/zdbg
+	fi
+
+ 	custom_apply
+
+	cs_init &
+
+	check_modem_mode &
+
+	echo cs_boot done >> /tmp/zdbg
+}
+

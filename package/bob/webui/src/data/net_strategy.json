@@ -1,0 +1,34 @@
+{
+  "lanIp":"192.168.0.1",
+  "enabled":"2",
+  "declareWan":"1",
+  "declareLan":"1",
+  "receiveDeclare":"1",
+  "defaultRouteNode":"192.168.0.5",
+  "orgNetId":"F420200001",
+  "netId":"F420200215",
+  "password":"12345678",
+  "deviceName":"test",
+  "portStart":"11",
+  "portEnd":"222",
+  "maxLimitNum":"5",
+  "mode":"route",
+  "brigeIf":"LAN1",
+  "filterDhcp":"1",
+  "rule":[
+    {
+      "idx":"1",
+      "network":"192.168.0.5/24",
+      "type":"1",
+      "nexthop":"WAN",
+      "comment":"abc"
+    },
+    {
+      "idx":"2",
+      "network":"192.168.3.5/24",
+      "type":"2",
+      "nexthop":"192.168.3.1",
+      "comment":"test"
+    }
+  ]
+}

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .time-format {
+      display: flex;
+    }
+    .time-format .line {
+      margin-right: 5px;
+    }
+    .time-format div, .s-e-format {
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .time-format select,
+    .s-e-format select {
+      width: 45%;
+    }
+    .count-input { display: inline-block !important;width: 50% !important;}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2">{{ lang_t('reboot_schedule.help') }} ({{ lang_t('reboot_schedule.ntp_desc') }})</td>
+              </tr>
+            </table>
+            <div class="table-phone-width">
+              <table class="table table-striped table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th style="width: 7%;">{{ lang_t('common.state') }}</th>
+                    <th style="width: 13%;">{{ lang_t('index.name') }}</th>
+                    <th style="width: 13%;">{{ lang_t('index.type') }}</th>
+                    <th style="width: 9.5%;">{{ lang_t('reboot_schedule.timing_type') }}</th>
+                    <th style="width: 24%;">{{ lang_t('reboot_schedule.time') }}</th>
+                    <th style="width: 13%;">{{ lang_t('reboot_schedule.date') }}</th>
+                    <th style="width: 14%;">{{ lang_t('reboot_schedule.weeks') }}</th>
+                    <th style="width: 8%;">{{ lang_t('common.edit') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item,index) in taskData" :key="index" @click="editItem(index,item)">
+                    <td>{{ index+1 }}</td>           
+                    <td>
+                      <select v-if="editIdx == index" v-model="editItemInfo.enabled">
+                        <option value="0">{{lang_t('common.off')}}</option>
+                        <option value="1">{{lang_t('common.on')}}</option>
+                      </select>
+                      <span v-else>{{ '1' == item.enabled ? lang_t('common.on') : lang_t('common.off') }}</span>
+                    </td>
+                    <td>
+                      <input type="text" v-if="editIdx == index" v-model="editItemInfo.taskName" maxlength="12">
+                      <span v-else>{{ item.taskName }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.taskAction" data-style="btn-default" v-if="editIdx == index" @change="SHFun()">
+                        <option value="reboot">reboot</option>
+                        <option value="modem-online">modem-online</option>
+                      </select>
+                      <span v-else>{{ item.taskAction }}</span>
+                    </td>
+                    <td>
+                      <select v-model="editItemInfo.taskMode" id="taskmode" data-style="btn-default" v-if="editIdx == index" @change="SHFun()">
+                        <option value="1">{{ lang_t('reboot_schedule.spec_time') }}</option>
+                        <option value="2" ref="coundown_op">{{ lang_t('reboot_schedule.countdown') }}</option>
+                      </select>
+                      <span v-else>{{ '1' == item.taskMode ? lang_t('reboot_schedule.spec_time') : lang_t('reboot_schedule.countdown') }}</span>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index">
+                        <div ref="coundown">
+                          <input type="text" v-model="editItemInfo.recMinute" class="count-input" maxlength="5">
+                          <span>(10~65535{{ lang_t('reboot_schedule.min') }})</span>
+                        </div>
+                        <div ref="time" class="time-format">
+                          <div>
+                            <select v-model="editItemInfo.hourStart">
+                              <option v-for="(data,i) in 24" :key="i" :value="i">{{stringConver(i)}}</option>
+                            </select>
+                            <span>:</span>
+                            <select v-model="editItemInfo.minuteStart">
+                              <option v-for="(data,i) in 60" :key="i" :value="i">{{stringConver(i)}}</option>
+                            </select>
+                          </div>
+                          <div ref="timeEnd">
+                            <span class="line">-</span>
+                            <select v-model="editItemInfo.hourEnd">
+                              <option v-for="(data,i) in 24" :key="i" :value="i">{{stringConver(i)}}</option>
+                            </select>
+                            <span>:</span>
+                            <select v-model="editItemInfo.minuteEnd">
+                              <option v-for="(data,i) in 60" :key="i" :value="i">{{stringConver(i)}}</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else>
+                        <div v-if=" '1' == item.taskMode">{{ stringConver(item.hourStart) }} : {{ stringConver(item.minuteStart) }} <span v-if="item.taskAction=='modem-online'">- {{ stringConver(item.hourEnd) }} : {{ stringConver(item.minuteEnd) }}</span></div>
+                        <div v-else>{{ item.recMinute }} {{ lang_t('reboot_schedule.min') }}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index" class="s-e-format">
+                        <select v-model="editItemInfo.dayStart">
+                          <option value="">{{lang_t('internet.none')}}</option>
+                          <option v-for="(data,i) in monthDay" :key="i" :value="data">{{data}}</option>
+                        </select>
+                        <span>-</span>
+                        <select v-model="editItemInfo.dayEnd">
+                          <option value="">{{lang_t('internet.none')}}</option>
+                          <option v-for="(data,i) in monthDay" :key="i" :value="data">{{data}}</option>
+                        </select>
+                      </div>
+                      <div v-else>{{ stringConver(item.dayStart) }} - {{ stringConver(item.dayEnd) }}</div>
+                    </td>
+                    <td>
+                      <div v-if="editIdx == index" class="s-e-format">
+                        <select v-model="editItemInfo.weekStart">
+                          <option v-for="(data,i) in weeks" :key="i" :value="data.val">{{data.week}}</option>
+                        </select>
+                        <span>-</span>
+                        <select v-model="editItemInfo.weekEnd">
+                          <option v-for="(data,i) in weeks" :key="i" :value="data.val">{{data.week}}</option>
+                        </select>
+                      </div>
+                      <div v-else>{{ weekConver(item.weekStart) }} - {{ weekConver(item.weekEnd) }}</div>
+                    </td>
+                    <td class="operation">
+                      <a v-show="editIdx == index" @click.stop="modifyRule(index)">{{ lang_t('common.modify') }}</a>
+                      <a v-show="editIdx == index" @click.stop="cancelEdit(item)">{{ lang_t('common.cancel') }}</a>
+                      <a @click.stop="delRuleFun(index,item)">{{ lang_t('common.delete') }}</a>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td></td>           
+                    <td>
+                      <select v-model="enabled">
+                        <option value="0">{{lang_t('common.off')}}</option>
+                        <option value="1">{{lang_t('common.on')}}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" v-model="taskName" maxlength="12">
+                    </td>
+                    <td>
+                      <select v-model="taskAction" data-style="btn-default">
+                        <option value="reboot">reboot</option>
+                        <option value="modem-online">modem-online</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select v-model="taskMode" data-style="btn-default">
+                        <option value="1">{{ lang_t('reboot_schedule.spec_time') }}</option>
+                        <option value="2" v-show="'reboot' == taskAction">{{ lang_t('reboot_schedule.countdown') }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <div v-if="taskMode=='2'">
+                        <input type="text" v-model="recMinute" maxlength="5" class="count-input">
+                        <span>(10~65535{{ lang_t('reboot_schedule.min') }})</span>
+                      </div>
+                      <div v-else class="time-format">
+                        <div>
+                          <select v-model="hourStart">
+                            <option v-for="(data,i) in 24" :key="i" :value="i">{{stringConver(i)}}</option>
+                          </select>
+                          <span>:</span>
+                          <select v-model="minuteStart">
+                            <option v-for="(data,i) in 60" :key="i" :value="i">{{stringConver(i)}}</option>
+                          </select>
+                        </div>
+                        <div v-show="taskAction=='modem-online'">
+                          <span class="line">-</span>
+                          <select v-model="hourEnd">
+                            <option v-for="(data,i) in 24" :key="i" :value="i">{{stringConver(i)}}</option>
+                          </select>
+                          <span>:</span>
+                          <select v-model="minuteEnd">
+                            <option v-for="(data,i) in 60" :key="i" :value="i">{{stringConver(i)}}</option>
+                          </select>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="s-e-format">
+                        <select v-model="dayStart">
+                          <option value="">{{lang_t('internet.none')}}</option>
+                          <option v-for="(data,i) in monthDay" :key="i" :value="data">{{data}}</option>
+                        </select>
+                        <span>-</span>
+                        <select v-model="dayEnd">
+                          <option value="">{{lang_t('internet.none')}}</option>
+                          <option v-for="(data,i) in monthDay" :key="i" :value="data">{{data}}</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="s-e-format">
+                        <select v-model="weekStart">
+                          <option v-for="(data,i) in weeks" :key="i" :value="data.val">{{data.week}}</option>
+                        </select>
+                        <span>-</span>
+                        <select v-model="weekEnd">
+                          <option v-for="(data,i) in weeks" :key="i" :value="data.val">{{data.week}}</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td class="operation">
+                      <a @click="addRule">{{ lang_t('common.add') }}</a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              </div>
+            <table class="table table-striped table-bordered table-hover" >
+              <tr>
+               <td colspan="2">
+                 <button class="btn btn-primary all-but" @click="saveInfo()">{{ lang_t('common.save') }}</button>
+                 <button class="btn btn-primary all-but" @click="cancelAll()">{{ lang_t('common.cancel') }}</button>
+               </td>
+             </tr>
+           </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      enabled:"1",
+      taskName:"",
+      taskMode:'1',
+      taskAction:"reboot",
+      hourStart:"0",
+      hourEnd:"0",
+      minuteStart:"0",
+      minuteEnd:"0",
+      dayStart:"",
+      dayEnd:"",
+      weekStart:"",
+      weekEnd:"",
+      recMinute:"10",
+      taskData:[],
+      editIdx: '-1',
+      editItemInfo: {},
+      monthDay: 1
+    }
+  },
+  watch:{
+    taskAction: function(){
+      if('modem-online' == this.taskAction){
+        this.taskMode = '1';
+      }
+    }
+  },
+  computed:{
+    weeks:function(){
+      return this.weekConver('all');
+    }
+  },
+  created:function(){
+    var _this = this;
+    this.monthDay = this.getMonthDay();
+    uiPost.getTimedTaskCfg(function(data) {
+      if (data.rule)  _this.taskData = data.rule;
+    });
+  },
+  methods:{
+    getMonthDay: function() {
+      var now = new Date();
+      var d = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return d.getDate() || 31;
+    },
+    stringConver:function(num) {
+      if (num === "") return "";
+      if(num < 10) return '0' + num;
+      else
+        return num;
+    },
+    weekConver:function(num) {
+      var _this = this;
+      var weeks = [
+        {
+          "week": lang_t('internet.none'),
+          "val":""
+        }, {
+          "week": lang_t('reboot_schedule.mon'),
+          "val":"1"
+        }, {
+          "week":lang_t('reboot_schedule.tue'),
+          "val":"2"
+        }, {
+          "week":lang_t('reboot_schedule.wed'),
+          "val":"3"
+        }, {
+          "week":lang_t('reboot_schedule.thu'),
+          "val":"4"
+        }, {
+          "week":lang_t('reboot_schedule.fri'),
+          "val":"5"
+        }, {
+          "week":lang_t('reboot_schedule.sat'),
+          "val":"6"
+        }, {
+          "week":lang_t('reboot_schedule.sun'),
+          "val":"7"
+        }
+      ];
+      if (num == 'all') return weeks;
+      if (num == "") return "";
+      for (var i = 0;i < weeks.length;i ++) {
+        if (num == weeks[i].val) return weeks[i].week;
+      }
+      return "";
+    },
+    SHFun: function() {
+      var edit = this.editItemInfo, ref = this.$refs;
+      var time_end = ref.timeEnd,
+        time = ref.time,
+        coundown = ref.coundown,
+        coundown_op = ref.coundown_op;
+      if (edit.taskAction == "modem-online") {
+        $(coundown_op).hide();
+        $(time_end).show();
+        this.$set(edit, "taskMode", "1");
+        $("#taskmode").val("1");
+      } else {
+        $(coundown_op).show();
+        $(time_end).hide();
+      }
+      if (edit.taskMode == "2") {
+        $(time).hide();
+        $(coundown).show();
+      } else {
+        $(time).show();
+        $(coundown).hide();
+      }
+    },
+    saveInfo:function () {
+      var _this = this;
+      this.editIdx = '-1';
+      var postVar = {};
+      postVar.rule = [].concat( this.taskData );
+      postVar.addEffect = "1";
+      uiPost.setTimedTaskCfg(postVar, apply_callback);
+    },
+    cancelAll:function () {
+      location.reload();
+    },
+    modifyRule:function (idx) {
+      if(!this.veriyfun(this.editItemInfo, idx)) return;
+      $.extend(this.taskData[idx], this.editItemInfo);
+      this.editIdx = '-1';
+    },
+    delRuleFun:function (idx,obj) {
+      this.editIdx = "-1";
+      this.taskData.splice(idx, 1);
+    },
+    editItem:function (index,obj) {
+      if('-1' != this.editIdx){
+        return false;
+      }
+      this.editItemInfo = {};
+      $.extend(this.editItemInfo, obj);
+      this.editIdx = index;
+      this.$nextTick(function() {
+        this.SHFun();
+      })
+    },
+    cancelEdit:function (obj) {
+      this.editIdx = "-1";
+      this.editItemInfo = obj;
+    },
+    veriyfun:function(val, flag) {
+      var  _s = cs.string(val.taskName);
+      if(0 == _s){
+        errorAlert(lang_t('index.name') + lang_t('alert.msg5'));
+        return false;
+      }else if(99 != _s){
+        errorAlert(lang_t('index.name') + lang_t('alert.msg6'));
+        return false;
+      }
+
+      for (var i = 0;i < this.taskData.length;i++) {
+        if(flag != undefined && i == flag) continue;
+        if(val.taskName == this.taskData[i].taskName) {
+          errorAlert(lang_t('alert.msg22'));
+          return false;
+        }
+      }
+
+      if ('1' == val.taskMode) {
+        if ('modem-online' == val.taskAction) {
+          if ( Number(val.hourStart) > Number(val.hourEnd) || (Number(val.hourStart) == Number(val.hourEnd) && Number(val.minuteStart) >  Number(val.minuteEnd)) ) {
+            errorAlert(lang_t('reboot_schedule.msg1'));
+            return false;
+          }
+        }
+
+        if ( Number(val.dayStart) > Number(val.dayEnd) ) {
+          errorAlert(lang_t('reboot_schedule.msg2'));
+          return false;
+        }
+        if ( Number((val.weekStart)) > Number(val.weekEnd) ) {
+          errorAlert(lang_t('reboot_schedule.msg3'));
+          return false;
+        }
+      } else {
+        if (99 != cs.num_range(val.recMinute, 10, 65535)) {
+          errorAlert(lang_t('reboot_schedule.countdown') + lang_t('alert.msg15',[10,65535]));
+          return false;
+        }
+      }
+      return true;
+    },
+    addRule:function () {
+      var _this = this;
+      var reboot_num = 0, online_num = 0;
+      for (var i = 0;i < this.taskData.length;i++) {
+        if (this.taskAction == "reboot" && this.taskData[i].taskAction == "reboot" && (reboot_num++) >= 4) {
+          errorAlert(this.taskAction + lang_t('index.type') +" "+ lang_t('alert.msg1', [5]));
+          return false;
+        } else if (this.taskAction == "modem-online" && this.taskData[i].taskAction == "modem-online" && (online_num++) >= 4){
+          errorAlert(this.taskAction + lang_t('index.type') +" "+ lang_t('alert.msg1', [5]));
+          return false;
+        }
+        if (this.taskMode == "2" && this.taskData[i].taskMode == "2") {
+          errorAlert(lang_t('reboot_schedule.countdown') + lang_t('reboot_schedule.timing_type') +" "+ lang_t('alert.msg1', [1]));
+          return false;
+        }
+      }
+
+      var temp = {
+        enabled: this.enabled,
+        taskName: this.taskName,
+        taskMode: this.taskMode,
+        taskAction: this.taskAction,
+        hourStart: this.hourStart,
+        hourEnd: this.hourEnd,
+        minuteStart: this.minuteStart,
+        minuteEnd: this.minuteEnd,
+        dayStart: this.dayStart,
+        dayEnd: this.dayEnd,
+        weekStart: this.weekStart,
+        weekEnd: this.weekEnd,
+        recMinute: this.recMinute
+      };
+      if(!this.veriyfun(temp)) return;
+      this.taskData.push(temp);      
+      this.enabled = "0";
+      this.taskName = "";
+      this.taskMode = "1";
+      this.taskAction = "reboot";
+      this.hourStart = "0";
+      this.hourEnd = "0";
+      this.minuteStart = "0";
+      this.minuteEnd = "0";
+      this.dayStart = "";
+      this.dayEnd = "";
+      this.weekStart = "";
+      this.weekEnd = "";
+      this.recMinute = "10";
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

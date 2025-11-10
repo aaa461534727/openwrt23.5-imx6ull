@@ -1,0 +1,46 @@
+[{
+    "bssid":  "f4:28:54:00:22:38",
+    "ssid": "wifi_002238",
+    "channel":  "1",
+    "encrypt":  "NONE",
+    "cipher": "",
+    "band": "11b/g/n",
+    "signal": "100",
+    "WiFiIdx":  "1"
+  }, {
+    "bssid":  "d8:5d:e2:2f:5a:a3",
+    "ssid": "APPT07-20160216A",
+    "channel":  "1",
+    "encrypt":  "WPA2PSK",
+    "cipher": "AES",
+    "band": "11b/g/n",
+    "signal": "88",
+    "WiFiIdx":  "1"
+  }, {
+    "bssid":  "f4:28:54:00:21:36",
+    "ssid": "TOTOLINK_honey",
+    "channel":  "1",
+    "encrypt":  "WPAPSKWPA2PSK",
+    "cipher": "TKIPAES",
+    "band": "11b/g/n",
+    "signal": "100",
+    "WiFiIdx":  "1"
+  }, {
+    "bssid":  "2e:b2:1a:55:08:0b",
+    "ssid": "Welcome to Carystudio",
+    "channel":  "1",
+    "encrypt":  "WPAPSKWPA2PSK",
+    "cipher": "TKIPAES",
+    "band": "11b/g/n",
+    "signal": "100",
+    "WiFiIdx":  "1"
+  }, {
+    "bssid":  "04:84:8a:08:00:06",
+    "ssid": "04296",
+    "channel":  "11",
+    "encrypt":  "WPA2PSK",
+    "cipher": "AES",
+    "band": "11b/g/n",
+    "signal": "100",
+    "WiFiIdx":  "1"
+  }]

@@ -1,0 +1,21 @@
+#!/bin/sh
+STATUS_DIR='/tmp/vpn_status'
+
+[ vpn == "${INTERFACE:0:3}" ] && {
+	if [ ! -d "$STATUS_DIR" ]; then                
+		mkdir $STATUS_DIR
+	fi
+	case "$ACTION" in
+		ifup)
+			echo "$INTERFACE=1" > $STATUS_DIR/$INTERFACE
+			
+			echo $INTERFACE up > /dev/console
+			;;
+		ifdown)
+			echo "$INTERFACE=0" > $STATUS_DIR/$INTERFACE
+			
+			echo $INTERFACE down > /dev/console	
+			;;
+	esac
+}
+

@@ -1,0 +1,11 @@
+{
+	"portalEnabled":"1",
+    "ddnsEnabled":"0",
+    "ttyEnabled":"1",
+    "smsEnabled":"0",
+    "wechatEnabled":"0",
+    "sambaEnabled":"0",
+    "gpsEnabled":"0",
+    "appFilterEnable":"1",
+    "qosPolicyEnable":"0"
+}

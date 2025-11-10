@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .check{
+      color:#3399ff;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ helpMsg }}</strong></td>
+              </tr>
+              <tr v-show="openvpnServerShow && openvpnClientShow">
+                <td>
+                  <span v-show="openvpnServerShow">
+                    <input type="radio" value="0" v-model="openvpnMode" @change="openvpnChange">
+				            {{lang_t('openvpn.title')}} &nbsp;&nbsp;&nbsp;&nbsp
+				          </span>
+                  <span v-show="openvpnClientShow">
+                    <input type="radio" value="1" v-model="openvpnMode" @change="openvpnChange">
+				            {{lang_t('openvpn_client.title')}} 
+                  </span>
+                </td>
+              </tr>          
+            </table>
+            <!--openvpn server-->
+            <table class="table table-striped" v-show="openvpnMode == 0 && openvpnServerShow">
+              <tr>
+                <td style="width: 20%">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_status" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="status">
+                <td>{{lang_t('openvpn.port')}}</td>
+                <td>
+                  <input type="number" v-model="serverdata.port" maxlength="5" />
+                  <span>(1~65536)</span>
+                </td>
+              </tr>
+              <tr v-show="status">
+                <td>{{lang_t('openvpn.subnet')}}</td>
+                <td>
+                  <input type="text" v-model="serverdata.subnet" maxlength="15" />
+                </td>
+              </tr>
+              <tr v-show="status">
+                <td>{{lang_t('openvpn.mask')}}</td>
+                <td>
+                  <select v-model="serverdata.mask">
+                    <option v-for="mask in maskOption" :value="mask.value" :key="mask.value">{{mask.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="status">
+                <td>{{lang_t('openvpn.client_certway')}}</td>
+                <td>
+                  <select v-model="serverdata.auth">
+                    <option value="2">{{ lang_t('openvpn.cert_auth') }}</option>
+                    <option value="3">{{ lang_t('openvpn.account_auth') }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="status">
+                <td>{{lang_t('openvpn.proto')}}</td>
+                <td>
+                  <select v-model="serverdata.proto">
+                    <option value="udp">UDP</option>
+                    <option value="tcp">TCP</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="status">
+                <td></td>
+                <td><label style="cursor: pointer;" @click="dirSwitch"><i :class="['fa',direction ? 'fa-chevron-up' : 'fa-chevron-down']" aria-hidden="true"></i>{{lang_t('openvpn.setting')}}</label></td>
+              </tr>
+              <tbody v-if="direction && status">
+                <tr v-show="status">
+                  <td>{{lang_t('openvpn.dev_type')}}</td>
+                  <td>
+                    <select v-model="serverdata.devType">
+                      <option value="tun">TUN</option>
+                      <option value="tap">TAP</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('openvpn.cipher')}}</td>
+                  <td>
+                    <select v-model="serverdata.cipher">
+                      <option v-for="cipher in cipherOption" :value="cipher.value" :key="cipher.value">{{cipher.option}}</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('openvpn.comp_lzo')}}</td>
+                  <td>
+                    <input type="radio" value="1" v-model="serverdata.compLzo">{{lang_t('common.on')}}&nbsp;&nbsp;
+                    <input type="radio" value="0" v-model="serverdata.compLzo">{{lang_t('common.off')}}
+                  </td>
+                </tr>
+                <tr v-show="">
+                  <td>{{lang_t('openvpn.tls_auth')}}</td>
+                  <td>
+                    <input type="radio" value="1" v-model="serverdata.tlsAuth">{{lang_t('common.on')}}&nbsp;&nbsp;
+                    <input type="radio" value="0" v-model="serverdata.tlsAuth">{{lang_t('common.off')}}
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('openvpn.mtu')}}</td>
+                  <td>
+                    <input type="text" v-model="serverdata.mtu" :maxlength="4" :disabled="true" />
+                    <span>(1400~1500)</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.ca') }}</td>
+                  <td>
+                    <ul class="list-inline">
+                      <li>
+                        <input type="text" v-model="filename_ca" disabled>
+                      </li>
+                      <li>
+                        <label class="input-group-btn">
+                          <span class="btn btn-default">
+                            <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="serverFile_ca" style="display: none;" @change="filechange('ca')" />
+                          </span>
+                        </label>
+                      </li>
+                      <li>
+                        <button class="btn btn-primary all-but" @click="uploadmark('ca')">{{ lang_t('openvpn.upload') }}</button>
+                      </li>
+                      <li style="width: 60px;">
+                        <span class="check" @click="certIfShow('ca')">{{ lang_t("openvpn.details") }}</span>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.ca_key') }}</td>
+                  <td>
+                    <ul class="list-inline">
+                      <li>
+                        <input type="text" v-model="filename_ca_key" disabled>
+                      </li>
+                      <li>
+                        <label class="input-group-btn">
+                          <span class="btn btn-default">
+                            <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="serverFile_ca_key" style="display: none;" @change="filechange('ca_key')" />
+                          </span>
+                        </label>
+                      </li>
+                      <li>
+                        <button class="btn btn-primary all-but" @click="uploadmark('ca_key')">{{ lang_t('openvpn.upload') }}</button>
+                      </li>
+                      <li style="width: 60px;">
+                        <span class="check" @click="certIfShow('ca_key')">{{ lang_t("openvpn.details") }}</span>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.secret_key') }}</td>
+                  <td>
+                    <ul class="list-inline">
+                      <li>
+                        <input type="text" v-model="filename_secret_key" disabled>
+                      </li>
+                      <li>
+                        <label class="input-group-btn">
+                          <span class="btn btn-default">
+                            <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="serverFile_secret_key" style="display: none;" @change="filechange('secret_key')" />
+                          </span>
+                        </label>
+                      </li>
+                      <li>
+                        <button class="btn btn-primary all-but" @click="uploadmark('secret_key')" >{{ lang_t('openvpn.upload') }}</button>
+                      </li>
+                      <li>
+                        <span class="check" @click="certIfShow('secret_key')">{{ lang_t("openvpn.details") }}</span>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.cert') }}</td>
+                  <td>
+                    <ul class="list-inline">
+                      <li>
+                        <input type="text" v-model="filename_cert" disabled>
+                      </li>
+                      <li>
+                        <label class="input-group-btn">
+                          <span class="btn btn-default">
+                            <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="serverFile_cert" style="display: none;" @change="filechange('cert')" />
+                          </span>
+                        </label>
+                      </li>
+                      <li>
+                        <button class="btn btn-primary all-but" @click="uploadmark('cert')">{{ lang_t('openvpn.upload') }}</button>
+                      </li>
+                      <li style="width: 60px;">
+                        <span class="check" @click="certIfShow('cert')">{{ lang_t("openvpn.details") }}</span>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.key') }}</td>
+                  <td>
+                    <ul class="list-inline">
+                      <li>
+                        <input type="text" id="filename_key" v-model="filename_key" disabled>
+                      </li>
+                      <li>
+                        <label class="input-group-btn">
+                          <span class="btn btn-default">
+                            <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="serverFile_key" style="display: none;" @change="filechange('key')" />
+                          </span>
+                        </label>
+                      </li>
+                      <li>
+                        <button class="btn btn-primary all-but" @click="uploadmark('key')">{{ lang_t('openvpn.upload') }}</button>
+                      </li>
+                      <li style="width: 60px;">
+                        <span class="check" @click="certIfShow('key')">{{ lang_t("openvpn.details") }}</span>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr v-show="">
+                  <td>{{ lang_t('openvpn_client.ta') }}</td>
+                  <td>
+                    <ul class="list-inline">
+                      <li>
+                        <input type="text" v-model="filename_ta" disabled>
+                      </li>
+                      <li>
+                        <label class="input-group-btn">
+                          <span class="btn btn-default">
+                            <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="serverFile_ta" style="display: none;" @change="filechange('ta')" />
+                          </span>
+                        </label>
+                      </li>
+                      <li>
+                        <button class="btn btn-primary all-but" @click="uploadmark('ta')">{{ lang_t('openvpn.upload') }}</button>
+                      </li>
+                      <li>
+                        <span class="check" @click="certIfShow('ta')">{{ lang_t("openvpn.details") }}</span>
+                      </li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{lang_t('openvpn.extra_config')}}</td>
+                  <td>
+                    <textarea rows="4" v-model="serverdata.extraConfig"></textarea>
+                     <span>{{ lang_t('openvpn.extra_config_example') }}</span><br>
+                     <span>tcp-queue-limit 32  mtu-disc no<br>route 192.168.98.0 255.255.255.0 10.20.40.200<br>push 'route 192.168.10.0 255.255.255.0'</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.servername') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.serverName" :maxlength="4" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.dayvalid') }}</td>
+                  <td>
+					<ul class="list-inline">
+						<li>
+							<input type="text" v-model="detail.dayvalid" :maxlength="4" />
+						</li>
+						<li>
+							<button id="create_cert" class="btn btn-primary all-but" :data-loading-text="lang_t('openvpn.creating')" @click="createCert">{{ lang_t('openvpn.create') }}</button>
+						</li>
+					</ul>
+				  </td>
+                </tr>
+				<!--
+                <tr>
+                  <td>{{ lang_t('openvpn.country') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.country" :maxlength="4" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.province') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.province" :maxlength="4" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.city') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.city" :maxlength="4" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.org') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.org" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.email') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.email" :maxlength="40" />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('openvpn.ou') }}</td>
+                  <td>
+                    <input type="text" v-model="detail.ou" :maxlength="4" />
+                  </td>
+                </tr>
+				-->
+              </tbody>
+              <tr v-if="status">
+                <td colspan="2">
+                  <ul class="list-inline">
+                    <li v-show="direction">
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="backupcert" :disabled="backupFlag">{{ lang_t('openvpn.backup') }}</button>&nbsp;&nbsp;
+                    </li>
+                    <li v-show="direction">
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="handleShowLog" :disabled="createdbtn">{{ lang_t('openvpn.show_log') }}</button>&nbsp;&nbsp;
+                    </li>
+                    <li>
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="handleSubmit(0)" :disabled="createdbtn">{{ lang_t('common.apply') }}</button>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+            </table>
+
+            <!--openvpn client-->
+            <table class="table table-striped" v-show="openvpnMode == 1 && openvpnClientShow">
+              <tr>
+                <td style="width: 20%">{{ lang_t('common.state') }}</td>
+                <td>
+                  <input type="checkbox" id="switch_client" :checked="toggle_client" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{ lang_t('openvpn_client.linkstatus') }}</td>
+                <td>
+                 <span style="color:#fff;background-color:#3399ff" v-if="openvpnConnect == 0">{{ lang_t('index.disconnected') }}</span>
+                 <span style="color:#fff;background-color:#3399ff" v-else-if="openvpnConnect == 1">{{ lang_t('index.dialing') }}</span>
+                 <span style="color:#fff;background-color:#3399ff" v-else-if="openvpnConnect == 2">{{ lang_t('index.connected') }}</span>
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn_client.serverip')}}</td>
+                <td>
+                  <input type="text" v-model="clientdata.address" :maxlength="15" />
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.port')}}</td>
+                <td>
+                  <input type="number" v-model="clientdata.port" :maxlength="5" />
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.client_certway')}}</td>
+                <td>
+                  <select v-model="clientdata.auth">
+                    <option value="2">{{lang_t('openvpn.cert_auth')}}</option>
+                    <option value="3">{{lang_t('openvpn.account_auth')}}</option> 
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth == '3'">
+                <td>{{lang_t('openvpn_client.username')}}</td>
+                <td>
+                  <input type="text" v-model="clientdata.username" maxlength="32" />
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth == '3'">
+                <td>{{lang_t('openvpn_client.pass')}}</td>
+                <td>
+                  <input type="text" v-model="clientdata.password" maxlength="64" v-pass/>
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.proto')}}</td>
+                <td>
+                  <select v-model="clientdata.proto" >
+                    <option value="udp">UDP</option>
+                    <option value="tcp">TCP</option> 
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.dev_type')}}</td>
+                <td>
+                  <select v-model="clientdata.devType">
+                    <option value="tun">TUN</option>
+                    <option value="tap">TAP</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.cipher')}}</td>
+                <td>
+                  <select v-model="clientdata.cipher">
+                    <option v-for="cipher in cipherOption" :value="cipher.value" :key="cipher.value">{{cipher.option}}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.comp_lzo')}}</td>
+                <td>
+				          <input type="radio" value="1" v-model="clientdata.compLzo">{{lang_t('common.on')}}&nbsp;&nbsp;
+                  <input type="radio" value="0" v-model="clientdata.compLzo">{{lang_t('common.off')}} 
+                </td>
+              </tr> 
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.tls_auth')}}</td>
+                <td> 
+				          <input type="radio" value="1" v-model="clientdata.tlsAuth">{{lang_t('common.on')}}&nbsp;&nbsp;
+                  <input type="radio" value="0" v-model="clientdata.tlsAuth">{{lang_t('common.off')}}
+                </td>
+              </tr> 
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn.mtu')}}</td>
+                <td>
+                  <input type="text" v-model="clientdata.mtu" :maxlength="4" />
+                  <span>(1400~1500)</span>
+                </td>
+              </tr>
+              <tr v-show="clientStatus">
+                <td>{{lang_t('openvpn_client.import_method')}}</td>
+                <td>
+				          <input type="radio" value="0" v-model="certManual">{{lang_t('openvpn.manual')}}&nbsp;&nbsp;
+                  <input type="radio" value="1" v-model="certManual">{{lang_t('openvpn.fileupload')}} 
+                </td>
+              </tr>
+              <tr v-show="clientStatus && certManual == '0'">
+                <td>{{lang_t('openvpn.ca')}}</td>
+                <td>
+                  <textarea rows="4" v-model="clientdata.ca"></textarea>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && certManual == '1'">
+                <td>{{lang_t('openvpn.ca')}}</td>
+                <td>
+                  <ul class="list-inline">
+                    <li>
+                      <input type="text" v-model="filename_ca" disabled>
+                    </li>
+                    <li>
+                      <label class="input-group-btn">
+                        <span class="btn btn-default">
+                          <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="clientFile_ca" style="display: none;" @change="filechange('ca')" />
+                        </span>
+                      </label>
+                    </li>
+                    <li>
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="uploadmark('ca')">{{ lang_t('openvpn.upload') }}</button>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth != '3' && certManual == '0'">
+                <td>{{lang_t('openvpn.cert')}}</td>
+                <td>
+                  <textarea rows="4" v-model="clientdata.cert"></textarea>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth != '3' && certManual == '1'">
+                <td>{{lang_t('openvpn.cert')}}</td>
+                <td>
+                  <ul class="list-inline">
+                    <li>
+                      <input type="text" v-model="filename_cert" disabled>
+                    </li>
+                    <li>
+                      <label class="input-group-btn">
+                        <span class="btn btn-default">
+                          <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="clientFile_cert" style="display: none;" @change="filechange('cert')" />
+                        </span>
+                      </label>
+                    </li>
+                    <li>
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="uploadmark('cert')" >{{ lang_t('openvpn.upload') }}</button>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth != '3' && certManual == '0'">
+                <td>{{lang_t('openvpn.key')}}</td>
+                <td>
+                  <textarea rows="4" v-model="clientdata.key"></textarea>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth != '3' && certManual == '1'">
+                <td>{{lang_t('openvpn.key')}}</td>
+                <td>
+                  <ul class="list-inline">
+                    <li>
+                      <input type="text" v-model="filename_key" disabled>
+                    </li>
+                    <li>
+                      <label class="input-group-btn">
+                        <span class="btn btn-default">
+                          <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="clientFile_key" style="display: none;" @change="filechange('key')" />
+                        </span>
+                      </label>
+                    </li>
+                    <li>
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="uploadmark('key')">{{ lang_t('openvpn.upload') }}</button>
+                    </li>
+                  </ul>
+                 </td>
+               </tr>
+               <tr v-show="clientStatus && clientdata.auth != '3' && certManual == '0' && clientdata.tlsAuth == '1'">
+                <td>{{lang_t('openvpn_client.ta')}}</td>
+                <td>
+                  <textarea rows="4" v-model="clientdata.ta"></textarea>
+                </td>
+              </tr>
+              <tr v-show="clientStatus && clientdata.auth != '3' && certManual == '1' && clientdata.tlsAuth == '1'">
+                <td>{{lang_t('openvpn_client.ta')}}</td>
+                <td>
+                  <ul class="list-inline">
+                    <li>
+                      <input type="text" v-model="filename_ta" disabled>
+                   </li>
+                    <li>
+                      <label class="input-group-btn">
+                        <span class="btn btn-default">
+                          <i class="glyphicon glyphicon-plus"></i> {{lang_t('firmware.select_file')}}<input type="file" id="clientFile_ta" style="display: none;" @change="filechange('ta')" />
+                        </span>
+                      </label>
+                    </li>
+                    <li>
+                      <button id="cloudFw" class="btn btn-primary all-but" @click="uploadmark('ta')" >{{ lang_t('openvpn.upload') }}</button>
+                    </li>
+                  </ul>
+                </td>
+              </tr> 
+               <tr v-if="0">
+                 <td>{{lang_t('openvpn.extra_config')}}</td>
+                 <td>
+                   <textarea rows="4" v-model="clientdata.extraConfig"></textarea>
+                   <span v-if="openvpnMode == '0'">{{ lang_t('openvpn.extra_config_example') }}</span><br>
+                   <span v-if="openvpnMode == '0'">tcp-queue-limit 32  mtu-disc no<br>route 192.168.98.0 255.255.255.0 10.20.40.200<br>push 'route 192.168.10.0 255.255.255.0'</span>
+                 </td>
+               </tr>
+               <tr v-show="clientStatus && openvpnMode == '1'">
+                 <td>{{lang_t('openvpn_client.ip')}}</td>
+                 <td>{{linkIp}}</td>
+               </tr>
+               <tr v-show="clientStatus">
+                 <td colspan="2" v-if="globalConfig.specialIotBanApply!='1'">
+                   <input type="file" id="clientFile_import" @change="filechange('import')" style="display: none;" />
+                   <button class="btn btn-primary all-but" @click="importClick">{{lang_t('openvpn_client.import')}}</button>&nbsp;&nbsp;
+                   <button class="btn btn-primary all-but" @click.prevent="handleSubmit(1)">{{lang_t('common.apply')}}</button>
+                 </td>
+               </tr>
+            </table>     
+          </div>
+        </div>
+      </sesction>	  
+
+      <div class="modal fade" id="modal_text" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 class="modal-title" id="myModalLabel">{{ certtitle }}</h4>
+            </div>
+            <div class="modal-body">
+              <textarea rows="12" style="min-width: 100%;background-color: #fff;resize:none;" v-model="certcontent" readonly></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" data-dismiss="modal">{{ lang_t('common.ok') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div style="display: none;">
+<form id="export" method="post" action="/cgi-bin/cstecgi.cgi?action=exportOvpn&type=server_cert&username=server_cert"></form>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+      lang:$.lang,
+      lang_t:lang_t,
+      status:false,
+      modal:false,
+      openvpnMode:'1',
+      openvpnServerShow:true,
+      openvpnClientShow:true,
+      exportAction:'',
+      filename_ca:'',
+      fileData_ca:'',
+      filename_ca_key: '',
+      fileData_ca_key: '',
+      filename_ta:'',
+      fileData_ta:'',
+      filename_secret_key:'',
+      fileData_secret_key:'',
+      filename_cert: '',
+      fileData_cert: '',
+      filename_key:'',
+      fileData_key:'',
+      clientStatus:false,
+      uploadPercent:0,
+      openvpnConnect:'0',
+			uploadApi:"/cgi-bin/cstecgi.cgi?action=upload&uploadOpenVpnCert",
+      serverdata:{
+        status: false,
+        enabled:false,
+        port: '',
+        auth:'',
+        proto:'',
+        devType:'',
+        cipher:'',
+        compLzo:'0',
+        tlsAuth:'0',
+        mtu:'',
+        ca:'',
+        cert:'',
+        key:'',
+        extraConfig:'',
+        subnet:'',
+        mask:'',
+        secret_key:'',
+        caKey:'',
+        ta:''
+      },
+      clientdata:{
+        status: false,
+        enabled:false,
+        port: '',
+        auth:'',
+        proto:'',
+        devType:'',
+        cipher:'',
+        compLzo:'0',
+        tlsAuth:'0',
+        mtu:'',
+        ca:'',
+        cert:'',
+        key:'',
+        extraConfig:'',
+        address:'',
+        username:'',
+        password:'',
+        ta:''
+      },
+      detail:{
+        serverName:'',
+        dayvalid:'',
+        country:'',
+        province:'',
+        city:'',
+        org:'',
+        email:'',
+        ou:''
+      },
+      log:'',
+      passtype:'password',
+      linkIp:'',
+      upload:{
+        format:['crt','key','pem'],
+        serveraction:'',
+        clientaction:'',
+        showlist:false
+      },
+      details:false,
+      createdbtn:false,
+      uploadflag:'',
+      openvpnEnble:false,
+      certcontent:'',
+      checkmark:'',
+      certManual:'1',
+      createtime:null,
+      backupFlag:true,
+      fileData:'error',
+      direction:false,
+      certtitle:'',
+      isslect: false,
+      refreshFlag:false
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    var openvpnMode = cs.local(_this.openvpnMode);
+    if(openvpnMode != ''){
+      _this.refreshFlag = true;
+      _this.openvpnMode = openvpnMode;
+    }
+    if(_this.globalConfig.openVpnServerSupport){
+      _this.openvpnServerInit();
+      _this.getCertStatus(1);
+    }else{
+      _this.openvpnServerShow = false;
+      _this.openvpnMode = '1';
+    }
+    if(_this.globalConfig.openVpnClientSupport){
+      _this.openvpnClientInit();
+    }else{
+      _this.openvpnClientShow = false;
+    }
+    addSwitch('#switch_status', function(data){
+      if(data != _this.status) _this.status = data;
+      _this.submit_server();
+    });
+    addSwitch('#switch_client', function(data){
+       if(globalConfig.specialIotBanApply ==1 ) return;
+      if(data != _this.clientStatus) _this.clientStatus = data;
+      _this.submit_client();
+    });
+  },
+  computed:{
+    helpMsg:function(){
+      var _this = this;
+      if(_this.openvpnMode == "0"){
+        return _this.lang_t('openvpn.help');
+      }else{
+        return _this.lang_t('openvpn_client.help');
+      }
+    },
+    linkMsg:function(){
+      return this.linkIp == "0.0.0.0" ? this.lang_t('index.disconnected') : this.lang_t('index.connected');
+    },
+    maskOption:function(){
+      return cs.maskOption();
+    },
+    cipherOption:function(){
+      return [
+        {
+          option: "NONE",
+          value: "none"
+        },
+        {
+          option: "BF-CBC",
+          value: "BF-CBC"
+        },{
+          option: "BF-CFB",
+          value: "BF-CFB"
+        },{
+          option: "BF-OFB",
+          value: "BF-OFB"
+        },{
+          option: "DES-CFB",
+          value: "DES-CFB"
+        },{
+          option: "DES-CBC",
+          value: "DES-CBC"
+        },{
+          option: "RC2-CBC",
+          value: "RC2-CBC"
+        },{
+          option: "RC2-CFB",
+          value: "RC2-CFB"
+        },{
+          option: "RC2-OFB",
+          value: "RC2-OFB"
+        },{
+          option: "DES-EDE-CBC",
+          value: "DES-EDE-CBC"
+        },{
+          option: "DES-EDE3-CBC",
+          value: "DES-EDE3-CBC"
+        },{
+          option: "DES-OFB",
+          value: "DES-OFB"
+        },{
+          option: "DES-EDE-CFB",
+          value: "DES-EDE-CFB"
+        },{
+          option: "DES-EDE3-CFB",
+          value: "DES-EDE3-CFB"
+        },{
+          option: "DES-EDE-OFB",
+          value: "DES-EDE-OFB"
+        },{
+          option: "DES-EDE3-OFB",
+          value: "DES-EDE3-OFB"
+        },{
+          option: "DESX-CBC",
+          value: "DESX-CBC"
+        },{
+          option: "RC2-40-CBC",
+          value: "RC2-40-CBC"
+        },{
+          option: "CAST5-CBC",
+          value: "CAST5-CBC"
+        },{
+          option: "CAST5-CFB",
+          value: "CAST5-CFB"
+        },{
+          option: "CAST5-OFB",
+          value: "CAST5-OFB"
+        },{
+          option: "RC2-64-CBC",
+          value: "RC2-64-CBC"
+        },{
+          option: "AES-128-CBC",
+          value: "AES-128-CBC"
+        },{
+          option: "AES-128-OFB",
+          value: "AES-128-OFB"
+        },{
+          option: "AES-128-CFB",
+          value: "AES-128-CFB"
+        },{
+          option: "AES-192-CBC",
+          value: "AES-192-CBC"
+        },{
+          option: "AES-192-OFB",
+          value: "AES-192-OFB"
+        },{
+          option: "AES-192-CFB",
+          value: "AES-192-CFB"
+        },{
+          option: "AES-256-CBC",
+          value: "AES-256-CBC"
+        },{
+          option: "AES-256-OFB",
+          value: "AES-256-OFB"
+        },{
+          option: "AES-256-CFB",
+          value: "AES-256-CFB"
+        },{
+          option: "AES-128-CFB1",
+          value: "AES-128-CFB1"
+        },{
+          option: "AES-192-CFB1",
+          value: "AES-192-CFB1"
+        },{
+          option: "AES-256-CFB1",
+          value: "AES-256-CFB1"
+        },{
+          option: "AES-128-CFB8",
+          value: "AES-128-CFB8"
+        },{
+          option: "AES-192-CFB8",
+          value: "AES-192-CFB8"
+        },{
+          option: "AES-256-CFB8",
+          value: "AES-256-CFB8"
+        },{
+          option: "DES-CFB1",
+          value: "DES-CFB1"
+        },{
+          option: "DES-CFB8",
+          value: "DES-CFB8"
+        },{
+          option: "DES-EDE3-CFB1",
+          value: "DES-EDE3-CFB1"
+        },{
+          option: "DES-EDE3-CFB8",
+          value: "DES-EDE3-CFB8"
+        },{
+          option: "SEED-CBC",
+          value: "SEED-CBC"
+        },{
+          option: "SEED-OFB",
+          value: "SEED-OFB"
+        },{
+          option: "SEED-CFB",
+          value: "SEED-CFB"
+        }
+      ];
+    },
+    toggle_status:function(){
+      var _this = this;
+      $('#switch_status').bootstrapSwitch('state',_this.status);
+    },
+    toggle_client:function(){
+      var _this = this;
+      $('#switch_client').bootstrapSwitch('state',_this.clientStatus);
+    }
+  },
+  created:function(){
+    
+  },
+  methods:{
+    openvpnServerInit:function(){
+      var _this = this;
+      uiPost.getOpenVpnServerCfg(function(data){
+        _this.detail = data;
+        _this.serverdata = data;
+        _this.status = data.enabled == "1" ? true : false;
+        _this.modeSelect(_this.status,'server');
+        _this.serverdata.enabled = data.enabled == "1" ? true : false;
+        _this.serverdata.secret_key = data.dh;
+        _this.serverdata.ta = data.ta;
+        _this.serverdata.devType = data.devType;
+      });
+    },
+    openvpnClientInit:function(){
+      var _this = this;
+      uiPost.getOpenVpnClientCfg(function(data){
+         _this.extend(_this.clientdata, data);
+        _this.clientStatus = data.enabled == "1" ? true : false;
+        _this.modeSelect(_this.clientStatus,'client');
+        _this.clientdata.enabled = data.enabled == "1" ? true : false;
+        _this.clientdata.ta = data.ta;
+        _this.clientdata.address = data.address;        
+        _this.clientdata.devType = data.devType;
+        if(data.certManual != undefined &&data.certManual != ""){
+        _this.certManual = data.certManual;
+        }
+        _this.linkIp = data.clientAddr;
+        if(_this.clientStatus){
+          _this.openvpnConnect = data.openvpnConnect;
+        }
+        if(data.uploadApi != undefined &&data.uploadApi != ""){
+					_this.uploadApi = data.uploadApi;
+        }
+      });
+    },
+    extend:function(obj, o){
+      for(var i in o){
+        if(obj[i] != undefined)
+          obj[i] = o[i];
+      }
+    },
+    modeSelect:function(flag,type){
+      if(!this.refreshFlag){
+        if(type == 'server'){
+          if(flag){
+            this.openvpnMode = '0';
+            this.isslect = true;
+          }
+        }else{
+          if(!this.isslect){
+            if(flag)
+              this.openvpnMode = '1';
+          }
+        }
+      }
+    },
+    openvpnChange:function(mode){
+		
+    },
+    getCertStatus:function(init){
+      var _this = this;
+      var status = '';
+      var btn = $("#create_cert");
+      uiPost.getCertStatus(function(data){
+        status = data.certStatus;
+        if(init == 1){
+          if(status == '0'){
+            _this.backupFlag = false;
+          }
+        }else{
+          if(status != '1'){
+            if(status != undefined && status != ''){
+              btn.button('reset');
+              clearInterval(_this.createtime);
+            }
+          }
+          if(status == '0'){
+            Cstools.msg({
+              content: _this.lang_t('openvpn.certcreart_exist'),
+              type: 'success',
+              messgetype: 'no',
+              time:1
+            });
+          }else if(status == '2'){
+            Cstools.msg({
+              content: _this.lang_t('openvpn.certcreart_success'),
+              type: 'success',
+              messgetype: 'no',
+              time:1
+            });
+          }else if(status == '3'){
+            Cstools.msg({
+              content: _this.lang_t('openvpn.certcreart_fail'),
+              type: 'success',
+              messgetype: 'no',
+              time:1
+            });
+          }else if(status == '4'){
+            Cstools.msg({
+              content: _this.lang_t('openvpn.certcreart_miss'),
+              type: 'success',
+              messgetype: 'no',
+              time:1
+            });
+          }
+        }
+      });
+    },
+    createCert:function(){
+      var _this = this;
+      var _s = cs.string(_this.detail.country);
+      var _ss = cs.string(_this.detail.email);
+      var _sss = cs.string(_this.detail.serverName);
+      var _ssss = cs.num(_this.detail.dayvalid);
+
+      if(_sss == 0 || _sss == 1){
+        errorAlert(_this.lang_t('openvpn.msg8'));
+        return false;
+      }
+      if(_ssss == 0 || _ssss == 1){
+        errorAlert(_this.lang_t('openvpn.msg9'));
+        return false;
+      }
+      if((_this.detail.country.length != 2 || _s == 1) && _this.detail.country) {
+        errorAlert(_this.lang_t('openvpn.msg6'));
+        return false;
+      }
+      if((_this.detail.email.length > 40 || _ss == 1) && _this.detail.email){
+        errorAlert(_this.lang_t('openvpn.msg7'));
+        return false;
+      }
+
+      var btn = $("#create_cert");
+      btn.button('loading');  
+      Cstools.msg({
+        content: _this.lang_t('openvpn.msg5'),
+        type: 'warn',
+        messgetype: 'confirm',
+        ok:function(){
+          var postVar = {};
+          _this.createdbtn = true;
+          postVar = _this.detail;
+          uiPost.setOpenVpndCertConfig(postVar,function(){
+            _this.createtime = setInterval(function(){
+              _this.getCertStatus();
+            },5000);
+          });
+          return false;
+        },
+        cancel:function () {
+          var btn = $("#create_cert");
+          btn.button('reset');
+          return false;
+        }
+      }); 
+    },
+    certIfShow:function(name){
+      var _this = this;
+      _this.checkmark = name;
+      if(name == 'ca'){
+        _this.certtitle = _this.lang_t('openvpn.ca');
+        _this.certcontent = _this.serverdata.ca;
+      }else if(name == 'ca_key'){
+        _this.certtitle = _this.lang_t('openvpn.ca_key');
+        _this.certcontent = _this.serverdata.caKey;
+      }else if(name == 'secret_key'){
+        _this.certtitle = _this.lang_t('openvpn.secret_key');
+        _this.certcontent = _this.serverdata.secret_key;
+      }else if(name == 'ta'){
+        _this.certtitle = _this.lang_t('openvpn.ca');
+        _this.certcontent = _this.serverdata.ta;
+      }else if(name == 'cert'){
+        _this.certtitle = _this.lang_t('openvpn.cert');
+        _this.certcontent = _this.serverdata.cert;
+      }else if(name == 'key'){
+        _this.certtitle = _this.lang_t('openvpn.key');
+        _this.certcontent = _this.serverdata.key;
+      }
+      $('#modal_text').modal('show');
+    },
+    uploadmark:function(name){
+      var _this = this;
+      var serveraction = _this.uploadApi + '&' + 'type=server&name=';
+      var clientaction = _this.uploadApi + '&' + 'type=client&name=';
+      var filename = '', action = '';
+      if(_this.openvpnMode == '0'){
+        if(name == 'ca'){
+          filename = 'ca.crt';
+          _this.fileData = _this.fileData_ca;
+        }else if(name == 'ca_key'){
+          filename = 'ca.key';
+          _this.fileData = _this.fileData_ca_key;
+        }else if(name == 'secret_key'){
+          filename = 'dh1024.pem';
+          _this.fileData = _this.fileData_secret_key;
+        }else if(name == 'ta'){
+          filename = 'ta.key';
+          _this.fileData = _this.fileData_ta;
+        }else if(name == 'cert'){
+          filename = 'server.crt';
+          _this.fileData = _this.fileData_cert;
+        }else if(name == 'key'){
+          filename = 'server.key';
+          _this.fileData = _this.fileData_key;
+        }
+        action = serveraction + filename;
+      }else{
+        if(name == 'ca'){
+          filename = 'ca.crt';
+          _this.fileData = _this.fileData_ca;
+        }else if(name == 'ta'){
+          filename = 'ta.key';
+          _this.fileData = _this.fileData_ta;
+        }else if(name == 'cert'){
+          filename = 'client.crt';
+          _this.fileData = _this.fileData_cert;
+        }else if(name == 'key'){
+          filename = 'client.key';
+          _this.fileData = _this.fileData_key;
+        }
+        action = clientaction + filename;
+      }
+      if(_this.fileData != 'error'){
+        upload.fileUpload({
+          url: action,
+          data: _this.fileData,
+          progress:function(v){
+
+          },
+          success:function(){
+            Cstools.msg({
+              content: _this.lang_t('common.upload_success'),
+              type: 'success',
+              messgetype: 'alert'
+            });
+          }
+        })
+      }
+    },
+    submit_server:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.status){
+        postVar.enabled = "0";
+        postVar.addEffect = "0";//on/off
+        uiPost.setOpenVpnServerCfg(postVar, apply_callback);
+      } 
+    },
+    submit_client:function(){
+      var _this = this;
+      var postVar = {};
+      if(!_this.clientStatus){
+        postVar.enabled = "0";
+        postVar.addEffect = "0";//on/off
+        uiPost.setOpenVpnClientCfg(postVar, apply_callback);
+      } 
+    },
+    handleSubmit:function(mode){
+      var _this = this;
+      var postVar = {};
+      var port,mtu,proto,devType,cipher,address,username,password,compLzo,tlsAuth,ca,cert,extraConfig,auth;
+      var _s;
+      if(mode == 1){//client
+        address = _this.clientdata.address;
+        port = _this.clientdata.port;
+        mtu  = _this.clientdata.mtu;
+        proto = _this.clientdata.proto;
+        devType = _this.clientdata.devType;
+        cipher = _this.clientdata.cipher;
+        username = _this.clientdata.username;
+        password = _this.clientdata.password;
+        compLzo = _this.clientdata.compLzo;
+        tlsAuth = _this.clientdata.tlsAuth;
+        ca = _this.clientdata.ca;
+        cert = _this.clientdata.cert;
+        key = _this.clientdata.key;
+        extraConfig = _this.clientdata.extraConfig;
+        auth = _this.clientdata.auth;
+
+        _s = cs.ip(address);
+        if(0 == _s){
+          errorAlert(_this.lang_t('openvpn_client.serverip') + _this.lang_t('alert.msg5'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(_this.lang_t('openvpn_client.serverip') + _this.lang_t('alert.msg14'));
+          return false;
+        }
+
+        if(99 != cs.num_range(mtu,1400,1500)){
+          errorAlert("MTU" + _this.lang_t('alert.msg15',[1400,1500]));
+          return false;
+        }
+        
+        if(auth == '3'){
+          _s = cs.string(username);
+          if(0 == _s){
+            errorAlert(_this.lang_t('openvpn_client.username') + _this.lang_t('alert.msg5'));
+            return false;
+          }else if(99 != _s){
+            errorAlert(_this.lang_t('openvpn_client.username') + _this.lang_t('alert.msg6'));
+            return false;
+          }
+
+          _s = cs.string(password);
+          if(0 == _s){
+            errorAlert(_this.lang_t('openvpn_client.pass') + _this.lang_t('alert.msg5'));
+            return false;
+          }else if(99 != _s){
+            errorAlert(_this.lang_t('openvpn_client.pass') + _this.lang_t('alert.msg6'));
+            return false;
+          }
+        }            
+      }else if(mode == 0){//server
+        port = _this.serverdata.port;
+        mtu = _this.serverdata.mtu;
+        proto = _this.serverdata.proto;
+        devType = _this.serverdata.devType;
+        cipher = _this.serverdata.cipher;
+        compLzo = _this.serverdata.compLzo;
+        tlsAuth = _this.serverdata.tlsAuth;
+        ca = _this.serverdata.ca;
+        cert = _this.serverdata.cert;
+        key = _this.serverdata.key;
+        extraConfig = _this.serverdata.extraConfig;
+        auth = _this.serverdata.auth;
+
+        _s = cs.ip(_this.serverdata.subnet);
+        if(0 == _s){
+          errorAlert(_this.lang_t('openvpn.subnet') + _this.lang_t('alert.msg5'));
+          return false;
+        }else if(99 != _s){
+          errorAlert(_this.lang_t('openvpn.subnet') + _this.lang_t('alert.msg14'));
+          return false;
+        }
+      }
+
+      if(99 != cs.num_range(port,1,65536)){
+        errorAlert(_this.lang_t('openvpn.port') + _this.lang_t('alert.msg15',[1,65535]));
+        return false;
+      } 
+          
+      postVar.port = port;
+      postVar.proto = proto;
+      postVar.devType = devType;
+      postVar.cipher = cipher;
+      postVar.compLzo = compLzo;
+      postVar.tlsAuth = tlsAuth;
+      postVar.mtu = mtu;
+      postVar.ca = ca;
+      postVar.cert = cert;
+      postVar.key = key;
+      postVar.extraConfig = extraConfig;
+      postVar.auth = auth;
+      if(mode == 0){
+        postVar.caKey = _this.serverdata.caKey;
+        postVar.subnet = _this.serverdata.subnet;
+        postVar.mask = _this.serverdata.mask;
+        postVar.dh = _this.serverdata.secret_key;
+        postVar.ta = _this.serverdata.ta;
+      }else{
+        postVar.certManual = _this.certManual;
+        postVar.address = _this.clientdata.address;
+        if(auth == '3'){
+          postVar.username = _this.clientdata.username;
+          postVar.password = _this.clientdata.password;
+        }
+        postVar.ta = _this.clientdata.ta;
+      }
+      postVar.enabled = "1";
+      postVar.addEffect = "1";//on/off
+      if(mode == 0){
+        uiPost.setOpenVpnServerCfg(postVar,function(data){
+          apply_callback(data, function() {
+            cs.href(_this.openvpnMode);
+          })
+        });
+      }else{
+        uiPost.setOpenVpnClientCfg(postVar, apply_callback);
+      }
+    },
+    backupcert:function(){  
+      $('#export').submit();
+    },
+    handleShowLog:function(){
+      var _this = this;
+      _this.modal = true;
+      uiPost.getOpenVpnLog(function(data){
+        _this.certtitle = _this.lang_t("openvpn.log");
+        _this.log = data.log;
+        _this.certcontent = data.log;
+        $('#modal_text').modal('show');
+      });
+    },
+    filechange:function(name){
+      var _this = this;
+      var format = '';
+      var file,filename;
+      if(_this.openvpnMode == '0'){
+        file = document.getElementById('serverFile_'+name);
+      }else{
+        file = document.getElementById('clientFile_'+name);
+      }
+      filename = file.files[0].name;
+      var filestatus = true;
+      if(_this.openvpnMode == '0'){
+        if(name == 'ca'){
+          if(filename.indexOf('.crt') < 0){
+            format = 'crt';
+            filestatus = false;
+          }else
+            _this.filename_ca = filename;
+        }else if(name == 'ca_key'){
+          if(filename.indexOf('.key') < 0){
+            format = 'key';
+            filestatus = false;
+          }else
+            _this.filename_ca_key = filename;
+        }else if(name == 'secret_key'){
+          if(filename.indexOf('.pem') < 0){
+            format = 'pem';
+            filestatus = false;
+          }else
+            _this.filename_secret_key = filename;
+        }else if(name == 'ta'){
+          if(filename.indexOf('.key') < 0){
+            format = 'key';
+            filestatus = false;
+          }else
+            _this.filename_ta = filename;
+        }else if(name == 'cert'){
+          if(filename.indexOf('.crt') < 0){
+            format = 'crt';
+            filestatus = false;
+          }else
+            _this.filename_cert = filename;
+        }else if(name == 'key'){
+          if(filename.indexOf('.key') < 0){
+            format = 'key';
+            filestatus = false;
+          }else
+            _this.filename_key = filename;
+        }
+      }else{
+        if(name == 'ca'){
+          if(filename.indexOf('.crt') < 0){
+            format = 'crt';
+            filestatus = false;
+          }else
+          _this.filename_ca = filename;
+        }else if(name == 'ta'){
+          if(filename.indexOf('.key') < 0){
+            format = 'key';
+            filestatus = false;
+          }else
+          _this.filename_ta = filename;
+        }else if(name == 'cert'){
+          if(filename.indexOf('.crt') < 0){
+            format = 'crt';
+            filestatus = false;
+          }else
+          _this.filename_cert = filename;
+        }else if(name == 'key'){
+          if(filename.indexOf('.key') < 0){
+            format = 'key';
+            filestatus = false;
+          }else
+          _this.filename_key = filename;
+        }else if(name == 'import'){
+          if(filename.indexOf('.tar.gz') < 0){
+            format = 'tar.gz';
+            errorAlert(_this.lang_t('openvpn.formaterror',['',format]));
+            return false;
+          }else{
+            var in_first = false;
+            _tempLoadFlag_ = true;
+			var token_tmp=get_token_from_url();
+			var token="";
+			if(token_tmp!="")
+			{
+				//token=token_tmp.split('=')[1];
+				token=token_tmp;
+				token=token_tmp;
+			}
+            upload.fileUpload({
+              url: _this.uploadApi + '&' + 'type=client&name=confgz'+"&"+token,
+              data: file.files[0],
+              progress:function(v){
+                if(!in_first){
+                  in_first=true;
+                  Cstools.msg({
+                    content: _this.lang_t('firmware.uploading'),
+                    type: 'info',
+                    messgetype: 'no',
+                    time: 6
+                  });       
+                }
+              },
+              success:function(data){
+                console.log(data)
+                //if(data.Result == 'Success'){
+                  _tempLoadFlag_ = false;
+                  Cstools.msg({
+                    content: _this.lang_t('common.upload_success'),
+                    type: 'success',
+                    messgetype: 'no',
+                    time:5,
+                    timeout:function(){
+                      cs.href(_this.openvpnMode);
+                    }
+                  });
+
+                //}else{
+                //  errorAlert(_this.lang_t('config.MM_ConfigFileInvalid'));
+                //}
+              },
+              error:function(){
+                errorAlert(_this.lang_t('common.upload_fail'));
+              }
+            })
+          }
+        }
+      }
+      if(!filestatus){
+        _this.formaterror(name,format,filename);
+        _this.fileData = 'error';
+      }else{
+        if(name == 'ca'){
+          _this.fileData_ca = file.files[0];
+        }else if(name == 'ca_key'){
+          _this.fileData_ca_key = file.files[0];
+        }else if(name == 'ta'){
+          _this.fileData_ta = file.files[0];
+        }else if(name == 'cert'){
+          _this.fileData_cert = file.files[0];
+        }else if(name == 'key'){
+          _this.fileData_key = file.files[0];
+        }else if(name == 'import'){
+          _this.fileData = file.files[0];
+        }else if(name == 'secret_key'){
+          _this.fileData_secret_key = file.files[0];
+        }else{
+          _this.fileData = file.files[0];
+        }
+      }
+    },
+    dirSwitch:function(){
+      this.direction = this.direction ? false : true;
+    },
+    importClick:function(){
+      var id = document.getElementById('clientFile_import');
+      id.click();
+    },
+    formaterror:function(id,format,filename){
+      var _this = this;
+      Cstools.msg({ 
+        content: _this.lang_t('openvpn.'+id)+_this.lang_t('openvpn.formaterror',[_this.lang_t('openvpn.'+id),format]),
+        type: 'error',
+        messgetype: 'alert'
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

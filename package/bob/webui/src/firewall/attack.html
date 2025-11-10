@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-switch.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2"><strong>{{ lang_t('attack.help') }}</strong></td>
+              </tr>
+              <tr>
+                <td>{{lang_t('attack.ddos')}}</td>
+                <td>
+                  <input type="checkbox" id="ddos_switch" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr>
+                <td>{{lang_t('attack.port_scan_limit')}}</td>
+                <td>
+                  <input type="checkbox" id="portscan_switch" :checked="toggle_status" data-on-color="warning">
+                </td>
+              </tr>
+              <tr v-if="globalConfig.specialIotBanApply!='1'">
+                <td colspan="2">
+                  <button class="btn btn-primary all-but" @click.prevent="handleSubmit">{{lang_t('common.apply')}}</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/plugin/bootstrap-switch.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script src="/static/js/qrcode.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    return {
+      globalConfig:globalConfig,
+	    lang:$.lang,
+      lang_t:lang_t,
+      ddosEnabled:false,
+      portScanEnabled:false
+    }
+  },
+  mounted:function(){
+    var _this = this;
+    uiPost.getAttackCfg(function(data){
+      _this.ddosEnabled = data.ddosEnabled == "1" ? true : false;
+      _this.portScanEnabled = data.portScanEnabled == "1" ? true : false;
+    });
+    addSwitch('#ddos_switch', function(data){
+      if(data != _this.ddosEnabled) _this.ddosEnabled = data;
+    });
+    addSwitch('#portscan_switch', function(data){
+      if(data != _this.portScanEnabled) _this.portScanEnabled = data;
+    });
+  },
+  computed:{
+    toggle_status:function(){
+      var _this = this;
+      $('#ddos_switch').bootstrapSwitch('state',_this.ddosEnabled);
+      $('#portscan_switch').bootstrapSwitch('state',_this.portScanEnabled);
+    }
+  },
+  created:function(){
+    
+  },
+  methods:{
+    handleSubmit:function(){
+      var _this = this;
+      var postVar = {};
+      postVar.ddosEnabled = _this.ddosEnabled == true ? "1" : "0";
+      postVar.portScanEnabled = _this.portScanEnabled == true ? "1" : "0";
+      uiPost.setAttackCfg(postVar, apply_callback);
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html> 

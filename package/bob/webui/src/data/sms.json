@@ -1,0 +1,14 @@
+{
+	"onlineEnable":"1",
+	"onlineText":"holleword!",
+	"offlineEnable":"0",
+	"offlineText":"hicarystudio!",
+	"rebootEnable":"0",
+	"rebootText":"hitotolink!",
+	"phone0":"12345678901",
+	"phone1":"98765432102",
+	"phone2":"22222222222",
+	"phone3":"66666666666",
+	"phone4":"88888888888",
+	"phone5":"99999999999"
+}

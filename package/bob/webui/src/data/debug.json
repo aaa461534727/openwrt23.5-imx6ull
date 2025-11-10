@@ -1,0 +1,12 @@
+{
+	"debugMode":"1",
+	"lteDial":"1",
+	"lteRsrp":"0",
+	"lteCsq":"1",
+	"lteCheck":"0",
+	"wanDial":"1",
+	"tntLog":"1",
+	"openvpnLog":"1",
+	"saveAction":"ExportEtcSyslog.tar.gz",
+	"iotLog":"0"
+}

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <section class="col-xs-12">
+        <div class="content-box">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <tr>
+                <td colspan="2">
+                    <strong>{{ lang_t('node_info.help') }}</strong>
+                    <span><button class="btn btn-primary all-but btn-sm" @click="refreshInfo()">{{ lang_t('net_strategy.refresh') }}</button></span>
+                </td>
+              </tr>
+            </table>
+            <table class="table table-striped table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>{{ lang_t('node_info.device_name') }}</th>
+                  <th v-if="false">{{ lang_t('node_info.net_id') }}</th>
+                  <th>{{ lang_t('node_info.device_id') }}</th>
+                  <th>{{ lang_t('node_info.mac') }}</th>
+                  <th>{{ lang_t('node_info.ip') }}</th>
+                  <th>{{ lang_t('node_info.status') }}</th>
+                </tr>
+              </thead>
+              <tr v-show="'1' == typeMode" v-for="(val,index) in clientData">
+                <td>{{ index + 1 }}</td>
+                <td>
+                    {{val.deviceName}}
+                    <span v-if="0 == index && '10.100.100.1' == val.ip" style="color: #008000;">{{ lang_t('node_info.master') }}</span>
+                </td>
+                <!--<td @click.prevent="editDevName(index)" style="min-width: 150px;cursor: pointer;">-->
+                    <!--<span v-if="index != editIdx">{{val.deviceName}} <span><i class="fa fa-edit" aria-hidden="true" style="float: right;margin-right: 10px;"></i></span></span>-->
+                    <!--<div v-else>-->
+                        <!--<input type="text" v-model="deviceName" style="width: 200px; float: left;margin-right: 10px;" maxlength="20">-->
+                        <!--<i class="fa fa-edit" aria-hidden="true" style="float: left;cursor: pointer;" @click.prevent="setDevName()"></i>-->
+                    <!--</div>-->
+                <!--</td>-->
+                <td v-if="false">{{val.netId}}</td>
+                <td>{{val.deviceId}}</td>
+                <td>{{val.mac}}</td>
+                <td>{{val.ip}}</td>
+                <td><span :style="'color:'+statusDesc[val.status].color">{{statusDesc[val.status].desc}}</span></td>
+              </tr>
+                <tr v-show="'2' == typeMode" v-for="(val,index) in slaveClientData">
+                    <td>{{ index + 1 }}</td>
+                    <td>
+                        {{val.deviceName}}
+                        <span v-if="0 == index && '10.100.100.1' == val.ip" style="color: #008000;">{{ lang_t('node_info.master') }}</span>
+                    </td>
+                    <!--<td @click.prevent="editDevName(index)" style="min-width: 150px;cursor: pointer;">-->
+                    <!--<span v-if="index != editIdx">{{val.deviceName}} <span><i class="fa fa-edit" aria-hidden="true" style="float: right;margin-right: 10px;"></i></span></span>-->
+                    <!--<div v-else>-->
+                    <!--<input type="text" v-model="deviceName" style="width: 200px; float: left;margin-right: 10px;" maxlength="20">-->
+                    <!--<i class="fa fa-edit" aria-hidden="true" style="float: left;cursor: pointer;" @click.prevent="setDevName()"></i>-->
+                    <!--</div>-->
+                    <!--</td>-->
+                    <td v-if="false">{{val.netId}}</td>
+                    <td>{{val.deviceId}}</td>
+                    <td>{{val.mac}}</td>
+                    <td>{{val.ip}}</td>
+                    <td><span :style="'color:'+statusDesc[val.status].color">{{statusDesc[val.status].desc}}</span></td>
+                </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template:"#main",
+  data:function(){
+    var _this = this;
+    return {
+      globalConfig:globalConfig,
+	  lang: $.lang,
+      lang_t:lang_t,
+      clientData:[],
+      editIdx:'-1',
+      deviceName:"",
+      typeMode:"0",
+      slaveClientData:[]
+    }
+  },
+  computed:{
+    statusDesc:function(){
+        return [
+            {
+                "desc":this.lang_t('node_info.offline'),
+                "color":"#ff0000;"
+            },
+            {
+                "desc":this.lang_t('node_info.online'),
+                "color":"#009900;"
+            },
+            {
+                "desc":this.lang_t('node_info.oneself'),
+                "color":"#444;"
+            }
+        ]
+            
+    }
+  },
+  created:function() {
+    var _this = this;
+      uiPost.getNetStrategyCfg(function(data){
+          _this.typeMode = data.enabled;
+      });
+
+      uiPost.getClientsInfo(function(data){
+        _this.clientData = data;
+        _this.slaveClientData = [];
+        for(var i in _this.clientData){
+            if('10.100.100.1' == _this.clientData[i].ip || '2' == _this.clientData[i].status){
+                _this.slaveClientData.push(_this.clientData[i]);
+            }
+        }
+      });
+  },
+  methods:{
+      refreshInfo:function () {
+          var _this = this;
+          uiPost.setUpdateInfoCfg(function(data){
+              if(data.wtime != undefined && data.wtime != ""){
+                  Cstools.count(data.wtime,'js',function(){
+                      location.reload();
+                  });
+              }else{
+                  location.reload();
+              }
+          });
+      },
+    setDevName:function(){
+        var _this = this;
+        if('-1' == this.editIdx){
+            return false;
+        }
+        var postVar = {};
+        postVar.deviceId = this.clientData[this.editIdx].deviceId;
+        postVar.deviceName = this.deviceName;
+        uiPost.setDeviceNameCfg(postVar,function(data){
+          if(data.wtime != undefined && data.wtime != ""){
+            Cstools.count(data.wtime,'js',function(){
+              location.href=location.href;
+            });
+          }else{
+            Cstools.msg({
+              content: _this.lang_t('common.success'),
+              type: 'success',
+              messgetype: 'no',
+              time: 1,
+              timeout:function(){
+                location.href=location.href;
+              }
+            });
+          }        
+        });
+    },
+    editDevName:function(idx){
+        var _this = this;
+        _this.editIdx = idx;
+        _this.deviceName = _this.clientData[idx].deviceName;
+    },
+    errorAlert:function (info) {
+      Cstools.msg({
+        content: info,
+        type: 'error',
+        messgetype: 'alert'
+      });
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>  

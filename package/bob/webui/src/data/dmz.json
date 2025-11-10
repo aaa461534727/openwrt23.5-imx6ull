@@ -1,0 +1,24 @@
+{
+	"enable":	"1",
+	"interface":	"WAN,MODEM",
+	"lan":	[{
+			"idx":	"1",
+			"ip":	"192.168.0.253",
+			"mask":	"255.255.255.0"
+		}],
+	"rule":	[{
+			"idx":	"1",
+			"sip":	"192.168.0.190",
+			"dip":	"192.168.1.85",
+			"port":	"WAN2",
+			"desc":	"test1",
+			"delRuleName":	"delRule0"
+		}, {
+			"idx":	"2",
+			"sip":	"192.168.0.110",
+			"dip":	"192.168.39.65",
+			"port":	"WAN3",
+			"desc":	"test2",
+			"delRuleName":	"delRule1"
+		}]
+}

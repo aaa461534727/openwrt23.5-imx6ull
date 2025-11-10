@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="robots" content="noindex, nofollow, noodp, noydir" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+  <meta http-equiv="proma" content="no-cache"/>
+  <meta http-equiv="cache-control" content="no cache" />
+  <meta http-equiv="expires" content="0" />
+  <link href="/static/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-dialog.css">
+  <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="main">
+    <div class="row" v-cloak>
+      <!--****填充区******-->
+      <div>
+        <table class="table table-striped">
+          <tr>
+            <td colspan="12">
+              <p>{{ lang_t('opmode.help') }}</p>
+            </td>
+          </tr>
+          <tr v-if="!isNext && bridgeSupport">
+            <td style="width: 15%;">
+              <input type="radio" value="0" name="mode" v-model="operationMode" >{{ lang_t('index.bridge_mode') }}
+            </td>
+            <td>
+              {{ lang_t('opmode.bridge_mode_msg') }}
+            </td>
+          </tr>
+          <tr v-if="!isNext">
+            <td style="width: 15%;">
+              <input type="radio" value="1" name="mode" v-model="operationMode" >{{ lang_t('index.router_mode') }}
+            </td>
+            <td>
+              {{ lang_t('opmode.gateway_mode_msg') }}
+            </td>
+          </tr>
+          <tr v-if="!isNext && repeaterSupport">
+            <td>
+              <input type="radio" value="2" name="mode" v-model="operationMode" >{{ lang_t('index.repeater_mode') }}
+            </td>
+            <td>
+              {{ lang_t('opmode.repeater_mode_msg') }}
+            </td>
+          </tr>
+          <tr v-if="!isNext && wispSupport">
+            <td>
+              <input type="radio" value="3" name="mode" v-model="operationMode">{{ lang_t('index.wisp_mode') }}
+            </td>
+            <td>
+              {{ lang_t('opmode.wisp_mode_msg') }}
+            </td>
+          </tr>
+          <tr v-if="isNext">
+            <td colspan="2">{{ lang_t('opmode.aplist_help') }}</td>
+          </tr>
+          <tr v-if="globalConfig.specialIotBanApply!='1'">
+            <td colspan="12">
+              <div v-if="operationMode=='0' || operationMode=='1'">
+                <button class="btn btn-primary" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+              </div>
+              <div v-else>
+                <button class="btn btn-primary" v-show="!isNext" @click="isNext=true">{{ lang_t('common.next') }}</button>
+                <button class="btn btn-primary" v-show="isNext" @click="isNext=false">{{ lang_t('common.back') }}</button>
+                    <button class="btn btn-primary" v-show="isNext" @click="scan" id="scan_ing" :data-loading-text="lang_t('common.scan')" >{{lang_t('common.scan')}}</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      
+      <div class="modal fade" id="scan_ap_list" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog" :style="{width: globalConfig.isPhoneDevice ? 'auto' : '800px'}">
+          <div class="modal-content" >
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4>{{ lang_t('opmode.extend_ap') }}</h4>
+              <p>{{ lang_t('opmode.aplist_help') }}</p>
+            </div>
+            <div class="modal-body" style="overflow-x: auto;">
+              <table class="table table-striped">
+                <thead>
+                  <th>{{ lang_t('opmode.channel') }}</th>
+                  <th>{{ lang_t('opmode.ssid') }}</th>
+                  <th>{{ lang_t('opmode.mac') }}</th>
+                  <th>{{ lang_t('index.encryption') }}</th>
+                  <th>{{ lang_t('opmode.signal') }}<i class="fa fa-sort" aria-hidden="true" style="cursor: pointer;" @click="sinalSort"></i></th>
+                  <th>{{ lang_t('opmode.mode') }}</th>
+                </thead>
+                <tbody>
+                  <tr v-for="(data,v) in aplist" data-dismiss="modal" @click="selectTable(data)" style="cursor: pointer;">
+                    <td>{{ data.channel }}</td>
+                    <td style="white-space:pre;">{{ data.ssid }}</td>
+                    <td>{{ data.bssid }}</td>
+                    <td>{{ data.encrypt }}</td>
+                    <td>{{ data.signal }}</td>
+                    <td>{{ data.band }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="12">
+                    <button type="button" class="btn btn-default all-but" data-dismiss="modal">{{ lang_t('common.disabled') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="set_rule" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+              <h4 id="myModalLabel">{{ lang_t('common.apply') }}</h4>
+              <p>{{ lang_t('opmode.aplist_help1') }}</p>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <tr>
+                  <td>{{ lang_t('opmode.ssid') }}</td>
+                  <td>
+                    <input type="text" v-model="forms.ssid" disabled />
+                  </td>
+                </tr>
+                <tr>
+                  <td>{{ lang_t('opmode.mac') }}</td>
+                  <td>
+                    <input type="text" v-model="forms.bssid" disabled />
+                  </td>
+                </tr>
+                <tr v-if ="false">
+                  <td>{{ lang_t('index.encryption') }}</td>
+                  <td>
+                    <select disabled v-model="forms.encrypt">
+                        <option value="NONE">{{ lang_t('common.disabled') }}</option>
+                        <option value="OPEN">WEP-{{ lang_t('opmode.open_system') }}</option>
+                        <option value="SHARED">WEP-{{ lang_t('opmode.shared_key') }}</option>
+                        <option value="WPAPSK">WPA-PSK</option>
+                        <option value="WPA2PSK">WPA2-PSK</option>
+                        <option value="WPAPSKWPA2PSK">WPA/WPA2-PSK</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-if ="false">
+                  <td>{{ lang_t('opmode.key_format') }}</td>
+                  <td>
+                    <select disabled v-model="forms.cipher" :placeholder="lang_t('common.select')">
+                        <option value="WEP64">WEP64</option>
+                        <option value="WEP128">WEP128</option>
+                        <option value="TKIP">TKIP</option>
+                        <option value="AES">AES</option>
+                        <option value="TKIPAES">TKIP/AES</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr v-show="forms.encrypt && forms.encrypt != 'NONE'">
+                  <td>{{ lang_t('index.password') }}</td>
+                  <td>
+                    <input type="text" v-model="forms.password" :maxlength="63"/>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <table>
+                <tr>
+                  <td colspan="2">
+                    <button type="button" class="btn btn-default all-but" data-dismiss="modal" @click="backListFun">{{ lang_t('common.back') }}</button> &nbsp;&nbsp;
+                    <button type="button" class="btn btn-primary all-but" @click="wifiapplySubmit">{{ lang_t('common.connect') }}</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> 
+  </div>
+</div>
+<script src="/plugin/vue.js"></script>
+<script src="/plugin/jquery-3.2.1.min.js"></script>
+<script src="/plugin/bootstrap.min.js"></script>
+<script src="/static/js/config.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="/static/js/common.js"></script>
+<script src="/static/js/topicurl.js"></script>
+<script>
+var cs_main = {
+  template: '#main',
+  data: function() {
+    var _this = this;
+    return {
+      globalConfig: globalConfig,
+      lang: $.lang,
+      lang_t: lang_t,
+      operationMode: '1',
+      opmodeSupport: "",
+      applyLoading: false,
+      tableLoading: false,
+      currentSelect: 0,
+      percent: 0,
+      selectData: null,
+      currentSortDir: 'desc',
+      forms: {
+        channel: '',
+        ssid: '',
+        bssid: '',
+        cipher: '',
+        signal: '',
+        band: '',
+        password: ''
+      },
+      modalTable:{
+        modalTitle:"",
+        table:{
+          th:[],
+          td:[]
+        }
+      },
+      aplist: [],
+      bridgeSupport: false,
+      repeaterSupport: false,
+      wispSupport: false,
+      isNext: false
+    }
+  },
+  watch:{
+    operationMode:function(){
+      this.isNext = false;
+    }
+  },
+  computed:{
+
+  },
+  created:function() {
+    var _this = this;
+    var op = globalConfig.opmodeString.toLowerCase();
+    this.bridgeSupport = !!~op.indexOf('br');
+    this.repeaterSupport = !!~op.indexOf('rpt');
+    this.wispSupport = !!~op.indexOf('wisp');
+
+    uiPost.getOpMode(function(data) {
+      _this.operationMode = data.operationMode;
+    })
+  },
+  methods:{
+    handleSubmit:function(){      
+      var _this = this;
+      var postVar = {};
+      var time = 20;
+      postVar.operationMode = _this.operationMode;
+      uiPost.setOpMode(postVar, apply_callback);
+    },
+    wifiapplySubmit:function(){
+      var _this = this;
+      var time = 30;
+      var postVar = {};      
+      postVar.operationMode = _this.operationMode;
+      postVar.apcliChannel = _this.forms.channel;
+      postVar.apcliSsid = _this.forms.ssid;
+      postVar.apcliBssid = _this.forms.bssid;
+      postVar.apcliAuthMode = _this.forms.encrypt;
+      postVar.apcliEncrypType = _this.forms.cipher;
+      postVar.apcliKey = _this.forms.password;
+      if(_this.forms.encrypt && _this.forms.encrypt != 'NONE'){
+        if (!_this.forms.password || _this.forms.password.length < 8) {
+          Cstools.msg({
+            content: lang_t('index.pass') + lang_t('alert.msg16'),
+            type: 'error',
+            messgetype: 'alert'
+          });
+          return false;
+        }
+        if (1 == cs.string(_this.forms.password)) {
+          Cstools.msg({
+            content: lang_t('index.pass') + lang_t('alert.msg49'),
+            type: 'error',
+            messgetype: 'alert'
+          });
+          return false;
+        }
+      }
+      if(_this.forms.channel < 15){
+        postVar.wifiIdx = "0";//2.4G
+      }else{
+        postVar.wifiIdx = "1";//5g
+      }
+      uiPost.setWiFiRepeaterConfig(postVar, apply_callback);
+    },
+    scan:function() {
+      $("#scan_ing").button('loading');
+      var postVar = {};
+      this.getAPlist(postVar);
+    },
+    getAPlist:function(postVar){
+      var _this = this;
+      this.tableLoading = true;
+      uiPost.getWiFiApcliScan(postVar,function(data){
+        _this.tableLoading = false;
+        _this.aplist = data;
+        _this.sinalSort('refre');
+        $('#scan_ap_list').modal('show');
+        $("#scan_ing").button('reset');
+      })
+    },
+    sinalSort:function(type){
+      var _this = this;
+      if(type != 'refre'){
+        _this.currentSortDir = this.currentSortDir == 'asc' ? 'desc' : 'asc';
+      }
+      var info= _this.aplist.sort(function(a,b){
+        var s = 'signal';
+        return _this.rank(a[s],b[s],_this.currentSortDir,'num');
+      });
+      _this.aplist = info;
+    },
+    rank: function(a,b,type,str){
+      var n=m=k=l=0;
+      if(str == "ip"){
+        n = Number(a.split('.')[2]);
+        m = Number(b.split('.')[2]);
+        k = Number(a.split('.')[3]);
+        l = Number(b.split('.')[3]);
+      }else if(str == "num"){
+        n = Number(a);
+        m = Number(b);
+      }else{
+        n = a;
+        m = b;
+      }
+      if(type == 'asc'){
+        if(n > m){
+          return 1;
+        }else if(n == m && str == "ip"){
+          return k > l ? 1 : -1;
+        }else if(n < m){
+          return -1;
+        }
+      }else{
+        if(n > m){
+          return -1;
+        }else if(n == m && str == "ip"){
+          return k > l ? -1 : 1;
+        }else if(n < m){
+          return 1;
+        }
+      }
+    },
+    selectTable: function(val) {
+      this.selectData = val;
+      this.forms = val;
+      $('#set_rule').modal('show');
+      cs.bodyAction('scan_ap_list','set_rule');
+    },
+    backListFun:function(){
+      $('#scan_ap_list').modal('show');
+      cs.bodyAction('set_rule','scan_ap_list');
+    }
+  }
+};
+</script>
+<script src="/static/js/main.js"></script>
+</body>
+</html>

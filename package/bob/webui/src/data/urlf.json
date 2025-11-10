@@ -1,0 +1,14 @@
+{
+  "enable":"1",
+  "rule":[
+    {"idx":"1","url":"baidu","delRuleName":"delRule0"},
+    {"idx":"2","url":"sina","delRuleName":"delRule1"},
+    {"idx":"3","url":"sohu","delRuleName":"delRule2"},
+    {"idx":"4","url":"totolink","delRuleName":"delRule3"},
+    {"idx":"5","url":"totolink","delRuleName":"delRule4"},
+    {"idx":"6","url":"totolink","delRuleName":"delRule5"},
+    {"idx":"7","url":"totolink","delRuleName":"delRule6"},
+    {"idx":"8","url":"totolink","delRuleName":"delRule7"},
+    {"idx":"9","url":"totolink","delRuleName":"delRule8"}
+  ]
+}

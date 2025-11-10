@@ -1,0 +1,83 @@
+config interface 'loopback'
+        option device 'lo'
+        option proto 'static'
+        option ipaddr '127.0.0.1'
+        option netmask '255.0.0.0'
+
+config globals 'globals'
+        option packet_steering '1'
+        option ula_prefix 'fd2a:cc80:33d1::/48'
+
+config interface 'wan'
+        option device 'eth0.1'
+        option proto 'dhcp'
+        option hostname 'none'
+
+config interface 'wan_modem'
+        option device 'usb0'
+        option proto 'dhcp'
+
+config interface 'wan6'
+        option device 'eth0.1'
+        option proto 'dhcpv6'
+
+config device
+        option name 'br-lan'
+        option type 'bridge'
+        list ports 'eth0.2'
+
+config interface 'lan'
+        option device 'br-lan'
+        option proto 'static'
+        option ipaddr '192.168.1.1'
+        option netmask '255.255.255.0'
+        option ip6assign '60'
+        option hostname 'none'
+
+config switch
+        option name 'switch0'
+        option reset '1'
+        option enable_vlan '1'
+
+config switch_vlan
+        option device 'switch0'
+        option vlan '2'
+        option ports '1 2 0 5t'
+  
+config interface 'wg0'                    
+        option proto 'wireguard'
+        option private_key ''      
+        option listen_port ''
+        option addresses ''
+        option disabled '1'
+
+config interface 'wg1'                    
+        option proto 'wireguard'
+        option private_key ''      
+        option listen_port ''
+        option addresses ''
+        option disabled '1'
+        
+config interface 'wg0'
+        option proto 'wireguard'
+        option disabled '1'
+
+config interface 'wg1'
+        option proto ''
+        option disabled '1'
+
+config wireguard_wg1 'cli_peer'  
+        option endpoint_host ''
+        option endpoint_port ''           
+        option route_allowed_ips '0'
+
+config interface 'pptp'
+        option proto 'pptp'
+        option disabled '1'
+
+config interface 'l2tp'
+        option proto 'l2tp'
+        option disabled '1'
+
+
+

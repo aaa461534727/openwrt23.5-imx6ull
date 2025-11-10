@@ -1,0 +1,8 @@
+{
+    "enable":"1",
+    "rule":[
+      {"idx":"1", "interface": "wan","vid": "100","peer_ip": "192.168.1.1","peer_prot": "4785","source_ip": "192.168.1.1"},
+      {"idx":"2", "interface": "wan","vid": "100","peer_ip": "192.168.1.1","peer_prot": "4785","source_ip": "192.168.1.1"},
+      {"idx":"3", "interface": "wan","vid": "100","peer_ip": "192.168.1.1","peer_prot": "4785","source_ip": "192.168.1.1"}
+    ]
+  }
