@@ -71,7 +71,7 @@ ifneq ($(wildcard ../tmp),)
 pre_clean:
 	@echo prepare clean...
 	cd $(RELEASE_DIR)/..; \
-#	 make clean;rm -rf tmp
+	# make clean;rm -rf tmp
 else
 pre_clean:
 	@echo no tmp dir, do nothing
@@ -79,7 +79,7 @@ endif
 
 pre_defconfig:
 	cd $(RELEASE_DIR)/..; \
-		cp -f $(MENUCONF_DIR)/$(CSID)/.config  .config; \
+		cp -f $(MENUCONF_DIR)/$(CSID)/openwrt.config  .config; \
                 cp -f $(MENUCONF_DIR)/$(CSID)/linux5.15.config  target/linux/${folder}/config-5.15; \
 		make defconfig
 
