@@ -14,7 +14,7 @@ define Package/opencv-app
   SECTION:=bob Properties
   CATEGORY:=bob Properties
   TITLE:=Simple OpenCV Test
-  DEPENDS:= +opencv +libopencv-core +libopencv-imgproc +libopencv-imgcodecs
+  DEPENDS:= +opencv
 endef
 
 define Package/opencv-app/description

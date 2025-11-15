@@ -136,9 +136,9 @@ rootfs-repackage: FORCE
 		echo "Repackaging rootfs for imx cortexa7..."; \
 		echo "Using path: $$BIN_PATH"; \
 		mkdir -p /tmp/rootfs_temp; \
-		ROOT_FILE=$$(ls $$BIN_PATH/*rootfs.tar.gz 2>/dev/null | head -1); \
+		ROOT_FILE=$$(find "$$BIN_PATH" -name "*imx6ull-14x14-emmc-rootfs.tar.gz" -type f -printf "%T@ %p\n" | sort -nr | head -1 | cut -d' ' -f2-); \
 		if [ -n "$$ROOT_FILE" ] && [ -f "$$ROOT_FILE" ]; then \
-			echo "Using rootfs: $$ROOT_FILE"; \
+			echo "Using rootfs (newest): $$ROOT_FILE"; \
 			tar -xzf "$$ROOT_FILE" -C /tmp/rootfs_temp; \
 			tar -cjf "$$BIN_PATH/rootfs.tar.bz2" -C /tmp/rootfs_temp .; \
 			rm -rf /tmp/rootfs_temp; \
