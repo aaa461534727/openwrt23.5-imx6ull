@@ -130,7 +130,29 @@ buildinfo: FORCE
 prepare: set_profile .config $(tools/stamp-compile) $(toolchain/stamp-compile)
 	$(_SINGLE)$(SUBMAKE) -r buildinfo
 
-world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
+rootfs-repackage: FORCE
+	@BIN_PATH="bin/targets/imx/cortexa7"; \
+	if [ -d "$$BIN_PATH" ]; then \
+		echo "Repackaging rootfs for imx cortexa7..."; \
+		echo "Using path: $$BIN_PATH"; \
+		mkdir -p /tmp/rootfs_temp; \
+		ROOT_FILE=$$(ls $$BIN_PATH/*rootfs.tar.gz 2>/dev/null | head -1); \
+		if [ -n "$$ROOT_FILE" ] && [ -f "$$ROOT_FILE" ]; then \
+			echo "Using rootfs: $$ROOT_FILE"; \
+			tar -xzf "$$ROOT_FILE" -C /tmp/rootfs_temp; \
+			tar -cjf "$$BIN_PATH/rootfs.tar.bz2" -C /tmp/rootfs_temp .; \
+			rm -rf /tmp/rootfs_temp; \
+			echo "Rootfs repackaged to: $$BIN_PATH/rootfs.tar.bz2"; \
+		else \
+			echo "Warning: No rootfs.tar.gz found in $$BIN_PATH/"; \
+			ls -la "$$BIN_PATH/" 2>/dev/null || echo "Directory does not exist"; \
+			rm -rf /tmp/rootfs_temp; \
+		fi; \
+	else \
+		echo "Warning: Directory $$BIN_PATH not found"; \
+	fi
+
+world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) rootfs-repackage FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
 	$(_SINGLE)$(SUBMAKE) -r json_overview_image_info
 	$(_SINGLE)$(SUBMAKE) -r checksum
@@ -138,6 +160,6 @@ ifneq ($(CONFIG_CCACHE),)
 	$(STAGING_DIR_HOST)/bin/ccache -s
 endif
 
-.PHONY: clean dirclean prereq prepare world package/symlinks package/symlinks-install package/symlinks-clean
+.PHONY: clean dirclean prereq prepare rootfs-repackage world package/symlinks package/symlinks-install package/symlinks-clean
 
 endif
