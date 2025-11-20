@@ -71,7 +71,7 @@ ifneq ($(wildcard ../tmp),)
 pre_clean:
 	@echo prepare clean...
 	cd $(RELEASE_DIR)/..; \
-	# make clean;rm -rf tmp
+	 make clean;rm -rf tmp
 else
 pre_clean:
 	@echo no tmp dir, do nothing
@@ -92,7 +92,6 @@ release:
 	mkdir -p "$(RELEASE_IMG_DIR)/$(CSID)"
 	mkdir -p /tmp/rootfs_temp
 	
-    # 使用wildcard函数在Makefile层面获取文件
 	$(eval ROOT_ACTUAL := $(firstword $(wildcard $(ROOT_FILE))))
 	$(eval WEB_ACTUAL := $(firstword $(wildcard $(WEB_FILE))))
 	
