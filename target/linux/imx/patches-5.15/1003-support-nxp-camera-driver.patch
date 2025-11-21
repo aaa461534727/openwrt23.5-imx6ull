@@ -16137,7 +16137,7 @@ index 000000000..ef6f8ca94
 +	ov5640_int_device.priv = &ov5640_data;
 +	retval = v4l2_int_device_register(&ov5640_int_device);
 +
-+	pr_info("camera ov5640 is found\n");
++	pr_info("camera ov5640_atk is found\n");
 +	return retval;
 +}
 +
