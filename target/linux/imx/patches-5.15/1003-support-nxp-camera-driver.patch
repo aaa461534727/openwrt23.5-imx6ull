@@ -18377,7 +18377,7 @@ index 000000000..7b8ec2f8f
 +		dev_err(&client->dev,
 +					"%s--Async register failed, ret=%d\n", __func__, retval);
 +
-+	pr_info("camera ov5640, is found\n");
++	pr_info("camera ov5640_atk, is found\n");
 +	return retval;
 +}
 +
@@ -24344,7 +24344,7 @@ index 000000000..1f0c0b39d
 +		dev_err(&client->dev,
 +					"%s--Async register failed, ret=%d\n", __func__, retval);
 +
-+	pr_info("camera ov5640, is found\n");
++	pr_info("camera ov5640_atk, is found\n");
 +	return retval;
 +}
 +

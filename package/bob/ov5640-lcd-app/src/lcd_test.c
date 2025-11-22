@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
         close(fd);
         exit(EXIT_FAILURE);
     }
-
+    printf("starr -----width = %d, height = %d\n", width, height);
     /* 画正方形方块 */
     int w = height * 0.25;//方块的宽度为1/4屏幕高度
     lcd_fill(0, width-1, 0, height-1, 0x0); //清屏（屏幕显示黑色）
